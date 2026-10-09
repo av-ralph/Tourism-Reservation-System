@@ -7,4 +7,5 @@ async function bootstrap(){
  app.enableShutdownHooks();
  await app.listen(process.env.PORT??3001,process.env.VERCEL?'0.0.0.0':'127.0.0.1');
 }
-await bootstrap();
+// Let Vercel finish importing the entrypoint while it starts the server.
+void bootstrap();
