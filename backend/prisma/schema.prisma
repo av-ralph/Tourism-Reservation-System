@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// One row per request/report/visit. JSON preserves all existing form fields.
+model HmRecord {
+  id        String   @id @db.VarChar(36)
+  kind      String   @db.VarChar(20)
+  owner     String?  @db.VarChar(36)
+  facility  String   @db.VarChar(100)
+  date      String   @db.VarChar(10)
+  status    String?  @db.VarChar(40)
+  payload   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([kind, owner])
+  @@index([kind, facility, date])
+  @@map("hm_records")
+}
+
+// Serializes concurrent writes so overlapping bookings cannot both be accepted.
+model HmWriteLock {
+  id      String @id @db.VarChar(20)
+  version Int    @default(0)
+
+  @@map("hm_write_lock")
+}

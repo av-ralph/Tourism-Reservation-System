@@ -1,0 +1,16 @@
+node_modules/
+dist/
+build/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+*.tsbuildinfo
+.repository-backups/
+backend/data/
+backend/data-test-*/
+backend/portal-test-*/
+backend/contact-test-*/
+backend/src/generated/
+.DS_Store
