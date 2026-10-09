@@ -19,3 +19,8 @@
 .admin-shell{--admin-ink:#111;color:#111}.admin-shell :is(h1,h2,h3,h4,p,small,strong,dt,dd,th,td,label,summary,footer,header,.eyebrow,.admin-date,.portal-label,.admin-results,.metric-top,.metric-value,.admin-staff-card,.sidebar-footer){color:#111}.admin-shell .sidebar nav button,.admin-shell .sidebar nav button.selected,.admin-shell .sidebar nav button:hover,.admin-shell .sidebar nav .admin-nav-label{color:#111}.admin-shell :is(button,a,input,select,textarea){color:#111}.admin-shell .sidebar nav .admin-nav-icon{color:#111}.admin-shell .sidebar nav button.selected .admin-nav-icon{color:#df5c25}.admin-shell .primary{color:#fff}.admin-shell .college-red-e{color:#ff0000!important}
 /* College navy for prominent headings, black for supporting text. */
 .admin-shell :is(h1,h2,h3,h4),.admin-shell .metric-value{color:#06266b}
+/* Keep prominent admin text navy despite section-specific styles. */
+.admin-shell :is(h1,h2,h3,h4),.admin-shell .metric-value{color:#06266b!important}
+/* College orange sign-out action with black lettering. */
+.admin-shell .admin-sidebar-bottom>button{background:#fa6020;border-color:#fa6020;color:#000}
+.admin-shell .admin-sidebar-bottom>button:hover{background:#e95519;border-color:#e95519;color:#000}
