@@ -20,7 +20,8 @@ export function fillReservationForm(template, reservation) {
   const values = {
     FILED_DATE:dateLabel(reservation.createdAt), USAGE_DATE:dateLabel(reservation.date),
     SUBJECT:reservation.subject, USAGE_TIME:`${reservation.start} – ${reservation.end}`,
-    PURPOSE:`${reservation.purpose}\nFacility: ${reservation.facility}\nRequested by: ${reservation.name}\nEmail: ${reservation.email}${reservation.studentId ? '\nID: '+reservation.studentId : ''}`,
+    PURPOSE:`${reservation.purpose}\nFacility: ${reservation.facility}`,
+    CONTACT_DETAILS:`Requested by: ${reservation.name} | Email: ${reservation.email}${reservation.studentId ? ' | ID: '+reservation.studentId : ''}`,
     INSTRUCTOR:reservation.instructor,
   }
   for (const [key,value] of Object.entries(values)) xml=xml.replaceAll('{{'+key+'}}',()=>escapeXml(value).replace(/\r?\n/g,'</w:t><w:br/><w:t xml:space="preserve">'))
