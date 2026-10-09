@@ -8,6 +8,7 @@ export type Row = Record<string,string>;
 export type Store = {reservations:Row[];reports:Row[];utilization:Row[];facilities:Row[]};
 const empty=():Store=>({reservations:[],reports:[],utilization:[],facilities:[]});
 export function storageMode(): 'file'|'tidb' {
+ if(process.env.VERCEL && (!process.env.DATABASE_URL || process.env.HM_STORAGE==='file'))throw new Error('The hosted backend requires TiDB credentials and HM_STORAGE=tidb.');
  const requested=process.env.HM_STORAGE;
  if(requested&& !['file','tidb'].includes(requested))throw new Error('HM_STORAGE must be file or tidb.');
  if(requested==='file')return 'file';

@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException, ForbiddenException, ServiceUnavailableException } from '@nestjs/common';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { randomUUID, randomBytes, timingSafeEqual } from 'node:crypto';
@@ -17,6 +17,7 @@ export class AppService {
  updateFacility(id:string,input:unknown){return this.storage.mutate(data=>{const original=facilityCatalog.find(f=>f.id===id);if(!original)throw new NotFoundException('Facility not found.');const raw=input as Record<string,unknown>;if(!raw||!['Available','Unavailable'].includes(String(raw.status)))throw new BadRequestException('Choose an availability status.');if(typeof raw.reason!=='string'||raw.reason.length>500||(raw.status==='Unavailable'&&!raw.reason.trim()))throw new BadRequestException('Provide a reason when making a facility unavailable.');if(typeof raw.description!=='string'||!raw.description.trim()||raw.description.length>1000)throw new BadRequestException('Provide a facility description.');const updated={...original,...data.facilities.find(f=>f.id===id),status:String(raw.status),description:raw.description.trim(),reason:raw.reason.trim(),updatedAt:new Date().toISOString()};data.facilities=data.facilities.filter(f=>f.id!==id);data.facilities.push(updated);return updated;});}
  private adminKey(): string {
   if(process.env.HM_ADMIN_KEY) return process.env.HM_ADMIN_KEY;
+  if(process.env.VERCEL)throw new ServiceUnavailableException('Administrator access has not been configured.');
   const keyFile=resolve(dirname(this.file),'admin-access-key.txt');
   if(!existsSync(keyFile)){mkdirSync(dirname(keyFile),{recursive:true});writeFileSync(keyFile,randomBytes(32).toString('hex'),{mode:0o600});}
   return readFileSync(keyFile,'utf8').trim();

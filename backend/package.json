@@ -27,7 +27,9 @@
     "db:import": "node scripts/database.mjs import",
     "dev:full": "node scripts/dev.mjs",
     "verify:system": "node scripts/verify-system.mjs",
-    "verify:workflows": "node scripts/verify-workflows.mjs"
+    "verify:workflows": "node scripts/verify-workflows.mjs",
+    "postinstall": "prisma generate",
+    "build:vercel": "prisma generate && nest build"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",
@@ -47,7 +49,8 @@
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "dotenv": "^18.0.3"
   },
   "devDependencies": {
     "@nestjs/cli": "^12.0.0",
@@ -68,5 +71,8 @@
     "typescript": "^6.0.2",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.1.2"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }

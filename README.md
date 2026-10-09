@@ -74,3 +74,9 @@ On October 9, 2026, the backend was switched to TiDB Cloud instance cec-hm-reser
 The root netlify.toml builds frontend with npm run build and publishes frontend/dist. SPA redirects support /admin and refreshed page URLs. Database credentials and HM_ADMIN_KEY belong only in the backend hosting environment, never in frontend variables.
 
 After the backend is deployed to Vercel, set VITE_API_BASE_URL in Netlify to its HTTPS origin (without /api) and trigger a new frontend build. Configure the backend to allow this Netlify origin, Content-Type, Authorization and X-User-Session headers for CORS. Until the public backend is configured, the site offers facility and college information and clearly marks online booking as unavailable; it does not pretend to save requests.
+
+## Vercel backend deployment
+
+Import only backend as a standalone NestJS project on Vercel Hobby. backend/vercel.json selects NestJS and npm run build:vercel; Node 22 and the Linux Prisma engine are configured. Store DATABASE_URL, HM_ADMIN_KEY and HM_STORAGE=tidb as sensitive Production environment variables. Do not put them into Netlify or VITE_ variables. The backend permits the Netlify origin https://hmreservation.netlify.app and the required request headers. An unrelated browser origin is not permitted.
+
+The hosted backend refuses file-storage fallback and does not generate an admin key on the read-only Vercel filesystem. After deployment, set Netlify's public VITE_API_BASE_URL to the production Vercel origin and rebuild the frontend. Verify the facility list, private admin access, guest submissions, and CORS through the deployed site.
