@@ -1,0 +1,82 @@
+[
+  {
+    "id": "facility-01",
+    "name": "Front Office Area",
+    "category": "Guest services",
+    "description": "Guest reception, check-in, and front office operations.",
+    "status": "Available",
+    "reason": ""
+  },
+  {
+    "id": "facility-02",
+    "name": "Mini Function Room",
+    "category": "Events",
+    "description": "Event planning, presentations, and small gatherings.",
+    "status": "Available",
+    "reason": ""
+  },
+  {
+    "id": "facility-03",
+    "name": "Dining Area",
+    "category": "Food & beverage",
+    "description": "Table service, dining etiquette, and restaurant operations.",
+    "status": "Available",
+    "reason": ""
+  },
+  {
+    "id": "facility-04",
+    "name": "Harmonia Mini-Hotel",
+    "category": "Accommodation",
+    "description": "Housekeeping and hospitality service practice.",
+    "status": "Available",
+    "reason": ""
+  },
+  {
+    "id": "facility-05",
+    "name": "Lunara Mini-Hotel",
+    "category": "Accommodation",
+    "description": "Room preparation and guest accommodation.",
+    "status": "Available",
+    "reason": ""
+  },
+  {
+    "id": "facility-06",
+    "name": "Hot Kitchen",
+    "category": "Culinary",
+    "description": "Hands-on culinary preparation and cooking activities.",
+    "status": "Available",
+    "reason": ""
+  },
+  {
+    "id": "facility-07",
+    "name": "Cold Kitchen",
+    "category": "Culinary",
+    "description": "Cold food preparation, plating, and presentation.",
+    "status": "Available",
+    "reason": ""
+  },
+  {
+    "id": "facility-08",
+    "name": "Laundry Area",
+    "category": "Housekeeping",
+    "description": "Linen care, laundry procedures, and equipment handling.",
+    "status": "Available",
+    "reason": ""
+  },
+  {
+    "id": "facility-09",
+    "name": "Bar Area",
+    "category": "Food & beverage",
+    "description": "Beverage preparation and professional bar service.",
+    "status": "Available",
+    "reason": ""
+  },
+  {
+    "id": "facility-10",
+    "name": "Computer Laboratory MH 302",
+    "category": "Technology",
+    "description": "Hospitality software and computer-based activities.",
+    "status": "Available",
+    "reason": ""
+  }
+]

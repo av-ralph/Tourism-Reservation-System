@@ -68,3 +68,9 @@ All guest submissions (bookings, incident reports and visit records) now collect
 
 On October 9, 2026, the backend was switched to TiDB Cloud instance cec-hm-reservations, ID 10626798825279771951, AWS Tokyo, Starter plan with a $0 monthly spending limit. The application uses the test database with strict TLS. Migrations and live read/write/transaction checks passed; the temporary test record was removed. There were no local records to import. Credentials remain in the ignored backend/.env.
 
+
+## Netlify frontend deployment
+
+The root netlify.toml builds frontend with npm run build and publishes frontend/dist. SPA redirects support /admin and refreshed page URLs. Database credentials and HM_ADMIN_KEY belong only in the backend hosting environment, never in frontend variables.
+
+After the backend is deployed to Vercel, set VITE_API_BASE_URL in Netlify to its HTTPS origin (without /api) and trigger a new frontend build. Configure the backend to allow this Netlify origin, Content-Type, Authorization and X-User-Session headers for CORS. Until the public backend is configured, the site offers facility and college information and clearly marks online booking as unavailable; it does not pretend to save requests.

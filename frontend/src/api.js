@@ -1,3 +1,6 @@
+const backendOrigin = (import.meta.env?.VITE_API_BASE_URL || '').trim().replace(/\/+$/, '')
+export const API_CONFIGURED = !import.meta.env?.PROD || !!backendOrigin
+
 export class ApiError extends Error {
   constructor(message, status = 0) {
     super(message)
@@ -7,10 +10,13 @@ export class ApiError extends Error {
 }
 
 export async function requestJson(url, options) {
+  if (!API_CONFIGURED) {
+    throw new ApiError('Online booking is not connected yet. Please contact the HM laboratory office for assistance.')
+  }
   let response
   let body
   try {
-    response = await fetch(url, options)
+    response = await fetch(backendOrigin + url, options)
     body = await response.text()
   } catch {
     throw new ApiError('The reservation service cannot be reached. Please try again shortly.')
