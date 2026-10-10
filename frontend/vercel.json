@@ -1,0 +1,10 @@
+{
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/backend/:path*", "destination": "https://tourism-reservation-system.vercel.app/:path*" },
+    { "source": "/admin", "destination": "/index.html" },
+    { "source": "/admin/:path*", "destination": "/index.html" }
+  ]
+}
