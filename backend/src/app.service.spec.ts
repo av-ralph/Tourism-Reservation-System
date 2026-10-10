@@ -16,7 +16,9 @@ describe('reservations',()=>{
    expect(await new AppService().authorizeAdmin('Bearer staff-custom-key-123')).toBe('admin');
    await expect(service.authorizeSuperAdmin('Bearer staff-custom-key-123')).rejects.toThrow('Only the super admin');
    await expect(service.createAdminKey({name:'Other',key:'staff-custom-key-123'})).rejects.toThrow('already in use');
-   expect(JSON.stringify(await service.listAdminKeys())).not.toContain('staff-custom-key-123');
+   expect((await new AppService().listAdminKeys())[0]?.key).toBe('staff-custom-key-123');
+   const stored=await import('node:fs/promises').then(fs=>fs.readFile(join(dir,'records.json'),'utf8'));
+   expect(stored).not.toContain('staff-custom-key-123');
    await service.revokeAdminKey(row.id);
    await expect(service.authorizeAdmin('Bearer staff-custom-key-123')).rejects.toThrow('valid administrator');
   }finally{delete process.env.HM_ADMIN_KEY;}

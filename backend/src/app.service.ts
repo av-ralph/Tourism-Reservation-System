@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException, ForbiddenException, ServiceUnavailableException } from '@nestjs/common';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
-import { randomUUID, randomBytes, timingSafeEqual, createHash } from 'node:crypto';
+import { randomUUID, randomBytes, timingSafeEqual, createHash, createCipheriv, createDecipheriv } from 'node:crypto';
 import { RecordStore } from './record-store.js';
 import type { Row, Store } from './record-store.js';
 import { facilityCatalog } from './facility-catalog.js';
@@ -34,7 +34,16 @@ export class AppService {
   throw new UnauthorizedException('Enter a valid administrator access key.');
  }
  async authorizeSuperAdmin(authorization?:string){if(await this.authorizeAdmin(authorization)!=='superadmin')throw new ForbiddenException('Only the super admin can manage access keys.');}
- async listAdminKeys(){return (await this.storage.read()).adminKeys.map(({id,name,createdAt})=>({id,name,createdAt}));}
+ private encryptAdminKey(key:string){
+  const iv=randomBytes(12),secret=createHash('sha256').update(this.adminKey()).digest(),cipher=createCipheriv('aes-256-gcm',secret,iv);
+  const encrypted=Buffer.concat([cipher.update(key,'utf8'),cipher.final()]);
+  return [iv,cipher.getAuthTag(),encrypted].map(value=>value.toString('base64')).join('.');
+ }
+ private decryptAdminKey(value?:string){
+  if(!value)return null;
+  try{const [iv,tag,encrypted]=value.split('.').map(part=>Buffer.from(part,'base64')),secret=createHash('sha256').update(this.adminKey()).digest(),decipher=createDecipheriv('aes-256-gcm',secret,iv!);decipher.setAuthTag(tag!);return Buffer.concat([decipher.update(encrypted!),decipher.final()]).toString('utf8');}catch{return null;}
+ }
+ async listAdminKeys(){return (await this.storage.read()).adminKeys.map(({id,name,createdAt,encryptedKey})=>({id,name,createdAt,key:this.decryptAdminKey(encryptedKey)}));}
  createAdminKey(input:unknown){
   if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid access key details.');
   const {name,key}=input as Record<string,unknown>;
@@ -44,7 +53,7 @@ export class AppService {
   if(hash===this.keyHash(this.adminKey()))throw new ConflictException('This access key is already in use.');
   return this.storage.mutate(data=>{
    if(data.adminKeys.some(row=>row.hash===hash||row.name!.toLowerCase()===name.trim().toLowerCase()))throw new ConflictException('This admin name or key is already in use.');
-   const row={id:randomUUID(),name:name.trim(),hash,createdAt:new Date().toISOString()};data.adminKeys.push(row);
+   const row={id:randomUUID(),name:name.trim(),hash,encryptedKey:this.encryptAdminKey(key),createdAt:new Date().toISOString()};data.adminKeys.push(row);
    return {id:row.id,name:row.name,createdAt:row.createdAt};
   });
  }
