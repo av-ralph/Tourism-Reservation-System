@@ -95,3 +95,8 @@
 .student-site .facility-art.has-photo{height:auto;aspect-ratio:16 / 10;background:#e9eef4}
 .student-site .facility-art.has-photo .facility-photo{display:block;width:100%;height:100%;max-width:none;object-fit:cover;object-position:center;opacity:1}
 .student-site .facility-art.has-photo small{opacity:1;letter-spacing:1px;box-shadow:0 1px 5px #14244720}
+.student-site .footer-links{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:12px}
+.student-site .footer-links :is(button,a){display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 12px;margin:0;font-size:14px;line-height:1.5;color:#334155;text-decoration:none;border:1px solid transparent;border-radius:8px;background:transparent}
+.student-site .footer-links a[href="/admin"]{color:#06266b;border-color:#8797ad;background:#fff;font-weight:600}
+.student-site .footer-links :is(button,a):hover{background:#dce5f2;color:#06266b}
+@media(max-width:600px){.student-site .footer-links{justify-content:flex-start;gap:8px}}
