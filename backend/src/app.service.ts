@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException, ForbiddenException, ServiceUnavailableException } from '@nestjs/common';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
-import { randomUUID, randomBytes, timingSafeEqual } from 'node:crypto';
+import { randomUUID, randomBytes, timingSafeEqual, createHash } from 'node:crypto';
 import { RecordStore } from './record-store.js';
 import type { Row, Store } from './record-store.js';
 import { facilityCatalog } from './facility-catalog.js';
@@ -13,7 +13,9 @@ export class AppService {
  getHello(){return 'HM Laboratory reservation service';}
  async records(){const data=await this.storage.read();return {reservations:data.reservations,reports:data.reports,utilization:data.utilization,facilities:this.facilitiesFrom(data)};}
  private facilitiesFrom(data:Store){return [...facilityCatalog.map(f=>({...f,...data.facilities.find(row=>row.id===f.id)})),...data.facilities.filter(row=>!facilityCatalog.some(f=>f.id===row.id))].filter(f=>(f as Row).deleted!=='true');}
- async listFacilities(){return this.facilitiesFrom(await this.storage.read());}
+ async listFacilities(){return this.facilitiesFrom(await this.storage.read()).map(f=>{const row=f as Row;const {photo,...details}=row;return {...details,photo:photo?`/api/facilities/${encodeURIComponent(row.id!)}/photo?v=${createHash('sha256').update(photo).digest('hex').slice(0,16)}`:''};});}
+ async facilityPhoto(id:string){const facility=this.facilitiesFrom(await this.storage.read()).find(f=>f.id===id) as Row|undefined;if(!facility?.photo)throw new NotFoundException('Facility photo not found.');return Buffer.from(facility.photo.split(',')[1]!,'base64');}
+
  updateFacility(id:string,input:unknown){if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid facility.');return this.storage.mutate(data=>{const original=this.facilitiesFrom(data).find(f=>f.id===id);if(!original)throw new NotFoundException('Facility not found.');const fields=this.validateFacility({...original,...(input&&typeof input==='object'?input:{})});if(this.facilitiesFrom(data).some(f=>f.id!==id&&f.name.toLowerCase()===fields.name!.toLowerCase()))throw new ConflictException('A facility with this name already exists.');if(fields.name!==original.name&&[...data.reservations,...data.reports,...data.utilization].some(r=>r.facility===original.name))throw new ConflictException('Facilities with existing records cannot be renamed.');const updated={...original,...fields,updatedAt:new Date().toISOString()};data.facilities=data.facilities.filter(f=>f.id!==id);data.facilities.push(updated);return updated;});}
  private adminKey(): string {
   if(process.env.HM_ADMIN_KEY) return process.env.HM_ADMIN_KEY;

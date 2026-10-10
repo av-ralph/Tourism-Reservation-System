@@ -42,3 +42,5 @@ export async function requestJson(url, options) {
   }
   return result
 }
+
+export function facilityPhotoUrl(photo){return photo?.startsWith('/api/')?backendOrigin+photo:photo}

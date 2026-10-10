@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Headers, Param, Patch, Post } from '@nestjs/common';
+import { Body, Header, StreamableFile, Controller, Delete, Get, Headers, Param, Patch, Post } from '@nestjs/common';
 import { AppService } from './app.service.js';
 @Controller()
 export class AppController {
@@ -6,6 +6,9 @@ export class AppController {
  @Get() getHello(){return this.appService.getHello();}
  @Get('api/records') records(@Headers('x-user-session') token?:string){return this.appService.userRecords(token);}
  @Get('api/facilities') facilities(){return this.appService.listFacilities();}
+ @Get('api/facilities/:id/photo')
+ @Header('Cache-Control','public, max-age=86400, s-maxage=86400')
+ photo(@Param('id') id:string){return this.appService.facilityPhoto(id).then(bytes=>new StreamableFile(bytes,{type:'image/jpeg',length:bytes.length}));}
  @Patch('api/admin/facilities/:id') facility(@Param('id') id:string,@Body() body:unknown,@Headers('authorization') key?:string){this.appService.authorizeAdmin(key);return this.appService.updateFacility(id,body);}
  @Get('api/schedule') schedule(){return this.appService.schedule();}
  @Post('api/reservations') reserve(@Body() body:unknown,@Headers('x-user-session') token?:string){return this.appService.createForUser('reservations',body,token);}
