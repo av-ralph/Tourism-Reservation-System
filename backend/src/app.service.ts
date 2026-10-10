@@ -24,7 +24,31 @@ export class AppService {
   if(!existsSync(keyFile)){mkdirSync(dirname(keyFile),{recursive:true});writeFileSync(keyFile,randomBytes(32).toString('hex'),{mode:0o600});}
   return readFileSync(keyFile,'utf8').trim();
  }
- authorizeAdmin(authorization?:string){const expected=Buffer.from(this.adminKey()), actual=Buffer.from((authorization||'').replace(/^Bearer /,''));if(actual.length!==expected.length||!timingSafeEqual(actual,expected))throw new UnauthorizedException('Enter a valid administrator access key.');}
+ private keyHash(key:string){return createHash('sha256').update(key).digest('hex');}
+ async authorizeAdmin(authorization?:string){
+  const value=(authorization||'').replace(/^Bearer /,''),expected=Buffer.from(this.adminKey()),actual=Buffer.from(value);
+  if(actual.length===expected.length&&timingSafeEqual(actual,expected))return 'superadmin';
+  if(!value||value.length>256)throw new UnauthorizedException('Enter a valid administrator access key.');
+  const hash=this.keyHash(value),data=await this.storage.read();
+  if(data.adminKeys.some(row=>row.hash===hash))return 'admin';
+  throw new UnauthorizedException('Enter a valid administrator access key.');
+ }
+ async authorizeSuperAdmin(authorization?:string){if(await this.authorizeAdmin(authorization)!=='superadmin')throw new ForbiddenException('Only the super admin can manage access keys.');}
+ async listAdminKeys(){return (await this.storage.read()).adminKeys.map(({id,name,createdAt})=>({id,name,createdAt}));}
+ createAdminKey(input:unknown){
+  if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid access key details.');
+  const {name,key}=input as Record<string,unknown>;
+  if(typeof name!=='string'||!name.trim()||name.trim().length>80)throw new BadRequestException('Enter an admin name of up to 80 characters.');
+  if(typeof key!=='string'||key.length<16||key.length>128||!/^[A-Za-z0-9_-]+$/.test(key))throw new BadRequestException('Use 16–128 letters, numbers, hyphens, or underscores for the key.');
+  const hash=this.keyHash(key);
+  if(hash===this.keyHash(this.adminKey()))throw new ConflictException('This access key is already in use.');
+  return this.storage.mutate(data=>{
+   if(data.adminKeys.some(row=>row.hash===hash||row.name!.toLowerCase()===name.trim().toLowerCase()))throw new ConflictException('This admin name or key is already in use.');
+   const row={id:randomUUID(),name:name.trim(),hash,createdAt:new Date().toISOString()};data.adminKeys.push(row);
+   return {id:row.id,name:row.name,createdAt:row.createdAt};
+  });
+ }
+ revokeAdminKey(id:string){return this.storage.mutate(data=>{if(!data.adminKeys.some(row=>row.id===id))throw new NotFoundException('Admin key not found.');data.adminKeys=data.adminKeys.filter(row=>row.id!==id);return {success:true};});}
  userToken(token?:string){if(!token||!/^[-a-zA-Z0-9]{36}$/.test(token))throw new UnauthorizedException('User session is missing.');return token;}
  async userRecords(token?:string){const owner=this.userToken(token),data=await this.storage.read();return {reservations:data.reservations.filter(r=>r.owner===owner),reports:data.reports.filter(r=>r.owner===owner),utilization:data.utilization.filter(r=>r.owner===owner)};}
  async schedule(){const data=await this.storage.read();return data.reservations.filter(r=>!['Cancelled','Rejected'].includes(r.status!)).map(({id,facility,date,start,end,status})=>({id,facility,date,start,end,status}));}
