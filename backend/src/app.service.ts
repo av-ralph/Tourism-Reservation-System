@@ -33,12 +33,23 @@ export class AppService {
   if(data.adminKeys.some(row=>row.hash===hash))return 'admin';
   throw new UnauthorizedException('Enter a valid administrator access key.');
  }
+ private profileId(role:string,authorization?:string){return role==='superadmin'?'super-admin-profile':'profile-'+this.keyHash((authorization||'').replace(/^Bearer /,''));}
  async adminIdentity(authorization?:string){
+  const role=await this.authorizeAdmin(authorization),data=await this.storage.read(),profile=data.adminProfiles.find(row=>row.id===this.profileId(role,authorization));
+  const hash=this.keyHash((authorization||'').replace(/^Bearer /,'')),admin=data.adminKeys.find(row=>row.hash===hash);
+  if(role!=='superadmin'&&!admin)throw new UnauthorizedException('Enter a valid administrator access key.');
+  return {role,adminName:profile?.name||(role==='superadmin'?'Super admin':admin!.name),adminPhoto:profile?.photo||'',adminEmail:profile?.email||''};
+ }
+ async updateAdminProfile(authorization:string|undefined,input:unknown){
   const role=await this.authorizeAdmin(authorization);
-  if(role==='superadmin')return {role,adminName:'Super admin'};
-  const hash=this.keyHash((authorization||'').replace(/^Bearer /,'')),row=(await this.storage.read()).adminKeys.find(row=>row.hash===hash);
-  if(!row)throw new UnauthorizedException('Enter a valid administrator access key.');
-  return {role,adminName:row.name};
+  if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid profile.');
+  const {name,email,photo}=input as Record<string,unknown>;
+  if(typeof name!=='string'||!name.trim()||name.length>80)throw new BadRequestException('Enter a name of up to 80 characters.');
+  if(typeof email!=='string'||email.length>254||(email!==''&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)))throw new BadRequestException('Enter a valid email address or leave it blank.');
+  if(typeof photo!=='string'||photo.length>220000||(photo!==''&&!/^data:image\/jpeg;base64,\/9j\/[A-Za-z0-9+/]*={0,2}$/.test(photo)))throw new BadRequestException('Choose a valid JPEG profile photo under 165 KB.');
+  const id=this.profileId(role,authorization);
+  await this.storage.mutate(data=>{if(role!=='superadmin'&&!data.adminKeys.some(row=>'profile-'+row.hash===id))throw new UnauthorizedException('Admin access has been revoked.');data.adminProfiles=data.adminProfiles.filter(row=>row.id!==id);data.adminProfiles.push({id,name:name.trim(),email:email.trim(),photo,updatedAt:new Date().toISOString()});});
+  return this.adminIdentity(authorization);
  }
  async authorizeSuperAdmin(authorization?:string){if(await this.authorizeAdmin(authorization)!=='superadmin')throw new ForbiddenException('Only the super admin can manage access keys.');}
  private encryptAdminKey(key:string){
@@ -64,7 +75,7 @@ export class AppService {
    return {id:row.id,name:row.name,createdAt:row.createdAt};
   });
  }
- revokeAdminKey(id:string){return this.storage.mutate(data=>{if(!data.adminKeys.some(row=>row.id===id))throw new NotFoundException('Admin key not found.');data.adminKeys=data.adminKeys.filter(row=>row.id!==id);return {success:true};});}
+ revokeAdminKey(id:string){return this.storage.mutate(data=>{if(!data.adminKeys.some(row=>row.id===id))throw new NotFoundException('Admin key not found.');const row=data.adminKeys.find(row=>row.id===id)!;data.adminProfiles=data.adminProfiles.filter(profile=>profile.id!=='profile-'+row.hash);data.adminKeys=data.adminKeys.filter(row=>row.id!==id);return {success:true};});}
  userToken(token?:string){if(!token||!/^[-a-zA-Z0-9]{36}$/.test(token))throw new UnauthorizedException('User session is missing.');return token;}
  async userRecords(token?:string){const owner=this.userToken(token),data=await this.storage.read();return {reservations:data.reservations.filter(r=>r.owner===owner),reports:data.reports.filter(r=>r.owner===owner),utilization:data.utilization.filter(r=>r.owner===owner)};}
  async schedule(){const data=await this.storage.read();return data.reservations.filter(r=>!['Cancelled','Rejected'].includes(r.status!)).map(({id,facility,date,start,end,status})=>({id,facility,date,start,end,status}));}

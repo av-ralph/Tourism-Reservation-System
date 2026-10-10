@@ -5,8 +5,8 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 export type Row = Record<string,string>;
-export type Store = {reservations:Row[];reports:Row[];utilization:Row[];facilities:Row[];adminKeys:Row[]};
-const empty=():Store=>({reservations:[],reports:[],utilization:[],facilities:[],adminKeys:[]});
+export type Store = {reservations:Row[];reports:Row[];utilization:Row[];facilities:Row[];adminKeys:Row[];adminProfiles:Row[]};
+const empty=():Store=>({reservations:[],reports:[],utilization:[],facilities:[],adminKeys:[],adminProfiles:[]});
 export function storageMode(): 'file'|'tidb' {
  if(process.env.VERCEL && (!process.env.DATABASE_URL || process.env.HM_STORAGE==='file'))throw new Error('The hosted backend requires TiDB credentials and HM_STORAGE=tidb.');
  const requested=process.env.HM_STORAGE;
@@ -35,7 +35,7 @@ export class RecordStore implements OnModuleInit,OnModuleDestroy {
   await this.ready;
  }
  private fromRows(rows:{kind:string;payload:Prisma.JsonValue}[]):Store{
-  const data=empty();for(const row of rows){if(['reservations','reports','utilization','facilities','adminKeys'].includes(row.kind))data[row.kind as keyof Store].push(row.payload as Row);}return data;
+  const data=empty();for(const row of rows){if(['reservations','reports','utilization','facilities','adminKeys','adminProfiles'].includes(row.kind))data[row.kind as keyof Store].push(row.payload as Row);}return data;
  }
  async read():Promise<Store>{
   if(this.mode==='tidb'){await this.initialize();return this.fromRows(await this.client!.hmRecord.findMany({orderBy:[{createdAt:'asc'},{id:'asc'}]}));}
@@ -54,7 +54,7 @@ export class RecordStore implements OnModuleInit,OnModuleDestroy {
      const data=this.fromRows(rows);
      const before=new Map(Object.values(data).flat().map(row=>[row.id,JSON.stringify(row)]));
      const result=change(data);
-     for(const kind of ['reservations','reports','utilization','facilities','adminKeys'] as const)for(const row of data[kind]){
+     for(const kind of ['reservations','reports','utilization','facilities','adminKeys','adminProfiles'] as const)for(const row of data[kind]){
       if(before.get(row.id)===JSON.stringify(row))continue;
       const record={kind,owner:row.owner||null,facility:row.facility||row.name||'Account',date:row.date||row.createdAt?.slice(0,10)||'2000-01-01',status:row.status||null,payload:row as Prisma.InputJsonValue,createdAt:row.createdAt?new Date(row.createdAt):new Date()};
       await tx.hmRecord.upsert({where:{id:row.id!},create:{id:row.id!,...record},update:record});
@@ -73,7 +73,7 @@ export class RecordStore implements OnModuleInit,OnModuleDestroy {
  async importLocal(){
   if(this.mode!=='tidb')throw new Error('Set HM_STORAGE=tidb to import local records.');
   const local=existsSync(this.file)?{...empty(),...JSON.parse(readFileSync(this.file,'utf8'))} as Store:empty();
-  return this.mutate(data=>{let count=0;for(const kind of ['reservations','reports','utilization','facilities','adminKeys'] as const)for(const row of local[kind]){if(data[kind].some(existing=>existing.id===row.id))continue;data[kind].push(row);count++;}return {imported:count};});
+  return this.mutate(data=>{let count=0;for(const kind of ['reservations','reports','utilization','facilities','adminKeys','adminProfiles'] as const)for(const row of local[kind]){if(data[kind].some(existing=>existing.id===row.id))continue;data[kind].push(row);count++;}return {imported:count};});
  }
  async onModuleDestroy(){await this.client?.$disconnect();}
 }

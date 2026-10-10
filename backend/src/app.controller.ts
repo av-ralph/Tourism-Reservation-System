@@ -22,6 +22,7 @@ export class AppController {
  @Post('api/admin/manage/:kind') async createAdmin(@Param('kind') kind:string,@Body() body:unknown,@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return kind==='facilities'?this.appService.createFacility(body):this.appService.adminCreate(kind,body);}
  @Patch('api/admin/manage/:kind/:id') async editAdmin(@Param('kind') kind:string,@Param('id') id:string,@Body() body:unknown,@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return kind==='facilities'?this.appService.updateFacility(id,body):this.appService.adminUpdate(kind,id,body);}
  @Delete('api/admin/manage/:kind/:id') async deleteAdmin(@Param('kind') kind:string,@Param('id') id:string,@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return kind==='facilities'?this.appService.deleteFacility(id):this.appService.adminDelete(kind,id);}
+ @Patch('api/admin/profile') async profile(@Body() body:unknown,@Headers('authorization') key?:string){return this.appService.updateAdminProfile(key,body);}
  @Header('Cache-Control','no-store')
  @Get('api/admin/keys') async keys(@Headers('authorization') key?:string){await this.appService.authorizeSuperAdmin(key);return this.appService.listAdminKeys();}
  @Post('api/admin/keys') async addKey(@Body() body:unknown,@Headers('authorization') key?:string){await this.appService.authorizeSuperAdmin(key);return this.appService.createAdminKey(body);}
