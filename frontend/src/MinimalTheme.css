@@ -1,0 +1,100 @@
+/* Final visual layer: quiet surfaces, readable details, restrained college accents. */
+:root{--reading-ink:#243044;--reading-muted:#47566a;--reading-border:#bac4d1;--reading-divider:#d4dbe4;--reading-surface:#f5f6f8;--ui-radius:12px}
+:is(.student-site,.admin-shell,.admin-login){background:#f5f6f8}
+:is(.student-site,.admin-shell) :is(h1,h2,h3){letter-spacing:-.5px;font-weight:700}
+:is(.student-site,.admin-shell) .eyebrow{color:#596579!important;font-weight:600;letter-spacing:1.3px;font-size:11px}
+:is(.student-site,.admin-shell) :is(.records,.college-section,.guidelines,.contact-panel,.metric,.admin-callout,.personal-booking,.facility-card){background:#fff;box-shadow:none;border-color:#bac4d1;border-radius:12px}
+:is(.student-site,.admin-shell,.admin-login) .primary{border-radius:8px;background:#fa6020;border-color:#d64b11;box-shadow:none;padding:12px 18px;font-size:14px}
+:is(.student-site,.admin-shell) .secondary{border-radius:8px;border-color:#9daabd;background:#fff;padding:11px 16px;font-weight:600}
+:is(.student-site,.admin-shell) :is(input,select,textarea){border-color:#9daabd;border-radius:8px;background:#fff;min-height:44px}
+:is(.student-site,.admin-shell) .search{background:#fff;border-color:#9daabd;min-height:44px}
+.student-site .student-header{background:#fff;box-shadow:none;min-height:88px;padding-top:16px;padding-bottom:16px;border-color:#bac4d1;gap:22px}
+.student-site .student-header .brand img{width:46px}
+.student-site .student-header .brand span{font-size:13px}
+.student-site .student-header .brand small{font-size:8px;letter-spacing:1px}
+.student-site .student-header nav button{border:0;border-radius:7px;padding:10px 11px;font-size:14px}
+.student-site .student-header nav button.active{background:#edf1f8;color:#06266b;box-shadow:none;position:relative}
+.student-site .student-header nav button.active:after{content:'';position:absolute;bottom:3px;left:12px;right:12px;height:2px;background:#fa6020}
+.student-site .student-main{max-width:1240px;padding-top:8px;padding-bottom:48px}
+.student-site :is(.browse-intro,.student-page-heading){padding-top:30px;padding-bottom:24px;border-bottom:0;margin-bottom:24px}
+.student-site :is(.browse-intro,.student-page-heading) h1{font-size:clamp(26px,2.8vw,34px);margin-bottom:12px;max-width:750px}
+.student-site :is(.browse-intro,.student-page-heading) p{font-size:15px;max-width:740px}
+.student-site .booking-steps{border-radius:10px;background:#fff;padding:22px 24px;margin-bottom:36px;box-shadow:none}
+.student-site .booking-steps>div>span{background:#f6f7fa;border-color:#bac4d1;color:#06266b;min-width:36px;height:36px;border-radius:8px;font-size:12px}
+.student-site .booking-steps h3{font-size:14px;margin-bottom:5px}
+.student-site .booking-steps p{margin:0;font-size:13px}
+.student-site .section-heading h2{font-size:24px;margin-bottom:8px}
+.student-site .filters{gap:8px;margin:20px 0}
+:is(.student-site,.admin-shell) .filters button{background:#fff;border:1px solid #bac4d1;font-size:13px;border-radius:7px;font-weight:500}
+:is(.student-site,.admin-shell) .filters button.active{background:#fff0e7;border-color:#bb774e;color:#773612;font-weight:600}
+.student-site .facility-grid{gap:22px}
+.student-site .facility-content{padding:22px}
+.student-site .facility-content .card-meta{letter-spacing:.4px;font-size:11px!important;gap:12px;flex-wrap:wrap}
+.student-site .facility-content h3{font-size:20px;margin:14px 0 10px}
+.student-site .facility-content p{font-size:14px;line-height:1.75;margin-bottom:24px}
+.student-site .facility-content button{background:#fff;border-color:#9daabd;font-size:14px;padding:11px 13px;border-radius:7px}
+.student-site .facility-content button:hover{background:#eef2f8}
+.student-site .facility-art.has-photo{aspect-ratio:16 / 9}
+.student-site .facility-art.has-photo small{font-size:10px;box-shadow:none;background:#ffffffed}
+.student-site :is(.help-navigation,.booking-view-filters){background:transparent;border:0;padding:0;gap:8px}
+.student-site :is(.help-navigation,.booking-view-filters) button{background:#fff;border:1px solid #bac4d1;border-radius:7px}
+.student-site :is(.help-navigation,.booking-view-filters) button.active{background:#edf1f8;border-color:#7b8da9;box-shadow:none}
+.student-site .personal-booking{padding:26px}
+.student-site .booking-feedback,.student-site .booking-next-step{background:#f3f6fa;border:1px solid #bac4d1;border-radius:8px;padding:16px;line-height:1.75}
+.student-site .schedule-controls{background:#fff;border-radius:10px;padding:24px}
+.student-site .occupied-times article{border-radius:10px;padding:22px}
+.student-site .guidelines{padding:32px;max-width:960px;margin:auto}
+.student-site .guidelines h2{font-size:26px;max-width:700px}
+.student-site .guidelines article>span{font-size:16px;color:#06266b;background:#f2f4f8;border:1px solid #bac4d1;border-radius:8px;align-self:flex-start;min-width:38px;height:38px;display:grid;place-items:center}
+.student-site .guidelines article h3{font-size:18px}
+.student-site .college-intro{background:#fff;color:#06266b;border:1px solid #bac4d1;padding:28px;border-radius:12px}
+.student-site .college-intro :is(h2,p,.eyebrow){color:#06266b!important}
+.student-site .college-intro img{width:72px}
+.student-site .college-section{padding:28px}
+.student-site .college-section h2{font-size:22px}
+.student-site .college-section :is(p,li){font-size:15px}
+.student-site .contact-panel{text-align:left;padding:32px;margin:0 auto}
+.student-site .contact-panel img{width:64px;margin-bottom:22px}
+.student-site .contact-panel p{margin:20px 0}
+.student-site .student-help-banner{background:#fff;border-color:#bac4d1;border-left:3px solid #fa6020;border-radius:10px;padding:28px;margin-top:36px}
+.student-site .student-help-banner h2{font-size:23px;max-width:650px}
+.student-site .student-footer{background:#eef1f5;padding-top:32px;padding-bottom:26px;border-color:#bac4d1}
+.student-site .student-footer strong{font-size:14px}
+.student-site :is(.browse-results span,.schedule-note,.device-note,.deployment-notice,.booking-date){color:#47566a!important}
+.student-site .deployment-notice{border-color:#bd9677;background:#fff4e9}
+.student-site .friendly-empty{background:#fff;border-style:solid;padding:40px 24px}
+.admin-shell .sidebar{background:#fff;border-color:#bac4d1;padding-top:24px}
+.admin-shell .sidebar nav button{font-size:14px;border-radius:8px;min-height:44px}
+.admin-shell .sidebar nav button.selected{background:#fff0e7;border-color:#c58b65;box-shadow:none}
+.admin-shell header{background:#fff;backdrop-filter:none;border-color:#bac4d1;height:68px}
+.admin-shell main{padding-top:30px}
+.admin-shell .page-heading h1{font-size:29px;letter-spacing:-.7px}
+.admin-shell .admin-metrics{gap:18px}
+.admin-shell .metric{border-top:1px solid #bac4d1;padding:22px}
+.admin-shell .metric-value{font-size:34px;margin-top:20px;letter-spacing:-1px}
+.admin-shell .metric-top i{background:#edf1f8;color:#06266b;font-size:16px;border-radius:7px}
+.admin-shell .admin-attention{background:#fff8f2;border-color:#c29476;padding:20px 24px;border-radius:10px}
+.admin-shell .admin-attention h2{font-size:17px}
+.admin-shell .admin-attention button{font-weight:600;color:#7e3a14}
+.admin-shell .admin-management-toolbar{padding:18px 20px;border-radius:10px;background:#fff}
+.admin-shell .records{padding:24px}
+.admin-shell .table-wrap{border-radius:8px;border-color:#bac4d1}
+.admin-shell th{background:#f1f3f7;letter-spacing:.5px;padding:15px 16px;font-size:11px}
+.admin-shell td{padding:20px 16px}
+.admin-shell tbody tr:hover{background:#f8f9fb}
+.admin-shell .admin-facility-grid article{background:#fff;border-radius:10px;padding:22px}
+.admin-shell .admin-callout{padding:22px}
+.admin-shell .admin-review-summary{background:#f5f7fa;padding:20px;border-radius:10px}
+.admin-shell .badge{border-radius:5px;padding:5px 9px}
+.admin-shell .admin-sidebar-bottom>button{border-radius:8px;min-height:42px}
+:is(.student-site,.admin-shell) .modal{padding:32px;border-radius:14px;box-shadow:0 18px 65px #14244730}
+:is(.student-site,.admin-shell) .modal-backdrop{background:#17263c80;backdrop-filter:blur(2px)}
+.student-site .booking-progress{border-bottom:1px solid #bac4d1;padding-bottom:20px}
+.student-site .booking-progress .current span{background:#06266b;color:#fff}
+.student-site .request-summary,.student-site .contact-note{background:#f3f5f8;border-color:#bac4d1;border-radius:9px}
+.student-site .equipment-fields,.facility-photo-upload{background:#f7f8fa;border-color:#bac4d1;border-radius:9px}
+.admin-login.admin-signin{background:#f3f5f8}
+.admin-login .signin-card{background:#fff;border:1px solid #aab7c7;border-top:3px solid #fa6020;border-radius:12px;box-shadow:0 8px 28px #14244708}
+.admin-login .signin-card h1{color:#06266b;font-size:28px}
+@media(max-width:900px){.student-site .student-header{gap:14px}.student-site .student-main{padding-left:24px;padding-right:24px}.admin-shell .admin-metrics{gap:12px}}
+@media(max-width:600px){.student-site .student-main{padding-left:18px;padding-right:18px}.student-site .student-header{padding:16px 18px}.student-site .booking-steps{padding:18px;gap:18px}.student-site .guidelines,.student-site .college-section,.student-site .contact-panel{padding:22px}.student-site .student-help-banner{padding:22px}.admin-shell .page-heading h1{font-size:25px}.admin-shell .records{padding:18px}.admin-shell td{padding:10px 0}.admin-shell .metric{padding:18px}.admin-shell .metric-value{font-size:29px}:is(.student-site,.admin-shell) .modal{padding:26px 20px}}

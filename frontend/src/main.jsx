@@ -4,6 +4,7 @@ import './index.css'
 import App from './App.jsx'
 import './Readability.css'
 import './Interface.css'
+import './MinimalTheme.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
