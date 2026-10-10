@@ -59,6 +59,9 @@ export class RecordStore implements OnModuleInit,OnModuleDestroy {
       const record={kind,owner:row.owner||null,facility:row.facility||row.name||'Account',date:row.date||row.createdAt?.slice(0,10)||'2000-01-01',status:row.status||null,payload:row as Prisma.InputJsonValue,createdAt:row.createdAt?new Date(row.createdAt):new Date()};
       await tx.hmRecord.upsert({where:{id:row.id!},create:{id:row.id!,...record},update:record});
      }
+     const remaining=new Set(Object.values(data).flat().map(row=>row.id));
+     const removed=[...before.keys()].filter(id=>!remaining.has(id));
+     if(removed.length)await tx.hmRecord.deleteMany({where:{id:{in:removed}}});
      return result;
     },{maxWait:10000,timeout:20000});}
     catch(error){if(!(error instanceof Prisma.PrismaClientKnownRequestError)||error.code!=='P2034'||attempt===2)throw error;}

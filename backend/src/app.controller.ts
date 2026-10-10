@@ -15,4 +15,7 @@ export class AppController {
  @Get('api/admin/records') adminRecords(@Headers('authorization') key?:string){this.appService.authorizeAdmin(key);return this.appService.records();}
  @Patch('api/admin/reservations/:id') review(@Param('id') id:string,@Body() body:unknown,@Headers('authorization') key?:string){this.appService.authorizeAdmin(key);return this.appService.reviewReservation(id,body);}
  @Patch('api/admin/reports/:id') resolve(@Param('id') id:string,@Body() body:unknown,@Headers('authorization') key?:string){this.appService.authorizeAdmin(key);return this.appService.resolveReport(id,body);}
+ @Post('api/admin/manage/:kind') createAdmin(@Param('kind') kind:string,@Body() body:unknown,@Headers('authorization') key?:string){this.appService.authorizeAdmin(key);return kind==='facilities'?this.appService.createFacility(body):this.appService.adminCreate(kind,body);}
+ @Patch('api/admin/manage/:kind/:id') editAdmin(@Param('kind') kind:string,@Param('id') id:string,@Body() body:unknown,@Headers('authorization') key?:string){this.appService.authorizeAdmin(key);return kind==='facilities'?this.appService.updateFacility(id,body):this.appService.adminUpdate(kind,id,body);}
+ @Delete('api/admin/manage/:kind/:id') deleteAdmin(@Param('kind') kind:string,@Param('id') id:string,@Headers('authorization') key?:string){this.appService.authorizeAdmin(key);return kind==='facilities'?this.appService.deleteFacility(id):this.appService.adminDelete(kind,id);}
 }
