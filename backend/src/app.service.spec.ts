@@ -11,9 +11,11 @@ describe('reservations',()=>{
   process.env.HM_ADMIN_KEY='test-super-key';
   try{
    expect(await service.authorizeAdmin('Bearer test-super-key')).toBe('superadmin');
+   expect(await service.adminIdentity('Bearer test-super-key')).toEqual({role:'superadmin',adminName:'Super admin'});
    expect(()=>service.createAdminKey({name:'Staff',key:'short'})).toThrow();
    const row=await service.createAdminKey({name:'Staff',key:'staff-custom-key-123'});
    expect(await new AppService().authorizeAdmin('Bearer staff-custom-key-123')).toBe('admin');
+   expect(await service.adminIdentity('Bearer staff-custom-key-123')).toEqual({role:'admin',adminName:'Staff'});
    await expect(service.authorizeSuperAdmin('Bearer staff-custom-key-123')).rejects.toThrow('Only the super admin');
    await expect(service.createAdminKey({name:'Other',key:'staff-custom-key-123'})).rejects.toThrow('already in use');
    expect((await new AppService().listAdminKeys())[0]?.key).toBe('staff-custom-key-123');

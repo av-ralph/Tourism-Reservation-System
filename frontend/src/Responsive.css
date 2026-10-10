@@ -114,3 +114,6 @@
  :is(.student-site,.admin-shell) .modal{max-height:calc(100dvh - 16px)}
  .student-site .guided-actions{position:static}
 }
+
+.admin-staff-card > div { min-width: 0; overflow-wrap: anywhere; }
+.admin-staff-card > span { flex-shrink: 0; }

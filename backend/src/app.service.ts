@@ -33,6 +33,13 @@ export class AppService {
   if(data.adminKeys.some(row=>row.hash===hash))return 'admin';
   throw new UnauthorizedException('Enter a valid administrator access key.');
  }
+ async adminIdentity(authorization?:string){
+  const role=await this.authorizeAdmin(authorization);
+  if(role==='superadmin')return {role,adminName:'Super admin'};
+  const hash=this.keyHash((authorization||'').replace(/^Bearer /,'')),row=(await this.storage.read()).adminKeys.find(row=>row.hash===hash);
+  if(!row)throw new UnauthorizedException('Enter a valid administrator access key.');
+  return {role,adminName:row.name};
+ }
  async authorizeSuperAdmin(authorization?:string){if(await this.authorizeAdmin(authorization)!=='superadmin')throw new ForbiddenException('Only the super admin can manage access keys.');}
  private encryptAdminKey(key:string){
   const iv=randomBytes(12),secret=createHash('sha256').update(this.adminKey()).digest(),cipher=createCipheriv('aes-256-gcm',secret,iv);

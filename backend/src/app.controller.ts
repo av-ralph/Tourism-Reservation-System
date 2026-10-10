@@ -16,7 +16,7 @@ export class AppController {
  @Post('api/utilization') utilization(@Body() body:unknown,@Headers('x-user-session') token?:string){return this.appService.createForUser('utilization',body,token);}
  @Delete('api/reservations/:id') cancel(@Param('id') id:string,@Headers('x-user-session') token?:string){return this.appService.cancelForUser(id,token);}
  @Header('Cache-Control','no-store')
- @Get('api/admin/records') async adminRecords(@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return {...await this.appService.records(),role:await this.appService.authorizeAdmin(key)};}
+ @Get('api/admin/records') async adminRecords(@Headers('authorization') key?:string){const identity=await this.appService.adminIdentity(key);return {...await this.appService.records(),...identity};}
  @Patch('api/admin/reservations/:id') async review(@Param('id') id:string,@Body() body:unknown,@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return this.appService.reviewReservation(id,body);}
  @Patch('api/admin/reports/:id') async resolve(@Param('id') id:string,@Body() body:unknown,@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return this.appService.resolveReport(id,body);}
  @Post('api/admin/manage/:kind') async createAdmin(@Param('kind') kind:string,@Body() body:unknown,@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return kind==='facilities'?this.appService.createFacility(body):this.appService.adminCreate(kind,body);}
