@@ -1,0 +1,116 @@
+/* Layout safeguards shared by phone, tablet, desktop and zoomed views. */
+:is(.student-site,.admin-shell) :is(main,section,article,.workspace,.page-heading>div,.section-heading>div,.facility-content,.personal-booking){min-width:0}
+:is(.student-site,.admin-shell) :is(h1,h2,h3,p,dd,small,.notice,.alert){overflow-wrap:anywhere}
+:is(.student-site,.admin-shell) img{max-width:100%}
+:is(.student-site,.admin-shell) .facility-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.student-site .college-sections,.student-site .booking-card-grid,.admin-shell .admin-facility-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.admin-shell .admin-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
+.student-site .student-footer{gap:24px;flex-wrap:wrap}
+.student-site .student-footer>div{min-width:0}
+.student-site .student-footer>small{flex-basis:100%}
+:is(.student-site,.admin-shell) .modal{width:min(660px,100%);max-height:calc(100dvh - 40px);overflow-y:auto;overscroll-behavior:contain}
+:is(.student-site,.admin-shell) .modal-backdrop{padding:20px}
+:is(.student-site,.admin-shell) .form-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+:is(.student-site,.admin-shell) .table-wrap{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+.admin-shell .table-wrap>table{min-width:760px}
+.admin-shell .admin-review-summary dl>div{display:contents}
+.admin-login .signin-wrap{max-width:440px;min-width:0}
+.student-site .occupied-times article>div{min-width:0}
+.student-site .occupied-times article p{overflow-wrap:anywhere}
+@media(min-width:1600px){.admin-shell main{max-width:1440px}.student-site .student-main{max-width:1280px}}
+/* Switch navigation before it collides with the wordmark or booking button. */
+@media(max-width:1100px){
+ .student-site .student-header{flex-wrap:wrap;gap:12px;padding:16px 24px}
+ .student-site .mobile-menu{display:inline-flex;align-items:center;justify-content:center;margin-left:auto;min-height:44px;padding:10px 14px;border:1px solid #9daabd;border-radius:8px;background:#fff;color:#06266b;font-size:14px}
+ .student-site .student-header nav{display:none;order:4;width:100%;flex-direction:row;flex-wrap:wrap;justify-content:flex-start;gap:8px;border-top:1px solid #bac4d1;padding-top:14px}
+ .student-site .student-header nav.is-open{display:flex}
+ .student-site .student-header nav button{flex:0 1 auto;min-height:44px}
+ .student-site .header-book{display:none}
+ .admin-shell .section-heading{flex-wrap:wrap}
+ .admin-shell .admin-management-toolbar{flex-wrap:wrap}
+ .admin-shell .admin-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:900px){
+ .student-site .facility-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .student-site .booking-steps{flex-wrap:wrap}
+ .student-site .booking-steps>div{flex:1 1 220px;min-width:0}
+ .student-site .student-help-banner{flex-wrap:wrap;gap:20px}
+ .student-site .student-help-banner>div{min-width:0}
+ .student-site .booking-toolbar{flex-wrap:wrap;gap:16px}
+ .student-site .booking-toolbar>div{display:flex;flex-wrap:wrap;gap:10px}
+ .admin-shell .page-heading{flex-wrap:wrap;gap:16px}
+ .admin-shell .refresh-control{margin-top:0}
+ .admin-shell .admin-facility-grid{grid-template-columns:1fr}
+}
+@media(max-width:850px){
+ .admin-shell .sidebar{height:auto;overflow:visible}
+ .admin-shell .sidebar nav{display:flex;flex-direction:row;overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;max-width:100%;padding:6px 0 10px;gap:8px}
+ .admin-shell .sidebar nav button{flex:0 0 auto;white-space:nowrap;min-height:44px}
+ .admin-shell .sidebar nav .admin-nav-label{width:auto}
+ .admin-shell .workspace{width:100%;margin-left:0}
+ .admin-shell header{padding:0 20px;gap:12px}
+ .admin-shell .header-right{font-size:0}
+ .admin-shell .admin-date{font-size:12px;white-space:nowrap}
+ .student-site .booking-card-grid{grid-template-columns:1fr}
+}
+@media(max-width:650px){
+ .student-site .college-sections{grid-template-columns:1fr}
+ .student-site .schedule-controls,.admin-shell .admin-schedule-controls{flex-wrap:wrap;gap:16px}
+ .student-site .schedule-controls label,.admin-shell .admin-schedule-controls label{flex:1 1 100%;min-width:0}
+ :is(.student-site,.admin-shell) .document-list{grid-template-columns:1fr}
+ .student-site .college-intro{align-items:flex-start;gap:16px}
+ .student-site .college-intro img{width:56px;flex-shrink:0}
+ .student-site .college-intro h2{font-size:22px}
+}
+@media(max-width:600px){
+ .student-site .student-header{padding:14px 18px;position:static}
+ .student-site .student-header .brand{gap:9px;min-width:0}
+ .student-site .student-header .brand span{font-size:12px}
+ .student-site .student-header .brand img{width:40px}
+ .student-site .student-main,.admin-shell main{padding-left:16px;padding-right:16px}
+ .student-site .facility-grid{grid-template-columns:1fr}
+ .student-site .section-heading{align-items:stretch;gap:16px}
+ :is(.student-site,.admin-shell) .search{width:100%;max-width:100%}
+ .student-site .booking-steps{flex-direction:column;gap:20px}
+ .student-site .booking-steps>div{flex:auto;width:100%}
+ .student-site .booking-view-filters button,.student-site .help-navigation button{flex:1 1 calc(50% - 8px);white-space:normal}
+ .student-site .occupied-times article{flex-wrap:wrap;gap:12px;padding:18px}
+ .student-site .occupied-times article>div{flex:1 1 180px}
+ .student-site .student-footer{padding:28px 18px;display:flex;flex-direction:column;align-items:flex-start}
+ .student-site .student-footer>small{flex-basis:auto}
+ .student-site .footer-links{justify-content:flex-start;gap:8px}
+ .admin-shell .table-wrap>table{min-width:0}
+ .admin-shell .table-wrap td{min-width:0;grid-template-columns:78px minmax(0,1fr)}
+ .admin-shell .table-wrap td:before{overflow-wrap:normal}
+ .admin-shell .table-wrap td .badge{white-space:normal}
+ .admin-shell .admin-management-toolbar .primary{white-space:normal}
+ .admin-shell .admin-review-summary dl{grid-template-columns:80px minmax(0,1fr);gap:12px}
+ .admin-shell .admin-attention button{margin-left:0;white-space:normal;text-align:left}
+ :is(.student-site,.admin-shell) .form-row{grid-template-columns:1fr;gap:0}
+ :is(.student-site,.admin-shell) .modal-backdrop{padding:10px}
+ :is(.student-site,.admin-shell) .modal{max-height:calc(100dvh - 20px);padding:26px 18px}
+ :is(.student-site,.admin-shell) .modal input,:is(.student-site,.admin-shell) .modal select,:is(.student-site,.admin-shell) .modal textarea{font-size:16px}
+ .student-site .guided-actions{bottom:-26px;gap:10px;flex-wrap:wrap}
+ .student-site .guided-actions .primary{white-space:normal;min-height:44px}
+ .student-site .step-counter{display:none}
+ .equipment-entry{grid-template-columns:72px minmax(0,1fr)}
+ .equipment-entry button{grid-column:2;justify-self:end}
+}
+@media(max-width:380px){
+ .student-site .student-header{padding:12px;gap:8px}
+ .student-site .student-header .brand small{font-size:7px;letter-spacing:.5px}
+ .student-site .mobile-menu{padding:8px 10px;font-size:13px}
+ .admin-shell .admin-metrics{gap:10px}
+ .admin-shell .metric{padding:14px}
+ .admin-shell .metric-top{flex-wrap:wrap;font-size:12px}
+ .admin-shell .metric-value{font-size:27px}
+ .admin-shell .review-decision{grid-template-columns:1fr}
+ .student-site .booking-progress li{font-size:10px;overflow-wrap:anywhere}
+ .admin-login.admin-signin{padding:20px 14px}
+}
+@media(max-height:500px) and (orientation:landscape){
+ .student-site .student-header{position:static}
+ :is(.student-site,.admin-shell) .modal-backdrop{align-items:flex-start;padding:8px}
+ :is(.student-site,.admin-shell) .modal{max-height:calc(100dvh - 16px)}
+ .student-site .guided-actions{position:static}
+}
