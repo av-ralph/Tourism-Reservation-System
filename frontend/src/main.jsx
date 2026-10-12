@@ -6,6 +6,7 @@ import './Readability.css'
 import './Interface.css'
 import './MinimalTheme.css'
 import './Responsive.css'
+import './ButtonTheme.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
