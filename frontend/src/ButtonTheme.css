@@ -1,25 +1,7 @@
-/* White labels with solid backgrounds across both portals. */
-:root { --button-blue: #06266b; --button-orange: #bd3f08; }
-body button,
-body a:is(.primary,.secondary,.book-button,.hero-link,.staff-signin),
-body [role="button"] {
+/* White labels only on the solid orange action buttons. */
+body .primary,
+body .primary *,
+body .admin-sidebar-bottom > button,
+body .admin-sidebar-bottom > button * {
  color: #fff !important;
- background: var(--button-blue) !important;
- border-color: var(--button-blue) !important;
 }
-body button *, body [role="button"] * { color: #fff !important; }
-body button:is(.primary,.active,.selected),
-body button[aria-pressed="true"],
-body button[aria-current="page"],
-body a.primary,
-body .admin-sidebar-bottom > button {
- background: var(--button-orange) !important;
- border-color: var(--button-orange) !important;
-}
-body button:hover:not(:disabled),
-body a:is(.primary,.secondary,.book-button,.hero-link,.staff-signin):hover {
- filter: brightness(.9);
-}
-body button:disabled { opacity: 1 !important; background: #596579 !important; border-color: #596579 !important; cursor: not-allowed; }
-body button:focus-visible, body [role="button"]:focus-visible { outline: 3px solid #fa6020; outline-offset: 3px; }
-body button.close, body button.modal-close { border-radius: 50%; }
