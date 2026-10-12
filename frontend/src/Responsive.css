@@ -123,11 +123,23 @@
 .profile-photo-preview img,.admin-profile-avatar { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .admin-profile fieldset { min-width: 0; }
 
-.student-site .laboratory-contact { text-align: left; padding: 28px; }
-.laboratory-contact .contact-details { max-width: 720px; }
-.laboratory-contact .contact-directory { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; margin: 24px 0; }
-.contact-directory dt { font-weight: 600; color: #06266b; margin-bottom: 6px; }
-.contact-directory dd { margin: 0; overflow-wrap: anywhere; }
-.contact-directory a { color: #06266b; text-decoration: underline; text-underline-offset: 3px; }
-.student-site .laboratory-contact .contact-reference-image { display: block; width: 100%; max-width: 100%; height: auto; border-radius: 10px; margin: 24px 0 0; border: 1px solid #bac4d1; }
-@media(max-width:600px) { .student-site .laboratory-contact { padding: 20px; } .laboratory-contact .contact-directory { grid-template-columns: minmax(0,1fr); } }
+ .student-site .laboratory-contact { display: grid; grid-template-columns: minmax(0,.9fr) minmax(0,1.2fr); gap: 24px; margin: 28px 0 48px; }
+.contact-office { background: #fff; border: 1px solid #bac4d1; border-top: 3px solid #fa6020; border-radius: 12px; padding: 28px; }
+.contact-office h2 { font-size: 26px; line-height: 1.3; margin: 14px 0; }
+.contact-office p,.contact-method p { color: #47566a; line-height: 1.65; margin: 8px 0 0; }
+.contact-person { display: flex; gap: 14px; align-items: center; margin: 28px 0; }
+.contact-person h3 { font-size: 17px; margin: 0; }
+.contact-monogram { display: grid; place-items: center; flex-shrink: 0; width: 52px; height: 52px; border-radius: 12px; background: #edf1f7; color: #06266b; font-weight: 700; }
+.contact-preparation { border-top: 1px solid #bac4d1; padding-top: 20px; font-size: 14px; }
+.contact-methods { display: grid; gap: 16px; align-content: start; min-width: 0; }
+.contact-method { display: flex; gap: 16px; align-items: flex-start; padding: 24px; border: 1px solid #bac4d1; border-radius: 12px; background: #fff; color: #06266b; text-decoration: none; min-width: 0; }
+.contact-method > div { flex: 1; min-width: 0; }
+.contact-method h3 { font-size: 18px; margin: 8px 0 0; overflow-wrap: anywhere; }
+.contact-method-label { color: #47566a; font-size: 11px; font-weight: 700; letter-spacing: 1.2px; }
+.contact-method-icon { background: #fff1e7; color: #8c370d; border-radius: 10px; padding: 8px 12px; font-size: 22px; }
+a.contact-method:hover { border-color: #06266b; background: #f8faff; }
+a.contact-method:focus-visible { outline: 3px solid #fa6020; outline-offset: 3px; }
+.contact-phone-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
+.contact-phone-grid .contact-method { padding: 20px; }
+@media(max-width:1000px) { .student-site .laboratory-contact { grid-template-columns: minmax(0,1fr); } }
+@media(max-width:600px) { .contact-phone-grid { grid-template-columns: minmax(0,1fr); } .contact-office,.contact-method { padding: 20px; } .contact-office h2 { font-size: 23px; } .contact-method h3 { font-size: 16px; } }
