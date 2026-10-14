@@ -1,0 +1,47 @@
+/* Consistent surfaces and spacing for the reservation experience. */
+:root { --reading-ink: #253247; --reading-muted: #47566a; --reading-border: #b9c5d5; }
+:is(.student-site,.admin-shell,.admin-login) { background: #f3f5f9; color: #253247; }
+:is(.student-site,.admin-shell) :is(h1,h2,h3) { color: #06266b; line-height: 1.3; }
+:is(.student-site,.admin-shell) :is(p,li) { line-height: 1.7; }
+:is(.student-site,.admin-shell,.admin-login) :is(button,input,select,textarea) { font-family: inherit; }
+:is(.student-site,.admin-shell,.admin-login) :is(input:not([type="checkbox"]):not([type="file"]),select,textarea) { border: 1px solid #a8b7ca; border-radius: 9px; background: #fff; padding: 12px 14px; color: #253247; }
+:is(.student-site,.admin-shell,.admin-login) :is(input,select,textarea):focus-visible { outline: 3px solid #dce6f6; border-color: #06266b; outline-offset: 1px; }
+:is(.student-site,.admin-shell,.admin-login) button { transition: background .15s,border-color .15s; }
+:is(.student-site,.admin-shell) :is(.records,.college-section,.guidelines,.personal-booking,.facility-card,.admin-callout,.schedule-controls,.contact-office,.contact-method,.admin-profile) { border: 1px solid #b9c5d5; box-shadow: 0 2px 8px #06266b05; border-radius: 14px; }
+.student-site .student-main { padding-bottom: 56px; }
+.student-site :is(.browse-intro,.student-page-heading) { padding-top: 36px; padding-bottom: 20px; margin-bottom: 20px; }
+.student-site :is(.browse-intro,.student-page-heading) h1 { font-size: clamp(27px,3vw,38px); line-height: 1.25; letter-spacing: -.8px; }
+.student-site .booking-steps { border: 1px solid #b9c5d5; border-radius: 14px; padding: 24px; }
+.student-site .facility-grid { gap: 24px; }
+.student-site .facility-card { overflow: hidden; display: flex; flex-direction: column; }
+.student-site .facility-content { display: flex; flex-direction: column; flex: 1; padding: 24px; }
+.student-site .facility-content h3 { font-size: 20px; }
+.student-site .facility-content p { flex: 1; margin-bottom: 22px; }
+.student-site .facility-content button { width: 100%; background: #f0f4fa; border-color: #aabbd3; color: #06266b; font-weight: 600; min-height: 44px; }
+.student-site .facility-content button:hover { background: #e5edf8; border-color: #06266b; }
+.student-site .student-help-banner { border-radius: 14px; padding: 28px; background: #fff; }
+.student-site .student-footer { background: #eaf0f7; border-top: 1px solid #b9c5d5; }
+.student-site .guidelines article { padding-top: 22px; padding-bottom: 22px; }
+.student-site .occupied-times article { border: 1px solid #b9c5d5; background: #fff; }
+.student-site .help-navigation button,.student-site .booking-view-filters button { min-height: 44px; }
+.admin-shell .sidebar { background: #fff; border-right-color: #b9c5d5; }
+.admin-shell .sidebar nav button { min-height: 46px; border-radius: 9px; margin-bottom: 5px; }
+.admin-shell .sidebar nav button.selected { background: #fff0e5; border-color: #d08b60; color: #182c4a; }
+.admin-shell .workspace > header { background: #fff; border-bottom: 1px solid #b9c5d5; }
+.admin-shell .page-heading { margin-bottom: 28px; }
+.admin-shell .admin-management-toolbar { border: 1px solid #b9c5d5; border-radius: 12px; background: #fff; }
+.admin-shell .records { padding: 26px; }
+.admin-shell .metric { border: 1px solid #b9c5d5; border-radius: 12px; padding: 22px; }
+.admin-shell .metric-value { color: #06266b; }
+.admin-shell .table-wrap { border: 1px solid #b9c5d5; border-radius: 10px; }
+.admin-shell th { background: #eef2f8; color: #253247; padding-top: 16px; padding-bottom: 16px; }
+.admin-shell tbody tr:hover { background: #f7f9fc; }
+.admin-shell .admin-staff-card { padding: 12px; background: #f2f5fa; border-radius: 10px; }
+.admin-shell .admin-profile { background: #fff; padding: 28px; }
+:is(.student-site,.admin-shell) .modal { border: 1px solid #b9c5d5; border-radius: 16px; box-shadow: 0 20px 64px #06266b24; }
+:is(.student-site,.admin-shell) .modal h2 { font-size: 26px; }
+:is(.student-site,.admin-shell) .notice { border-radius: 10px; }
+.admin-login .signin-card { box-shadow: 0 10px 32px #06266b0c; }
+@media(max-width:850px) { .admin-shell .records { padding: 20px; } .admin-shell .page-heading { margin-bottom: 22px; } }
+@media(max-width:600px) { .student-site :is(.browse-intro,.student-page-heading) { padding-top: 26px; } .student-site .facility-content { padding: 20px; } .student-site .booking-steps { padding: 18px; } .student-site .student-help-banner { padding: 22px; } .admin-shell .records,.admin-shell .admin-profile { padding: 18px; } .admin-shell .metric { padding: 18px; } .admin-shell th { padding: 12px; } :is(.student-site,.admin-shell) .modal h2 { font-size: 23px; } }
+@media(prefers-reduced-motion:reduce) { :is(.student-site,.admin-shell,.admin-login) button { transition: none; } }

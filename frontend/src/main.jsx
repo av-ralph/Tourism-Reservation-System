@@ -7,6 +7,8 @@ import './Interface.css'
 import './MinimalTheme.css'
 import './Responsive.css'
 import './ButtonTheme.css'
+import './CollegeBanner.css'
+import './DesignPolish.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

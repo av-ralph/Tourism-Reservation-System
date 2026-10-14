@@ -1,0 +1,74 @@
+/* College masthead based on the supplied campus sign. */
+.college-banner { display: flex; align-items: center; justify-content: space-between; gap: 28px; background: #224f7c; border-bottom: 12px solid #e76626; padding: 18px 28px; min-height: 220px; }
+.college-banner-brand { display: flex; align-items: center; gap: 22px; min-width: 0; text-decoration: none; color: #e3e6e9; }
+.college-banner-brand img { width: 180px; height: 180px; object-fit: contain; flex-shrink: 0; }
+.college-banner-wordmark { min-width: 0; text-align: center; font-family: Georgia, 'Times New Roman', serif; }
+.college-banner-wordmark > span { display: block; font-size: clamp(28px,3.7vw,58px); font-weight: 400; line-height: 1.15; color: #e3e6e9; }
+.college-banner-wordmark em { display: block; font-size: clamp(18px,2vw,30px); line-height: 1.3; margin-top: 6px; color: #e3e6e9; }
+.student-site .college-banner-motto { flex-shrink: 0; font: italic 24px/1.35 Georgia, 'Times New Roman', serif; text-align: right; color: #e3e6e9; margin: 0; }
+.student-site .student-header > .brand { display: none; }
+.student-site .student-header { min-height: 70px; padding: 12px max(5vw,24px); }
+.college-banner-brand:focus-visible { outline: 3px solid #fff; outline-offset: 5px; border-radius: 4px; }
+@media(max-width:1100px) { .college-banner { min-height: 170px; padding: 18px 24px; gap: 18px; } .college-banner-brand img { width: 130px; height: 130px; } .college-banner-brand { gap: 16px; } .student-site .college-banner-motto { font-size: 18px; } .student-site .student-header { justify-content: flex-end; } .student-site .student-header .mobile-menu { margin-left: 0; } }
+@media(max-width:700px) { .college-banner { flex-wrap: wrap; padding: 16px; gap: 12px; border-bottom-width: 8px; min-height: 0; } .college-banner-brand { width: 100%; gap: 12px; } .college-banner-brand img { width: 80px; height: 80px; } .college-banner-wordmark { flex: 1; } .college-banner-wordmark > span { font-size: clamp(19px,4.3vw,30px); } .college-banner-wordmark em { font-size: 15px; } .student-site .college-banner-motto { width: 100%; text-align: center; font-size: 14px; } .college-banner-motto br { display: none; } .college-banner-motto br::after { content: ' '; } .student-site .student-header { padding: 10px 18px; min-height: 60px; } }
+
+/* Navigation bar under the college masthead. */
+.student-site .student-header { position: sticky; top: 0; z-index: 30; background: #fff; gap: 20px; border-bottom: 1px solid #bac4d1; box-shadow: 0 3px 12px #06266b08; padding: 12px max(3vw,20px); }
+.nav-portal-label { color: #06266b; font-size: 14px; font-weight: 700; letter-spacing: .2px; white-space: nowrap; }
+.student-site .student-header nav { flex: 1; justify-content: center; gap: 4px; }
+.student-site .student-header nav button { min-height: 44px; padding: 11px 14px; border: 1px solid transparent; border-radius: 8px; color: #334155; background: transparent; font-size: 14px; font-weight: 500; transition: background .15s,color .15s; }
+.student-site .student-header nav button:hover { color: #06266b; background: #f0f4fa; }
+.student-site .student-header nav button.active { color: #06266b; background: #eaf0fa; border-color: #c7d4e9; box-shadow: none; font-weight: 700; }
+.student-site .student-header nav button.active::after { display: none; }
+.student-site .student-header .header-book { white-space: nowrap; min-height: 44px; border-radius: 8px; padding: 12px 18px; }
+.student-site .student-header button:focus-visible { outline: 3px solid #fa6020; outline-offset: 3px; }
+@media(max-width:1100px) {
+ .student-site .student-header { justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px 24px; }
+ .student-site .student-header .mobile-menu { margin-left: auto; border-color: #bac4d1; background: #f8fafc; }
+ .student-site .student-header .header-book { display: inline-flex; align-items: center; }
+ .student-site .student-header nav { display: none; flex-basis: 100%; order: 4; padding-top: 12px; border-top: 1px solid #d1d9e4; gap: 8px; }
+ .student-site .student-header nav.is-open { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); }
+ .student-site .student-header nav button { text-align: left; white-space: normal; }
+}
+@media(max-width:600px) {
+ .student-site .student-header { padding: 10px 16px; gap: 8px; }
+ .nav-portal-label { font-size: 12px; }
+ .student-site .student-header .header-book { padding: 10px; font-size: 12px; }
+ .student-site .student-header .mobile-menu { padding: 10px; font-size: 12px; }
+ .student-site .student-header nav.is-open { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media(prefers-reduced-motion:reduce) { .student-site .student-header nav button { transition: none; } }
+
+/* Unified masthead and navigation. */
+.student-site .college-header { display: block; width: 100%; height: auto; padding: 0; color: #e3e6e9; background: #224f7c; border-bottom: 5px solid #e76626; box-shadow: 0 4px 14px #06266b12; }
+.student-site .college-header .college-banner-wordmark > span { margin: 0; color: #e3e6e9; }
+.student-site .college-header .student-header .nav-portal-label { margin: 0; }
+.student-site .college-header .college-banner { border-bottom: 0; min-height: 160px; padding: 22px max(4vw,24px) 18px; }
+.student-site .college-header .college-banner-brand img { width: 124px; height: 124px; }
+.student-site .college-header .college-banner-wordmark > span { font-size: clamp(25px,3.2vw,48px); }
+.student-site .college-header .college-banner-wordmark em { font-size: clamp(17px,1.8vw,25px); }
+.student-site .college-header .college-banner-motto { font-size: 20px; }
+.student-site .college-header .college-banner-motto { color: #fff !important; }
+.student-site .college-header .student-header { position: static; background: transparent; border-bottom: 0; border-top: 1px solid #ffffff30; box-shadow: none; min-height: 64px; padding: 10px max(4vw,24px); }
+.student-site .college-header .nav-portal-label { color: #edf3fa; font-size: 13px; letter-spacing: .4px; }
+.student-site .college-header .student-header nav { justify-content: flex-end; gap: 6px; }
+.student-site .college-header .student-header nav button { color: #fff; border-color: transparent; background: transparent; }
+.student-site .college-header .student-header nav button:hover { background: #ffffff14; }
+.student-site .college-header .student-header nav button.active { background: #fff; color: #06266b; border-color: #fff; box-shadow: none; }
+.student-site .college-header .student-header .mobile-menu { color: #fff; background: #ffffff12; border-color: #ffffff60; }
+.student-site .college-header .student-header button:focus-visible { outline-color: #ffd4bd; }
+@media(max-width:1100px) {
+ .student-site .college-header .student-header nav { border-top-color: #ffffff30; }
+ .student-site .college-header .student-header nav.is-open { justify-content: start; }
+ .student-site .college-header .college-banner-brand img { width: 104px; height: 104px; }
+ .student-site .college-header .college-banner { min-height: 140px; }
+ .student-site .college-header .college-banner-motto { font-size: 17px; }
+}
+@media(max-width:700px) {
+ .student-site .college-header .college-banner { padding: 18px 16px 14px; min-height: 0; gap: 10px; }
+ .student-site .college-header .college-banner-brand img { width: 72px; height: 72px; }
+ .student-site .college-header .college-banner-wordmark > span { font-size: clamp(18px,4vw,28px); }
+ .student-site .college-header .college-banner-wordmark em { font-size: 14px; }
+ .student-site .college-header .college-banner-motto { font-size: 13px; }
+ .student-site .college-header .student-header { padding: 10px 16px; min-height: 60px; }
+}

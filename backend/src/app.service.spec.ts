@@ -31,6 +31,40 @@ describe('reservations',()=>{
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
  it('persists records across restart',async()=>{await service.create('reservations',booking);expect((await new AppService().records()).reservations).toHaveLength(1);});
+ it('lets administrators manage instructor keys without granting administrator key access',async()=>{
+  process.env.HM_ADMIN_KEY='test-super-key';
+  try{
+   const admin=await service.createStaffKey({name:'Office Admin',key:'office-admin-key-123',role:'admin'},'Bearer test-super-key');
+   const adminAuth='Bearer office-admin-key-123';
+   await expect(service.createStaffKey({name:'Another Admin',key:'another-admin-key-123',role:'admin'},adminAuth)).rejects.toThrow('instructor keys only');
+   await expect(service.createStaffKey({name:'Default Admin',key:'default-admin-key-123'},adminAuth)).rejects.toThrow('instructor keys only');
+   const instructor=await service.createStaffKey({name:'Instructor B',key:'instructor-b-key-123',role:'instructor'},adminAuth);
+   expect((await service.listStaffKeys(adminAuth)).map(row=>row.name)).toEqual(['Instructor B']);
+   expect((await service.listStaffKeys('Bearer test-super-key')).map(row=>row.name)).toEqual(['Office Admin','Instructor B']);
+   await expect(service.listStaffKeys('Bearer instructor-b-key-123')).rejects.toThrow('Instructor keys cannot access');
+   await expect(service.createStaffKey({name:'Instructor C',key:'instructor-c-key-123',role:'instructor'},'Bearer instructor-b-key-123')).rejects.toThrow('Instructor keys cannot access');
+   await expect(service.revokeStaffKey(admin.id,adminAuth)).rejects.toThrow('instructor keys only');
+   await service.revokeStaffKey(instructor.id,adminAuth);
+   await expect(service.authorizeInstructor('Bearer instructor-b-key-123')).rejects.toThrow('valid administrator');
+   expect(await service.authorizeAdmin(adminAuth)).toBe('admin');
+  }finally{delete process.env.HM_ADMIN_KEY;}
+ });
+ it('separates instructor review from final admin approval',async()=>{
+  process.env.HM_ADMIN_KEY='test-super-key';
+  try{
+   await service.createAdminKey({name:'Faculty A',key:'faculty-access-key-123',role:'instructor'});
+   const key='Bearer faculty-access-key-123',reservation=await service.create('reservations',booking);
+   expect((await service.instructorRecords(key)).reservations).toHaveLength(1);
+   await expect(service.authorizeInstructor('Bearer test-super-key')).rejects.toThrow('instructor access key');
+   await expect(service.authorizeAdmin(key)).rejects.toThrow('Instructor keys cannot access');
+   await expect(service.reviewAsInstructor(reservation.id!,{decision:'Declined',note:''},key)).rejects.toThrow('Explain why');
+   await expect(service.reviewReservation(reservation.id!,{action:'Approved',note:'',signatureConfirmed:true})).rejects.toThrow('instructor');
+   await service.reviewAsInstructor(reservation.id!,{decision:'Approved',note:'Suitable activity'},key);
+   expect((await service.records()).reservations[0]?.status).toBe('Awaiting signature');
+   expect((await service.reviewReservation(reservation.id!,{action:'Approved',note:'',signatureConfirmed:true})).status).toBe('Approved');
+   await expect(service.reviewAsInstructor(reservation.id!,{decision:'Declined',note:'Reason'},key)).rejects.toThrow('pending');
+  }finally{delete process.env.HM_ADMIN_KEY;}
+ });
  it('blocks simultaneous overlapping bookings',async()=>{const results=await Promise.allSettled([service.create('reservations',booking),service.create('reservations',booking)]);expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(1);});
  it('requires email and terms but permits omitted ID',async()=>{await expect(service.create('reservations',{...booking,email:''})).rejects.toThrow('email address');await expect(service.create('reservations',{...booking,termsAccepted:false})).rejects.toThrow('Terms and Conditions');const {studentId,...withoutId}=booking;expect((await service.create('reservations',withoutId)).studentId).toBe('');});
  it('releases cancelled times and permits adjacent sessions',async()=>{const row=await service.create('reservations',booking);await service.create('reservations',{...booking,start:'10:00',end:'11:00'});await service.cancel(row.id!);await expect(service.create('reservations',booking)).resolves.toBeDefined();});
