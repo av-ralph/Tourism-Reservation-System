@@ -10,6 +10,7 @@ import './ButtonTheme.css'
 import './CollegeBanner.css'
 import './DesignPolish.css'
 import './DeviceLayouts.css'
+import './StudentMenu.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

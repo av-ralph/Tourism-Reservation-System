@@ -1,0 +1,41 @@
+.student-site .student-header nav button span{width:auto;margin:0;color:inherit;font-size:inherit;text-align:inherit}
+.student-site .student-header .mobile-menu span{margin:0;color:inherit}
+.student-site .mobile-nav-heading,.student-site .student-nav-arrow,.student-site .menu-glyph{display:none}
+
+@media(max-width:1100px){
+ .student-site .college-header .student-header .mobile-menu{display:inline-flex;align-items:center;justify-content:center;gap:9px;margin-left:auto;min-width:92px;min-height:44px;padding:9px 13px;border:1px solid #fff;border-radius:9px;background:#fff;color:#06266b;font-size:14px;font-weight:700;line-height:1}
+ .student-site .college-header .student-header .mobile-menu:hover{background:#edf3fb;border-color:#edf3fb}
+ .student-site .menu-glyph{display:block;position:relative;width:19px;height:19px;flex:none}
+ .student-site .menu-glyph i{position:absolute;left:1px;display:block;width:17px;height:2px;border-radius:2px;background:currentColor;transition:transform .18s ease,opacity .18s ease}
+ .student-site .menu-glyph i:nth-child(1){top:4px}
+ .student-site .menu-glyph i:nth-child(2){top:9px}
+ .student-site .menu-glyph i:nth-child(3){top:14px}
+ .student-site .mobile-menu[aria-expanded="true"] .menu-glyph i:nth-child(1){transform:translateY(5px) rotate(45deg)}
+ .student-site .mobile-menu[aria-expanded="true"] .menu-glyph i:nth-child(2){opacity:0}
+ .student-site .mobile-menu[aria-expanded="true"] .menu-glyph i:nth-child(3){transform:translateY(-5px) rotate(-45deg)}
+ .student-site .college-header .student-header nav.is-open{flex:none;width:100%;max-height:min(58dvh,410px);overflow-y:auto;overscroll-behavior:contain;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:4px 0 2px;padding:16px;border:1px solid #bdcde0;border-radius:13px;background:#fff;box-shadow:0 14px 28px #081d3e24}
+ .student-site .mobile-nav-heading{grid-column:1/-1;display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:0 2px 6px;color:#06266b}
+ .student-site .mobile-nav-heading strong{font-size:14px;font-weight:700}
+ .student-site .mobile-nav-heading span{width:auto;margin:0;font-size:12px;color:#526781}
+ .student-site .college-header .student-header nav.is-open button{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;min-height:50px;padding:11px 13px;border:1px solid #d3ddea;border-radius:9px;background:#f7f9fc;color:#183b6e;text-align:left;font-size:13px;font-weight:600;line-height:1.25;box-shadow:none}
+ .student-site .college-header .student-header nav.is-open button:hover{background:#edf3fb;border-color:#aebfd8;color:#06266b}
+ .student-site .college-header .student-header nav.is-open button.active{background:#eaf0fa;border-color:#b9cbe3;box-shadow:inset 3px 0 #f26026;color:#06266b;font-weight:800}
+ .student-site .college-header .student-header nav.is-open button>span:first-child{flex:1 1 auto;width:auto;min-width:0;color:inherit;text-align:left;font-size:inherit;overflow-wrap:normal}
+ .student-site .college-header .student-header nav.is-open .student-nav-arrow{display:inline-block;flex:none;width:auto;color:#6b83a2;font-size:18px;font-weight:400}
+}
+
+@media(max-width:600px){
+ .student-site .college-header .student-header .mobile-menu{min-width:82px;padding:8px 10px;font-size:13px}
+ .student-site .college-header .student-header nav.is-open{grid-template-columns:repeat(2,minmax(0,1fr));padding:12px;gap:8px}
+ .student-site .mobile-nav-heading{display:block;padding:2px 1px 7px}
+ .student-site .mobile-nav-heading span{display:block;margin-top:4px;font-size:11px}
+ .student-site .college-header .student-header nav.is-open button{min-height:52px;padding:10px 11px;font-size:12px}
+}
+
+@media(max-width:360px){
+ .student-site .mobile-nav-heading strong{font-size:13px}
+ .student-site .college-header .student-header nav.is-open button{font-size:11px;padding:9px}
+ .student-site .college-header .student-header nav.is-open .student-nav-arrow{font-size:15px}
+}
+
+@media(prefers-reduced-motion:reduce){.student-site .menu-glyph i{transition:none}}
