@@ -9,6 +9,7 @@ import './Responsive.css'
 import './ButtonTheme.css'
 import './CollegeBanner.css'
 import './DesignPolish.css'
+import './DeviceLayouts.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
