@@ -5,6 +5,7 @@ import {AppService} from './app.service.js';
 describe('reservations',()=>{
  let dir:string,service:AppService;
  const booking={facility:'Hot Kitchen',name:'Test',studentId:'TEST',date:'2099-10-10',start:'09:00',end:'10:00',purpose:'Practice',subject:'Culinary',instructor:'Instructor',equipment:'None',email:'student@example.com',termsAccepted:true};
+ const signature=[[[10,10],[24,30],[40,18],[57,42],[75,24],[94,49],[112,31],[130,55]]];
  beforeEach(async()=>{dir=await mkdtemp(join(tmpdir(),'hm-test-'));process.env.HM_STORAGE='file';process.env.HM_DATA_FILE=join(dir,'records.json');service=new AppService();});
  afterEach(async()=>{delete process.env.HM_STORAGE;delete process.env.HM_DATA_FILE;await rm(dir,{recursive:true,force:true,maxRetries:5,retryDelay:200});});
  it('restricts key management and persists revocation',async()=>{
@@ -69,8 +70,11 @@ describe('reservations',()=>{
    await expect(service.authorizeAdmin(key)).rejects.toThrow('Instructor keys cannot access');
    await expect(service.reviewAsInstructor(reservation.id!,{decision:'Declined',note:''},key)).rejects.toThrow('Explain why');
    await expect(service.reviewReservation(reservation.id!,{action:'Approved',note:'',signatureConfirmed:true})).rejects.toThrow('instructor');
-   await service.reviewAsInstructor(reservation.id!,{decision:'Approved',note:'Suitable activity'},key);
+   await expect(service.reviewAsInstructor(reservation.id!,{decision:'Approved',note:'Suitable activity',signature:[]},key)).rejects.toThrow('signature');
+   await expect(service.reviewAsInstructor(reservation.id!,{decision:'Approved',note:'Suitable activity',signature:[[[10,10],[12,11]]]},key)).rejects.toThrow('signature');
+   await service.reviewAsInstructor(reservation.id!,{decision:'Approved',note:'Suitable activity',signature},key);
    expect((await service.records()).reservations[0]?.status).toBe('Awaiting admin');
+   expect((await service.records()).reservations[0]?.instructorSignature).toBe(JSON.stringify(signature));
    expect((await service.reviewReservation(reservation.id!,{action:'Approved',note:'',signatureConfirmed:true})).status).toBe('Approved');
    await expect(service.reviewAsInstructor(reservation.id!,{decision:'Declined',note:'Reason'},key)).rejects.toThrow('awaiting instructor');
   }finally{delete process.env.HM_ADMIN_KEY;}
@@ -86,11 +90,15 @@ describe('reservations',()=>{
    expect(row.instructorKeyId).toBe(first.id);
    expect((await service.instructorRecords('Bearer instructor-one-key-123')).reservations).toHaveLength(1);
    expect((await service.instructorRecords('Bearer instructor-two-key-123')).reservations).toHaveLength(0);
-   await expect(service.reviewAsInstructor(row.id!,{decision:'Approved',note:''},'Bearer instructor-two-key-123')).rejects.toThrow('another instructor');
+   await expect(service.reviewAsInstructor(row.id!,{decision:'Approved',note:'',signature},'Bearer instructor-two-key-123')).rejects.toThrow('another instructor');
    await expect(service.reviewReservation(row.id!,{action:'Rejected',note:'Too early'})).rejects.toThrow('instructor');
-   await service.reviewAsInstructor(row.id!,{decision:'Approved',note:''},'Bearer instructor-one-key-123');
+   await service.reviewAsInstructor(row.id!,{decision:'Approved',note:'',signature},'Bearer instructor-one-key-123');
    expect((await service.userRecords(owner)).reservations[0]?.status).toBe('Awaiting admin');
    expect((await service.reviewReservation(row.id!,{action:'Approved',note:'',signatureConfirmed:true})).status).toBe('Approved');
+   const changed=await service.adminUpdate('reservations',row.id!,{purpose:'Changed activity'});
+   expect(changed).toMatchObject({status:'Awaiting instructor',purpose:'Changed activity'});
+   expect(changed.instructorSignature).toBeUndefined();
+   await expect(service.reviewReservation(row.id!,{action:'Approved',note:'',signatureConfirmed:true})).rejects.toThrow('instructor');
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
  it('ends the flow when an instructor declines a request',async()=>{

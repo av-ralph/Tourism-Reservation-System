@@ -15,3 +15,11 @@
 .instructor-filters button.active { border-color: #be6a3d; background: #fff0e5; font-weight: 700; }
 @media(max-width:1100px) { .instructor-request { grid-template-columns: repeat(2,minmax(0,1fr)); } .instructor-decision { grid-column: 1/-1; } }
 @media(max-width:700px) { .instructor-request { grid-template-columns: minmax(0,1fr); } .instructor-decision { grid-column: auto; } .admin-shell.instructor-shell .admin-metrics { grid-template-columns: minmax(0,1fr); } }
+.signature-pad { margin: 16px 0; }
+.signature-pad-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; color: #17345d; }
+.signature-pad-heading button { min-height: 36px; padding: 6px 12px; }
+.signature-pad canvas { display: block; width: 100%; height: auto; aspect-ratio: 10 / 3; border: 1px solid #9caec5; border-radius: 9px; background: #fff; cursor: crosshair; touch-action: none; }
+.signature-pad small { display: block; margin-top: 8px; color: #47566a; line-height: 1.5; }
+.instructor-signature-preview { display: block; width: min(100%, 360px); height: 108px; margin: 8px 0; border: 1px solid #bac4d1; border-radius: 8px; background: #fff; }
+.admin-saved-signature { margin-top: 16px; }
+.admin-saved-signature small { display: block; color: #47566a; }

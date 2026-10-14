@@ -9,7 +9,7 @@ export function reservationInventory(equipment) {
     return match ? {quantity:match[1],description:match[2]} : {quantity:'',description:line}
   })
 }
-export function fillReservationForm(template, reservation) {
+export function fillReservationForm(template, reservation, signatureImage) {
   const files = unzipSync(template)
   let xml = strFromU8(files['word/document.xml'])
   const rowPattern = /<w:tr\b[^>]*>(?:(?!<\/w:tr>)[\s\S])*?\{\{ITEM_QUANTITY\}\}(?:(?!<\/w:tr>)[\s\S])*?<\/w:tr>/
@@ -22,11 +22,30 @@ export function fillReservationForm(template, reservation) {
     SUBJECT:reservation.subject, USAGE_TIME:`${reservation.start} – ${reservation.end}`,
     PURPOSE:`${reservation.purpose}\nFacility: ${reservation.facility}`,
     CONTACT_DETAILS:`Requested by: ${reservation.name} | Email: ${reservation.email}${reservation.studentId ? ' | ID: '+reservation.studentId : ''}`,
-    INSTRUCTOR:reservation.instructor,
   }
   for (const [key,value] of Object.entries(values)) xml=xml.replaceAll('{{'+key+'}}',()=>escapeXml(value).replace(/\r?\n/g,'</w:t><w:br/><w:t xml:space="preserve">'))
+  let signatureRun=''
+  if(signatureImage){
+    const cx=1828800,cy=548640
+    signatureRun=`<w:r><w:br/><w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="999" name="Instructor signature"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="1" name="Instructor signature"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rIdInstructorSignature"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`
+    const rels='word/_rels/document.xml.rels'
+    files[rels]=strToU8(strFromU8(files[rels]).replace('</Relationships>','<Relationship Id="rIdInstructorSignature" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/instructor-signature.png"/></Relationships>'))
+    files['word/media/instructor-signature.png']=signatureImage
+  }
+  xml=xml.replaceAll('{{INSTRUCTOR}}',()=>escapeXml(reservation.instructor)+(signatureRun?`</w:t></w:r>${signatureRun}<w:r><w:t>`:''))
   files['word/document.xml']=strToU8(xml)
   return zipSync(files)
+}
+function renderSignature(value){
+  if(!value)return null
+  let strokes
+  try{strokes=JSON.parse(value)}catch{return null}
+  if(!Array.isArray(strokes))return null
+  const canvas=document.createElement('canvas');canvas.width=600;canvas.height=180
+  const context=canvas.getContext('2d');context.strokeStyle='#142e57';context.lineWidth=3.5;context.lineCap='round';context.lineJoin='round'
+  for(const stroke of strokes){if(!Array.isArray(stroke)||stroke.length<2)continue;context.beginPath();stroke.forEach(([x,y],index)=>index?context.lineTo(x,y):context.moveTo(x,y));context.stroke()}
+  const base64=canvas.toDataURL('image/png').split(',')[1]
+  return Uint8Array.from(atob(base64),char=>char.charCodeAt(0))
 }
 let templatePromise
 export async function downloadReservationForm(reservation) {
@@ -35,7 +54,7 @@ export async function downloadReservationForm(reservation) {
       if (!response.ok) throw new Error('The form template could not be loaded.')
       return new Uint8Array(await response.arrayBuffer())
     }).catch(error=>{templatePromise=undefined;throw error})
-    const bytes=fillReservationForm(await templatePromise,reservation)
+    const bytes=fillReservationForm(await templatePromise,reservation,renderSignature(reservation.instructorSignature))
     const url=URL.createObjectURL(new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}))
     const link=document.createElement('a');link.href=url;link.download=`HM-Reservation-${reservation.date}-${reservation.id}.docx`;link.click()
     setTimeout(()=>URL.revokeObjectURL(url),30000)

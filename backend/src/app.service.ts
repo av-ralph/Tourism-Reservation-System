@@ -100,12 +100,30 @@ export class AppService {
  async createStaffKey(input:unknown,authorization?:string){const role=await this.authorizeAdmin(authorization);if(role!=='superadmin'&&(!input||typeof input!=='object'||Array.isArray(input)||(input as Record<string,unknown>).role!=='instructor'))throw new ForbiddenException('Administrators can create instructor keys only.');return this.createAdminKey(input);}
  async revokeStaffKey(id:string,authorization?:string){const role=await this.authorizeAdmin(authorization);return this.revokeAdminKey(id,role);}
  async instructorRecords(authorization?:string){await this.authorizeInstructor(authorization);const identity=await this.adminIdentity(authorization),data=await this.storage.read(),hash=this.keyHash((authorization||'').replace(/^Bearer /,'')),instructor=data.adminKeys.find(row=>row.hash===hash);return {...identity,reservations:data.reservations.filter(row=>!row.instructorKeyId||row.instructorKeyId===instructor?.id).map(row=>{const reservation=this.publicReservation(row);delete reservation.owner;return reservation;}),facilities:this.facilitiesFrom(data).map(facility=>{const details={...facility} as Row;delete details.photo;return details;})};}
+ private validateSignature(value:unknown){
+  if(!Array.isArray(value)||value.length<1||value.length>20)throw new BadRequestException('Draw your signature before approving the request.');
+  let count=0,length=0,minX=600,maxX=0,minY=180,maxY=0;
+  for(const stroke of value){
+   if(!Array.isArray(stroke)||stroke.length<2||stroke.length>300)throw new BadRequestException('Draw a complete signature before approving.');
+   count+=stroke.length;
+   if(count>2000)throw new BadRequestException('The signature is too detailed. Clear it and try again.');
+   for(let index=0;index<stroke.length;index++){
+    const point=stroke[index];
+    if(!Array.isArray(point)||point.length!==2||!point.every((coordinate:unknown)=>typeof coordinate==='number'&&Number.isInteger(coordinate))||point[0]<0||point[0]>600||point[1]<0||point[1]>180)throw new BadRequestException('Signature points are invalid. Clear it and try again.');
+    minX=Math.min(minX,point[0]);maxX=Math.max(maxX,point[0]);minY=Math.min(minY,point[1]);maxY=Math.max(maxY,point[1]);
+    if(index)length+=Math.hypot(point[0]-stroke[index-1][0],point[1]-stroke[index-1][1]);
+   }
+  }
+  if(count<8||maxX-minX<25||maxY-minY<8||length<75)throw new BadRequestException('Draw a fuller signature before approving the request.');
+  return JSON.stringify(value);
+ }
  async reviewAsInstructor(id:string,input:unknown,authorization?:string){
   await this.authorizeInstructor(authorization);
   if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid instructor review.');
-  const {decision,note}=input as Record<string,unknown>;
+  const {decision,note,signature}=input as Record<string,unknown>;
   if(!['Approved','Declined'].includes(String(decision)))throw new BadRequestException('Choose approve or decline.');
   if(typeof note!=='string'||note.length>1000||(decision==='Declined'&&!note.trim()))throw new BadRequestException('Explain why the request was declined.');
+  const validatedSignature=decision==='Approved'?this.validateSignature(signature):'';
   const identity=await this.adminIdentity(authorization);
   return this.storage.mutate(data=>{
    const reservation=data.reservations.find(row=>row.id===id);
@@ -114,6 +132,7 @@ export class AppService {
    if(reservation.instructorKeyId&&reservation.instructorKeyId!==instructor?.id)throw new ForbiddenException('This request belongs to another instructor.');
    if(this.reservationStatus(reservation)!=='Awaiting instructor')throw new ConflictException('Only requests awaiting instructor review can be reviewed.');
    reservation.instructorDecision=String(decision);reservation.instructorNote=note.trim();reservation.instructorReviewedBy=identity.adminName;reservation.instructorReviewedAt=new Date().toISOString();
+   reservation.instructorSignature=validatedSignature;
    reservation.status=decision==='Approved'?'Awaiting admin':'Rejected';
    if(decision==='Declined')reservation.reviewNote=note.trim();
    return {id:reservation.id,status:reservation.status,instructorDecision:reservation.instructorDecision,instructorNote:reservation.instructorNote,instructorReviewedBy:reservation.instructorReviewedBy,instructorReviewedAt:reservation.instructorReviewedAt};
@@ -201,7 +220,14 @@ export class AppService {
  });}
  private recordKind(kind:string):'reservations'|'reports'|'utilization'{if(!['reservations','reports','utilization'].includes(kind))throw new BadRequestException('Invalid record type.');return kind as 'reservations'|'reports'|'utilization';}
  adminCreate(kind:string,input:unknown){const type=this.recordKind(kind);return this.create(type,input,undefined,type==='reservations');}
- adminUpdate(kind:string,id:string,input:unknown){const type=this.recordKind(kind);return this.storage.mutate(data=>{const old=data[type].find(r=>r.id===id);if(!old)throw new NotFoundException('Record not found.');if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid record.');const r=this.validateRecord(type,{...old,...input as object,termsAccepted:old.termsAccepted==='true'},data,id);const updated:Row={...old,...r,updatedAt:new Date().toISOString()};if(type==='reservations'){updated.termsAcceptedAt=old.termsAcceptedAt!;updated.termsVersion=old.termsVersion!;}data[type]=data[type].map(row=>row.id===id?updated:row);return updated;});}
+ adminUpdate(kind:string,id:string,input:unknown){const type=this.recordKind(kind);return this.storage.mutate(data=>{const old=data[type].find(r=>r.id===id);if(!old)throw new NotFoundException('Record not found.');if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid record.');const r=this.validateRecord(type,{...old,...input as object,termsAccepted:old.termsAccepted==='true'},data,id);const updated:Row={...old,...r,updatedAt:new Date().toISOString()};if(type==='reservations'){
+   updated.termsAcceptedAt=old.termsAcceptedAt!;updated.termsVersion=old.termsVersion!;
+   const signedFields=['facility','name','email','studentId','date','start','end','purpose','subject','instructor','equipment'];
+   if(old.instructorDecision==='Approved'&&signedFields.some(field=>old[field]!==updated[field])){
+    updated.status='Awaiting instructor';
+    for(const field of ['instructorDecision','instructorNote','instructorReviewedBy','instructorReviewedAt','instructorSignature','reviewNote','reviewedAt'])delete updated[field];
+   }
+  }data[type]=data[type].map(row=>row.id===id?updated:row);return updated;});}
  adminDelete(kind:string,id:string){const type=this.recordKind(kind);return this.storage.mutate(data=>{if(!data[type].some(r=>r.id===id))throw new NotFoundException('Record not found.');data[type]=data[type].filter(r=>r.id!==id);return {success:true};});}
  createFacility(input:unknown){return this.storage.mutate(data=>{const fields=this.validateFacility(input);if(this.facilitiesFrom(data).some(f=>f.name.toLowerCase()===fields.name!.toLowerCase()))throw new ConflictException('A facility with this name already exists.');const row={...fields,id:randomUUID(),createdAt:new Date().toISOString()};data.facilities.push(row);return row;});}
  private validateFacility(input:unknown):Row{if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid facility.');const raw=input as Record<string,unknown>,row:Row={};for(const [key,max] of [['name',100],['category',100],['description',1000]] as const){if(typeof raw[key]!=='string'||!raw[key].trim()||raw[key].length>max)throw new BadRequestException('Provide a valid facility '+key+'.');row[key]=raw[key].trim();}if(!['Available','Unavailable'].includes(String(raw.status)))throw new BadRequestException('Choose a valid availability status.');row.status=String(raw.status);if(typeof raw.reason!=='string'||raw.reason.length>500||(row.status==='Unavailable'&&!raw.reason.trim()))throw new BadRequestException('Provide a reason when unavailable.');row.reason=raw.reason.trim();if(raw.photo!==undefined){if(typeof raw.photo!=='string'||raw.photo.length>220000||(raw.photo!==''&&!/^data:image\/jpeg;base64,\/9j\/[A-Za-z0-9+/]*={0,2}$/.test(raw.photo)))throw new BadRequestException('Provide a valid JPEG facility photo under 165 KB.');row.photo=raw.photo;}return row;}
