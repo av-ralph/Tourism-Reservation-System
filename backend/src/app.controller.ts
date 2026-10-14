@@ -6,6 +6,11 @@ export class AppController {
  @Get() getHello(){return this.appService.getHello();}
  @Get('api/records') records(@Headers('x-user-session') token?:string){return this.appService.userRecords(token);}
  @Get('api/facilities') facilities(){return this.appService.listFacilities();}
+ @Header('Cache-Control','no-store')
+ @Get('api/organization') organization(){return this.appService.collegeOrganization();}
+ @Header('Cache-Control','no-store')
+ @Get('api/admin/organization') async adminOrganization(@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return this.appService.collegeOrganization();}
+ @Patch('api/admin/organization') async saveOrganization(@Body() body:unknown,@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return this.appService.saveCollegeOrganization(body);}
  @Get('api/facilities/:id/photo')
  @Header('Cache-Control','public, max-age=86400, s-maxage=86400')
  photo(@Param('id') id:string){return this.appService.facilityPhoto(id).then(bytes=>new StreamableFile(bytes,{type:'image/jpeg',length:bytes.length}));}

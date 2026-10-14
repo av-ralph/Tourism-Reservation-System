@@ -15,6 +15,34 @@ export class AppService {
  private facilitiesFrom(data:Store){return [...facilityCatalog.map(f=>({...f,...data.facilities.find(row=>row.id===f.id)})),...data.facilities.filter(row=>!facilityCatalog.some(f=>f.id===row.id))].filter(f=>(f as Row).deleted!=='true');}
  async listFacilities(){return this.facilitiesFrom(await this.storage.read()).map(f=>{const row=f as Row;const {photo,...details}=row;return {...details,photo:photo?`/api/facilities/${encodeURIComponent(row.id!)}/photo?v=${createHash('sha256').update(photo).digest('hex').slice(0,16)}`:''};});}
  async facilityPhoto(id:string){const facility=this.facilitiesFrom(await this.storage.read()).find(f=>f.id===id) as Row|undefined;if(!facility?.photo)throw new NotFoundException('Facility photo not found.');return Buffer.from(facility.photo.split(',')[1]!,'base64');}
+ async collegeOrganization(){const row=(await this.storage.read()).organization.find(item=>item.id==='college-organization');return {groups:row?JSON.parse(row.content!):null};}
+ async saveCollegeOrganization(input:unknown){
+  if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid college organization.');
+  const groups=(input as Record<string,unknown>).groups;
+  if(!Array.isArray(groups)||groups.length<1||groups.length>20)throw new BadRequestException('Add between 1 and 20 organization groups.');
+  let people=0;
+  const titles=new Set<string>();
+  const cleaned=groups.map(group=>{
+   if(!group||typeof group!=='object'||Array.isArray(group))throw new BadRequestException('Invalid organization group.');
+   const raw=group as Record<string,unknown>,title=raw.title;
+   if(typeof title!=='string'||!title.trim()||title.trim().length>120)throw new BadRequestException('Enter a group name of up to 120 characters.');
+   if(titles.has(title.trim().toLowerCase()))throw new BadRequestException('Organization group names must be unique.');
+   titles.add(title.trim().toLowerCase());
+   if(!Array.isArray(raw.items)||raw.items.length<1||raw.items.length>30)throw new BadRequestException('Each group needs between 1 and 30 people.');
+   people+=raw.items.length;
+   const items=raw.items.map(item=>{
+    if(!item||typeof item!=='object'||Array.isArray(item))throw new BadRequestException('Invalid organization person.');
+    const person=item as Record<string,unknown>,name=person.name,photo=person.photo;
+    if(typeof name!=='string'||!name.trim()||name.trim().length>160)throw new BadRequestException('Enter each person’s name and role, up to 160 characters.');
+    if(typeof photo!=='string'||photo.length>30000||(photo!==''&&!/^data:image\/jpeg;base64,\/9j\/[A-Za-z0-9+/]*={0,2}$/.test(photo)))throw new BadRequestException('Choose a valid JPEG portrait under 22 KB.');
+    return {name:name.trim(),photo};
+   });
+   return {title:title.trim(),items};
+  });
+  if(people>150||JSON.stringify(cleaned).length>850000)throw new BadRequestException('The organization list is too large.');
+  await this.storage.mutate(data=>{const old=data.organization.find(row=>row.id==='college-organization');data.organization=[{id:'college-organization',content:JSON.stringify(cleaned),createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()}];});
+  return {groups:cleaned};
+ }
 
  updateFacility(id:string,input:unknown){if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid facility.');return this.storage.mutate(data=>{const original=this.facilitiesFrom(data).find(f=>f.id===id);if(!original)throw new NotFoundException('Facility not found.');const fields=this.validateFacility({...original,...(input&&typeof input==='object'?input:{})});if(this.facilitiesFrom(data).some(f=>f.id!==id&&f.name.toLowerCase()===fields.name!.toLowerCase()))throw new ConflictException('A facility with this name already exists.');if(fields.name!==original.name&&[...data.reservations,...data.reports,...data.utilization].some(r=>r.facility===original.name))throw new ConflictException('Facilities with existing records cannot be renamed.');const updated={...original,...fields,updatedAt:new Date().toISOString()};data.facilities=data.facilities.filter(f=>f.id!==id);data.facilities.push(updated);return updated;});}
  private adminKey(): string {
