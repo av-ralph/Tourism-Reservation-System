@@ -11,9 +11,12 @@ export class AppService {
  private file=resolve(process.env.HM_DATA_FILE||'data/records.json');
  constructor(private readonly storage:RecordStore = new RecordStore()){}
  getHello(){return 'HM Laboratory reservation service';}
- async records(){const data=await this.storage.read();return {reservations:data.reservations,reports:data.reports,utilization:data.utilization,facilities:this.facilitiesFrom(data)};}
+ private reservationStatus(row:Row){return row.status==='Awaiting signature'?(row.instructorDecision==='Approved'?'Awaiting admin':row.instructorDecision==='Declined'?'Rejected':'Awaiting instructor'):row.status;}
+ private publicReservation(row:Row):Row{return {...row,status:this.reservationStatus(row)};}
+ async records(){const data=await this.storage.read();return {reservations:data.reservations.map(row=>this.publicReservation(row)),reports:data.reports,utilization:data.utilization,facilities:this.facilitiesFrom(data)};}
  private facilitiesFrom(data:Store){return [...facilityCatalog.map(f=>({...f,...data.facilities.find(row=>row.id===f.id)})),...data.facilities.filter(row=>!facilityCatalog.some(f=>f.id===row.id))].filter(f=>(f as Row).deleted!=='true');}
  async listFacilities(){return this.facilitiesFrom(await this.storage.read()).map(f=>{const row=f as Row;const {photo,...details}=row;return {...details,photo:photo?`/api/facilities/${encodeURIComponent(row.id!)}/photo?v=${createHash('sha256').update(photo).digest('hex').slice(0,16)}`:''};});}
+ async listInstructors(){return (await this.storage.read()).adminKeys.filter(row=>row.role==='instructor').map(row=>({id:row.id,name:row.name})).sort((a,b)=>a.name!.localeCompare(b.name!));}
  async facilityPhoto(id:string){const facility=this.facilitiesFrom(await this.storage.read()).find(f=>f.id===id) as Row|undefined;if(!facility?.photo)throw new NotFoundException('Facility photo not found.');return Buffer.from(facility.photo.split(',')[1]!,'base64');}
  async collegeOrganization(){const row=(await this.storage.read()).organization.find(item=>item.id==='college-organization');return {groups:row?JSON.parse(row.content!):null};}
  async saveCollegeOrganization(input:unknown){
@@ -96,7 +99,7 @@ export class AppService {
  async listStaffKeys(authorization?:string){const role=await this.authorizeAdmin(authorization);const keys=await this.listAdminKeys();return role==='superadmin'?keys:keys.filter(row=>row.role==='instructor');}
  async createStaffKey(input:unknown,authorization?:string){const role=await this.authorizeAdmin(authorization);if(role!=='superadmin'&&(!input||typeof input!=='object'||Array.isArray(input)||(input as Record<string,unknown>).role!=='instructor'))throw new ForbiddenException('Administrators can create instructor keys only.');return this.createAdminKey(input);}
  async revokeStaffKey(id:string,authorization?:string){const role=await this.authorizeAdmin(authorization);return this.revokeAdminKey(id,role);}
- async instructorRecords(authorization?:string){await this.authorizeInstructor(authorization);const identity=await this.adminIdentity(authorization),data=await this.storage.read();return {...identity,reservations:data.reservations.map(row=>{const reservation={...row};delete reservation.owner;return reservation;}),facilities:this.facilitiesFrom(data).map(facility=>{const details={...facility} as Row;delete details.photo;return details;})};}
+ async instructorRecords(authorization?:string){await this.authorizeInstructor(authorization);const identity=await this.adminIdentity(authorization),data=await this.storage.read(),hash=this.keyHash((authorization||'').replace(/^Bearer /,'')),instructor=data.adminKeys.find(row=>row.hash===hash);return {...identity,reservations:data.reservations.filter(row=>!row.instructorKeyId||row.instructorKeyId===instructor?.id).map(row=>{const reservation=this.publicReservation(row);delete reservation.owner;return reservation;}),facilities:this.facilitiesFrom(data).map(facility=>{const details={...facility} as Row;delete details.photo;return details;})};}
  async reviewAsInstructor(id:string,input:unknown,authorization?:string){
   await this.authorizeInstructor(authorization);
   if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid instructor review.');
@@ -107,9 +110,13 @@ export class AppService {
   return this.storage.mutate(data=>{
    const reservation=data.reservations.find(row=>row.id===id);
    if(!reservation)throw new NotFoundException('Reservation not found.');
-   if(reservation.status!=='Awaiting signature')throw new ConflictException('Only pending requests can be reviewed by an instructor.');
+   const hash=this.keyHash((authorization||'').replace(/^Bearer /,'')),instructor=data.adminKeys.find(row=>row.hash===hash);
+   if(reservation.instructorKeyId&&reservation.instructorKeyId!==instructor?.id)throw new ForbiddenException('This request belongs to another instructor.');
+   if(this.reservationStatus(reservation)!=='Awaiting instructor')throw new ConflictException('Only requests awaiting instructor review can be reviewed.');
    reservation.instructorDecision=String(decision);reservation.instructorNote=note.trim();reservation.instructorReviewedBy=identity.adminName;reservation.instructorReviewedAt=new Date().toISOString();
-   return {id:reservation.id,instructorDecision:reservation.instructorDecision,instructorNote:reservation.instructorNote,instructorReviewedBy:reservation.instructorReviewedBy,instructorReviewedAt:reservation.instructorReviewedAt};
+   reservation.status=decision==='Approved'?'Awaiting admin':'Rejected';
+   if(decision==='Declined')reservation.reviewNote=note.trim();
+   return {id:reservation.id,status:reservation.status,instructorDecision:reservation.instructorDecision,instructorNote:reservation.instructorNote,instructorReviewedBy:reservation.instructorReviewedBy,instructorReviewedAt:reservation.instructorReviewedAt};
   });
  }
  createAdminKey(input:unknown){
@@ -129,16 +136,17 @@ export class AppService {
  }
  revokeAdminKey(id:string,callerRole:'admin'|'superadmin'='superadmin'){return this.storage.mutate(data=>{const row=data.adminKeys.find(row=>row.id===id);if(!row)throw new NotFoundException('Staff key not found.');if(callerRole!=='superadmin'&&row.role!=='instructor')throw new ForbiddenException('Administrators can revoke instructor keys only.');data.adminProfiles=data.adminProfiles.filter(profile=>profile.id!=='profile-'+row.hash);data.adminKeys=data.adminKeys.filter(entry=>entry.id!==id);return {success:true};});}
  userToken(token?:string){if(!token||!/^[-a-zA-Z0-9]{36}$/.test(token))throw new UnauthorizedException('User session is missing.');return token;}
- async userRecords(token?:string){const owner=this.userToken(token),data=await this.storage.read();return {reservations:data.reservations.filter(r=>r.owner===owner),reports:data.reports.filter(r=>r.owner===owner),utilization:data.utilization.filter(r=>r.owner===owner)};}
- async schedule(){const data=await this.storage.read();return data.reservations.filter(r=>!['Cancelled','Rejected'].includes(r.status!)).map(({id,facility,date,start,end,status})=>({id,facility,date,start,end,status}));}
- createForUser(kind:'reservations'|'reports'|'utilization',input:unknown,token?:string){const owner=this.userToken(token);return this.create(kind,input,owner);}
- cancelForUser(id:string,token?:string){const owner=this.userToken(token);return this.storage.mutate(data=>{const r=data.reservations.find(r=>r.id===id);if(!r)throw new NotFoundException('Reservation not found.');if(r.owner!==owner)throw new ForbiddenException('You can only cancel your own reservations.');if(['Rejected','Cancelled'].includes(r.status!))throw new BadRequestException('This request is already closed.');r.status='Cancelled';return {success:true};});}
+ async userRecords(token?:string){const owner=this.userToken(token),data=await this.storage.read();return {reservations:data.reservations.filter(r=>r.owner===owner).map(row=>this.publicReservation(row)),reports:data.reports.filter(r=>r.owner===owner),utilization:data.utilization.filter(r=>r.owner===owner)};}
+ async schedule(){const data=await this.storage.read();return data.reservations.filter(row=>!['Cancelled','Rejected'].includes(this.reservationStatus(row)!)).map(row=>({id:row.id,facility:row.facility,date:row.date,start:row.start,end:row.end,status:this.reservationStatus(row)}));}
+ createForUser(kind:'reservations'|'reports'|'utilization',input:unknown,token?:string){const owner=this.userToken(token);return this.create(kind,input,owner,kind==='reservations');}
+ cancelForUser(id:string,token?:string){const owner=this.userToken(token);return this.storage.mutate(data=>{const r=data.reservations.find(r=>r.id===id);if(!r)throw new NotFoundException('Reservation not found.');if(r.owner!==owner)throw new ForbiddenException('You can only cancel your own reservations.');if(['Rejected','Cancelled'].includes(this.reservationStatus(r)!))throw new BadRequestException('This request is already closed.');r.status='Cancelled';return {success:true};});}
 
  reviewReservation(id:string,input:unknown){return this.storage.mutate(data=>{
   if(!input||typeof input!=='object')throw new BadRequestException('Invalid review.');
   const {action,note,signatureConfirmed}=input as Record<string,unknown>;
   const r=data.reservations.find(r=>r.id===id);if(!r)throw new NotFoundException('Reservation not found.');
-  if(!['Awaiting signature','Approved','Reserved'].includes(r.status!)||(action!=='Cancelled'&&r.status!=='Awaiting signature'))throw new BadRequestException('Only pending requests can be reviewed.');
+  const stage=this.reservationStatus(r);
+  if(!['Awaiting instructor','Awaiting admin','Approved','Reserved'].includes(stage!)||(action!=='Cancelled'&&stage!=='Awaiting admin'))throw new BadRequestException('Only requests endorsed by an instructor can receive a final admin decision.');
   if(!['Approved','Rejected','Cancelled'].includes(String(action)))throw new BadRequestException('Invalid decision.');
   if(typeof note!=='string'||note.length>1000||(['Rejected','Cancelled'].includes(String(action))&&!note.trim()))throw new BadRequestException('Provide a rejection reason or a valid review note.');
   if(action==='Approved'&&this.facilitiesFrom(data).find(f=>f.name===r.facility)?.status==='Unavailable')throw new ConflictException('This facility is currently unavailable.');
@@ -149,7 +157,7 @@ export class AppService {
  });}
  resolveReport(id:string,input:unknown){return this.storage.mutate(data=>{const r=data.reports.find(r=>r.id===id);if(!r)throw new NotFoundException('Report not found.');const note=(input as {note?:unknown})?.note;if(typeof note!=='string'||!note.trim()||note.length>1000)throw new BadRequestException('Enter resolution details.');if(r.status==='Resolved')throw new BadRequestException('Report is already resolved.');const updated={...r,status:'Resolved',resolution:note.trim(),resolvedAt:new Date().toISOString()};data.reports=data.reports.map(x=>x.id===id?updated:x);return updated;});}
 
- private validateRecord(kind:'reservations'|'reports'|'utilization',input:unknown,data:Store,excludeId?:string):Row{
+ private validateRecord(kind:'reservations'|'reports'|'utilization',input:unknown,data:Store,excludeId?:string,requireInstructor=false):Row{
   if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid request.');
   const raw=input as Record<string,unknown>,r:Row={};
   const closedEdit=excludeId&&data.reservations.some(x=>x.id===excludeId&&['Cancelled','Rejected'].includes(x.status!));
@@ -161,6 +169,11 @@ export class AppService {
    if(typeof raw.email!=='string'||raw.email.trim().length>254||! /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw.email.trim()))throw new BadRequestException('Please enter a valid email address.');
    r.email=raw.email.trim();
    if(kind==='reservations'){if(raw.termsAccepted!==true)throw new BadRequestException('Please agree to the Terms and Conditions before booking.');r.termsAccepted='true';r.termsAcceptedAt=new Date().toISOString();r.termsVersion='hm-laboratory-2026-10-09';}
+  }
+  if(kind==='reservations'){
+   const selected=data.adminKeys.find(row=>row.role==='instructor'&&row.name!.toLowerCase()===r.instructor!.toLowerCase());
+   if(requireInstructor&&!selected)throw new BadRequestException('Choose a listed instructor before sending this request.');
+   r.instructorKeyId=selected?.id||'';
   }
   if(!this.facilitiesFrom(data).some(f=>f.name===r.facility))throw new BadRequestException('Select a listed facility.');
   if(kind==='reservations'&&!closedEdit&&this.facilitiesFrom(data).find(f=>f.name===r.facility)?.status==='Unavailable')throw new ConflictException('This facility is currently unavailable. Please choose another space.');
@@ -175,19 +188,19 @@ export class AppService {
    if(kind==='reservations'){
     const now=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Manila',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());
     if(r.date===today&&r.start!<=now)throw new BadRequestException('Choose a future start time.');
-    if(!closedEdit&&data.reservations.some(x=>x.id!==excludeId&&!['Cancelled','Rejected'].includes(x.status!)&&x.facility===r.facility&&x.date===r.date&&x.start!<r.end!&&x.end!>r.start!))throw new ConflictException('This facility is already reserved during that time. Choose another time.');
+    if(!closedEdit&&data.reservations.some(x=>x.id!==excludeId&&!['Cancelled','Rejected'].includes(this.reservationStatus(x)!)&&x.facility===r.facility&&x.date===r.date&&x.start!<r.end!&&x.end!>r.start!))throw new ConflictException('This facility is already reserved during that time. Choose another time.');
    }
   }
   if(kind==='reports'&&!['Damage','Loss'].includes(r.type!))throw new BadRequestException('Invalid report type.');
   if(kind==='utilization'&&(!/^\d+$/.test(r.attendees!)||Number(r.attendees)<1||Number(r.attendees)>500))throw new BadRequestException('Participants must be between 1 and 500.');
   return r;
  }
- create(kind:'reservations'|'reports'|'utilization',input:unknown,owner?:string){return this.storage.mutate(data=>{
-  const r=this.validateRecord(kind,input,data);
-  r.id=randomUUID();r.createdAt=new Date().toISOString();if(owner)r.owner=owner;if(kind==='reservations')r.status='Awaiting signature';if(kind==='reports')r.status='Open';data[kind].push(r);return r;
+ create(kind:'reservations'|'reports'|'utilization',input:unknown,owner?:string,requireInstructor=false){return this.storage.mutate(data=>{
+  const r=this.validateRecord(kind,input,data,undefined,requireInstructor);
+  r.id=randomUUID();r.createdAt=new Date().toISOString();if(owner)r.owner=owner;if(kind==='reservations')r.status='Awaiting instructor';if(kind==='reports')r.status='Open';data[kind].push(r);return r;
  });}
  private recordKind(kind:string):'reservations'|'reports'|'utilization'{if(!['reservations','reports','utilization'].includes(kind))throw new BadRequestException('Invalid record type.');return kind as 'reservations'|'reports'|'utilization';}
- adminCreate(kind:string,input:unknown){return this.create(this.recordKind(kind),input);}
+ adminCreate(kind:string,input:unknown){const type=this.recordKind(kind);return this.create(type,input,undefined,type==='reservations');}
  adminUpdate(kind:string,id:string,input:unknown){const type=this.recordKind(kind);return this.storage.mutate(data=>{const old=data[type].find(r=>r.id===id);if(!old)throw new NotFoundException('Record not found.');if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid record.');const r=this.validateRecord(type,{...old,...input as object,termsAccepted:old.termsAccepted==='true'},data,id);const updated:Row={...old,...r,updatedAt:new Date().toISOString()};if(type==='reservations'){updated.termsAcceptedAt=old.termsAcceptedAt!;updated.termsVersion=old.termsVersion!;}data[type]=data[type].map(row=>row.id===id?updated:row);return updated;});}
  adminDelete(kind:string,id:string){const type=this.recordKind(kind);return this.storage.mutate(data=>{if(!data[type].some(r=>r.id===id))throw new NotFoundException('Record not found.');data[type]=data[type].filter(r=>r.id!==id);return {success:true};});}
  createFacility(input:unknown){return this.storage.mutate(data=>{const fields=this.validateFacility(input);if(this.facilitiesFrom(data).some(f=>f.name.toLowerCase()===fields.name!.toLowerCase()))throw new ConflictException('A facility with this name already exists.');const row={...fields,id:randomUUID(),createdAt:new Date().toISOString()};data.facilities.push(row);return row;});}

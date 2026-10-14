@@ -64,21 +64,51 @@ describe('reservations',()=>{
    await service.createAdminKey({name:'Faculty A',key:'faculty-access-key-123',role:'instructor'});
    const key='Bearer faculty-access-key-123',reservation=await service.create('reservations',booking);
    expect((await service.instructorRecords(key)).reservations).toHaveLength(1);
+   expect((await service.records()).reservations[0]?.status).toBe('Awaiting instructor');
    await expect(service.authorizeInstructor('Bearer test-super-key')).rejects.toThrow('instructor access key');
    await expect(service.authorizeAdmin(key)).rejects.toThrow('Instructor keys cannot access');
    await expect(service.reviewAsInstructor(reservation.id!,{decision:'Declined',note:''},key)).rejects.toThrow('Explain why');
    await expect(service.reviewReservation(reservation.id!,{action:'Approved',note:'',signatureConfirmed:true})).rejects.toThrow('instructor');
    await service.reviewAsInstructor(reservation.id!,{decision:'Approved',note:'Suitable activity'},key);
-   expect((await service.records()).reservations[0]?.status).toBe('Awaiting signature');
+   expect((await service.records()).reservations[0]?.status).toBe('Awaiting admin');
    expect((await service.reviewReservation(reservation.id!,{action:'Approved',note:'',signatureConfirmed:true})).status).toBe('Approved');
-   await expect(service.reviewAsInstructor(reservation.id!,{decision:'Declined',note:'Reason'},key)).rejects.toThrow('pending');
+   await expect(service.reviewAsInstructor(reservation.id!,{decision:'Declined',note:'Reason'},key)).rejects.toThrow('awaiting instructor');
+  }finally{delete process.env.HM_ADMIN_KEY;}
+ });
+ it('routes public requests to their selected instructor before admin review',async()=>{
+  process.env.HM_ADMIN_KEY='test-super-key';
+  try{
+   const first=await service.createAdminKey({name:'Instructor One',key:'instructor-one-key-123',role:'instructor'});
+   await service.createAdminKey({name:'Instructor Two',key:'instructor-two-key-123',role:'instructor'});
+   const owner='12345678-1234-1234-1234-123456789012';
+   await expect(service.createForUser('reservations',{...booking,instructor:'Unknown Instructor'},owner)).rejects.toThrow('listed instructor');
+   const row=await service.createForUser('reservations',{...booking,instructor:'Instructor One'},owner);
+   expect(row.instructorKeyId).toBe(first.id);
+   expect((await service.instructorRecords('Bearer instructor-one-key-123')).reservations).toHaveLength(1);
+   expect((await service.instructorRecords('Bearer instructor-two-key-123')).reservations).toHaveLength(0);
+   await expect(service.reviewAsInstructor(row.id!,{decision:'Approved',note:''},'Bearer instructor-two-key-123')).rejects.toThrow('another instructor');
+   await expect(service.reviewReservation(row.id!,{action:'Rejected',note:'Too early'})).rejects.toThrow('instructor');
+   await service.reviewAsInstructor(row.id!,{decision:'Approved',note:''},'Bearer instructor-one-key-123');
+   expect((await service.userRecords(owner)).reservations[0]?.status).toBe('Awaiting admin');
+   expect((await service.reviewReservation(row.id!,{action:'Approved',note:'',signatureConfirmed:true})).status).toBe('Approved');
+  }finally{delete process.env.HM_ADMIN_KEY;}
+ });
+ it('ends the flow when an instructor declines a request',async()=>{
+  process.env.HM_ADMIN_KEY='test-super-key';
+  try{
+   await service.createAdminKey({name:'Instructor One',key:'instructor-one-key-123',role:'instructor'});
+   const row=await service.create('reservations',{...booking,instructor:'Instructor One'});
+   await service.reviewAsInstructor(row.id!,{decision:'Declined',note:'The lab is unsuitable.'},'Bearer instructor-one-key-123');
+   expect((await service.records()).reservations[0]).toMatchObject({status:'Rejected',reviewNote:'The lab is unsuitable.'});
+   await expect(service.reviewReservation(row.id!,{action:'Approved',note:'',signatureConfirmed:true})).rejects.toThrow('instructor');
+   await expect(service.create('reservations',{...booking,instructor:'Instructor One'})).resolves.toBeDefined();
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
  it('blocks simultaneous overlapping bookings',async()=>{const results=await Promise.allSettled([service.create('reservations',booking),service.create('reservations',booking)]);expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(1);});
- it('requires email and terms but permits omitted ID',async()=>{await expect(service.create('reservations',{...booking,email:''})).rejects.toThrow('email address');await expect(service.create('reservations',{...booking,termsAccepted:false})).rejects.toThrow('Terms and Conditions');const {studentId,...withoutId}=booking;expect((await service.create('reservations',withoutId)).studentId).toBe('');});
+ it('requires email and terms but permits omitted ID',async()=>{await expect(service.create('reservations',{...booking,email:''})).rejects.toThrow('email address');await expect(service.create('reservations',{...booking,termsAccepted:false})).rejects.toThrow('Terms and Conditions');const withoutId={...booking};delete (withoutId as Partial<typeof booking>).studentId;expect((await service.create('reservations',withoutId)).studentId).toBe('');});
  it('releases cancelled times and permits adjacent sessions',async()=>{const row=await service.create('reservations',booking);await service.create('reservations',{...booking,start:'10:00',end:'11:00'});await service.cancel(row.id!);await expect(service.create('reservations',booking)).resolves.toBeDefined();});
- it('admin CRUD preserves ownership and rejects conflicting edits',async()=>{const first=await service.create('reservations',booking,'owner');const second=await service.adminCreate('reservations',{...booking,start:'10:00',end:'11:00'});await expect(service.adminUpdate('reservations',second.id!,{start:'09:30'})).rejects.toThrow('already reserved');const edited=await service.adminUpdate('reservations',first.id!,{purpose:'Updated practice',owner:'attacker',status:'Approved'});expect(edited.owner).toBe('owner');expect(edited.status).toBe('Awaiting signature');expect(edited.purpose).toBe('Updated practice');await service.adminDelete('reservations',first.id!);expect((await service.records()).reservations).toHaveLength(1);await expect(service.adminDelete('reservations','missing')).rejects.toThrow('not found');});
- it('supports facility CRUD and prevents deleting referenced facilities',async()=>{const facility=await service.createFacility({name:'Practice Room',category:'Events',description:'Practice space',status:'Available',reason:''});await service.adminCreate('reservations',{...booking,facility:facility.name});await expect(service.deleteFacility(facility.id!)).rejects.toThrow('existing records');await expect(service.createFacility({name:'practice room',category:'Events',description:'Duplicate',status:'Available',reason:''})).rejects.toThrow('already exists');const empty=await service.createFacility({name:'Empty Room',category:'Events',description:'Space',status:'Available',reason:''});await service.deleteFacility(empty.id!);expect((await service.listFacilities()).some(f=>f.id===empty.id)).toBe(false);});
+ it('admin CRUD preserves ownership and rejects conflicting edits',async()=>{await service.createAdminKey({name:'Instructor',key:'instructor-test-key-123',role:'instructor'});const first=await service.create('reservations',booking,'owner');const second=await service.adminCreate('reservations',{...booking,start:'10:00',end:'11:00'});await expect(service.adminUpdate('reservations',second.id!,{start:'09:30'})).rejects.toThrow('already reserved');const edited=await service.adminUpdate('reservations',first.id!,{purpose:'Updated practice',owner:'attacker',status:'Approved'});expect(edited.owner).toBe('owner');expect(edited.status).toBe('Awaiting instructor');expect(edited.purpose).toBe('Updated practice');await service.adminDelete('reservations',first.id!);expect((await service.records()).reservations).toHaveLength(1);await expect(service.adminDelete('reservations','missing')).rejects.toThrow('not found');});
+ it('supports facility CRUD and prevents deleting referenced facilities',async()=>{await service.createAdminKey({name:'Instructor',key:'instructor-test-key-123',role:'instructor'});const facility=await service.createFacility({name:'Practice Room',category:'Events',description:'Practice space',status:'Available',reason:''});await service.adminCreate('reservations',{...booking,facility:facility.name});await expect(service.deleteFacility(facility.id!)).rejects.toThrow('existing records');await expect(service.createFacility({name:'practice room',category:'Events',description:'Duplicate',status:'Available',reason:''})).rejects.toThrow('already exists');const empty=await service.createFacility({name:'Empty Room',category:'Events',description:'Space',status:'Available',reason:''});await service.deleteFacility(empty.id!);expect((await service.listFacilities()).some(f=>f.id===empty.id)).toBe(false);});
  it('admin report and utilization edits validate input',async()=>{const report=await service.adminCreate('reports',{...booking,date:'2020-01-01',type:'Damage',details:'Broken tray'});await expect(service.adminUpdate('reports',report.id!,{email:'invalid'})).rejects.toThrow('email');await service.adminUpdate('reports',report.id!,{details:'Broken plate'});await service.adminDelete('reports',report.id!);const visit=await service.adminCreate('utilization',{...booking,date:'2020-01-01',attendees:'10'});await expect(service.adminUpdate('utilization',visit.id!,{attendees:'0'})).rejects.toThrow('Participants');await service.adminDelete('utilization',visit.id!);expect((await service.records()).utilization).toHaveLength(0);});
  it('validates facility photos and permits removal',async()=>{const base={name:'Photo Room',category:'Events',description:'A room',status:'Available',reason:''};await expect(service.createFacility({...base,photo:'data:image/svg+xml;base64,unsafe'})).rejects.toThrow('valid JPEG');await expect(service.createFacility({...base,photo:'x'.repeat(220001)})).rejects.toThrow('valid JPEG');const row=await service.createFacility({...base,photo:''});expect((await service.updateFacility(row.id!,{description:'New description'})).photo).toBe('');});
  it('returns lightweight versioned photo URLs and image bytes',async()=>{const photo='data:image/jpeg;base64,/9j/AA==';const row=await service.createFacility({name:'Cached Photo Room',category:'Events',description:'Room',status:'Available',reason:'',photo});const before=(await service.listFacilities()).find(f=>f.id===row.id)!;expect(before.photo).toMatch(/^\/api\/facilities\/.+\/photo\?v=/);expect(JSON.stringify(before)).not.toContain('base64');expect(await service.facilityPhoto(row.id!)).toEqual(Buffer.from('/9j/AA==','base64'));await service.updateFacility(row.id!,{photo:'data:image/jpeg;base64,/9j/AQ=='});const after=(await service.listFacilities()).find(f=>f.id===row.id)!;expect(after.photo).not.toBe(before.photo);await service.updateFacility(row.id!,{photo:''});await expect(service.facilityPhoto(row.id!)).rejects.toThrow('not found');});

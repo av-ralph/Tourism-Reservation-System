@@ -1,0 +1,4 @@
+.status-Awaiting-instructor,.status-Awaiting-admin{background:#fff2d9;color:#765018}
+.status-Awaiting-admin{background:#eaf1fc;color:#174a85}
+.student-site .status-Awaiting-instructor,.student-site .status-Awaiting-admin{border:1px solid #dfc394}
+.student-site .status-Awaiting-admin{border-color:#adc8e9}

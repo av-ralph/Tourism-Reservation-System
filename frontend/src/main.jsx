@@ -11,6 +11,7 @@ import './CollegeBanner.css'
 import './DesignPolish.css'
 import './DeviceLayouts.css'
 import './StudentMenu.css'
+import './ApprovalFlow.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
