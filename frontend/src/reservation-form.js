@@ -1,4 +1,5 @@
 import { unzipSync, zipSync, strFromU8, strToU8 } from 'fflate'
+import {drawSignature,SIGNATURE_WIDTH,SIGNATURE_HEIGHT} from './signature-utils'
 const escapeXml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[char]))
 const dateLabel = value => value ? new Date(value.length === 10 ? value + 'T00:00:00+08:00' : value).toLocaleDateString('en-PH', {timeZone:'Asia/Manila',year:'numeric',month:'short',day:'numeric'}) : ''
 export function reservationInventory(equipment) {
@@ -41,9 +42,8 @@ function renderSignature(value){
   let strokes
   try{strokes=JSON.parse(value)}catch{return null}
   if(!Array.isArray(strokes))return null
-  const canvas=document.createElement('canvas');canvas.width=600;canvas.height=180
-  const context=canvas.getContext('2d');context.strokeStyle='#142e57';context.lineWidth=3.5;context.lineCap='round';context.lineJoin='round'
-  for(const stroke of strokes){if(!Array.isArray(stroke)||stroke.length<2)continue;context.beginPath();stroke.forEach(([x,y],index)=>index?context.lineTo(x,y):context.moveTo(x,y));context.stroke()}
+  const canvas=document.createElement('canvas');canvas.width=SIGNATURE_WIDTH;canvas.height=SIGNATURE_HEIGHT
+  drawSignature(canvas.getContext('2d'),strokes)
   const base64=canvas.toDataURL('image/png').split(',')[1]
   return Uint8Array.from(atob(base64),char=>char.charCodeAt(0))
 }
