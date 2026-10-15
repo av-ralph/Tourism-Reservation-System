@@ -12,6 +12,7 @@ import './DesignPolish.css'
 import './DeviceLayouts.css'
 import './StudentMenu.css'
 import './ApprovalFlow.css'
+import './StaffHeader.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

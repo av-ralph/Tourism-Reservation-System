@@ -1,0 +1,115 @@
+/* Carry the college masthead colors into both staff workspaces. */
+.admin-shell .sidebar {
+  background: #224f7c;
+  border-right-color: #173e68;
+  color: #fff;
+}
+.admin-shell .sidebar .brand {
+  border-bottom-color: #ffffff36;
+}
+.admin-shell .sidebar .brand span,
+.admin-shell .sidebar .brand small,
+.admin-shell .portal-label {
+  color: #fff !important;
+}
+.admin-shell .sidebar .brand small,
+.admin-shell .portal-label {
+  opacity: .82;
+}
+.admin-shell .sidebar nav button,
+.admin-shell .sidebar nav .admin-nav-label,
+.admin-shell .sidebar nav .admin-nav-icon {
+  color: #f2f6fb;
+}
+.admin-shell .sidebar nav button:hover {
+  background: #ffffff1c;
+  color: #fff;
+}
+.admin-shell .sidebar nav button.selected {
+  background: #fff;
+  border-color: #fff;
+  box-shadow: inset 4px 0 #e76626;
+  color: #173e68;
+}
+.admin-shell .sidebar nav button.selected .admin-nav-icon,
+.admin-shell .sidebar nav button.selected .admin-nav-label {
+  color: #173e68;
+}
+.admin-shell .sidebar nav em {
+  background: #ffffff2b;
+  color: #fff;
+}
+.admin-shell .sidebar nav button.selected em {
+  background: #fce4d7;
+  color: #9d3d15;
+}
+.admin-shell .admin-sidebar-bottom {
+  border-top-color: #ffffff36;
+}
+.admin-shell .admin-staff-card {
+  background: #ffffff17;
+  color: #fff !important;
+}
+.admin-shell .admin-staff-card small {
+  color: #e3ecf6 !important;
+}
+.admin-shell .admin-staff-card > span {
+  background: #fff;
+  color: #224f7c;
+}
+.admin-shell .admin-sidebar-bottom > a {
+  color: #f2f6fb;
+}
+.admin-shell .admin-sidebar-bottom > button {
+  background: #e76626;
+  border-color: #e76626;
+  color: #fff;
+}
+.admin-shell .admin-sidebar-bottom > button:hover {
+  background: #d95718;
+  border-color: #d95718;
+  color: #fff;
+}
+.admin-shell .workspace > header {
+  background: #224f7c;
+  border-bottom: 5px solid #e76626;
+  color: #fff;
+  box-shadow: 0 4px 14px #06266b12;
+  backdrop-filter: none;
+}
+.admin-shell .workspace > header,
+.admin-shell .workspace > header strong,
+.admin-shell .workspace > header .admin-date,
+.admin-shell .workspace > header .header-right {
+  color: #fff;
+}
+.admin-shell .workspace > header > div:first-child > span {
+  color: #cbd9e9;
+}
+.admin-shell .workspace > header .admin-date {
+  border-right-color: #ffffff45;
+}
+.admin-shell .workspace > header .avatar {
+  background: #ffffff1f;
+  border-color: #ffffff70;
+  color: #fff;
+}
+.admin-shell .admin-mobile-menu {
+  background: #ffffff18;
+  border-color: #ffffff8a;
+  color: #fff;
+}
+.admin-shell .sidebar :is(a,button):focus-visible,
+.admin-shell .workspace > header :is(a,button):focus-visible {
+  outline: 3px solid #ffd2b6;
+  outline-offset: 3px;
+}
+
+@media (max-width: 850px) {
+  .admin-shell .sidebar {
+    border-bottom: 1px solid #ffffff36;
+  }
+  .admin-shell .sidebar nav.is-open {
+    border-top: 1px solid #ffffff36;
+  }
+}
