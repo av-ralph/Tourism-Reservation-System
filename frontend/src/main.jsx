@@ -15,6 +15,7 @@ import './ApprovalFlow.css'
 import './StaffHeader.css'
 import './StaffExperience.css'
 import './LogoBranding.css'
+import './ModalExperience.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
