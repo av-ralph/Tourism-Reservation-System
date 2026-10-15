@@ -17,7 +17,7 @@ export function fillReservationForm(template, reservation, signatureImage) {
   const row = xml.match(rowPattern)?.[0]
   if (!row) throw new Error('The reservation form template is unavailable.')
   const inventory = reservationInventory(reservation.equipment)
-  xml = xml.replace(rowPattern, () => Array.from({length:Math.max(22,inventory.length)}, (_,i) => row.replace('{{ITEM_QUANTITY}}',()=>escapeXml(inventory[i]?.quantity)).replace('{{ITEM_DESCRIPTION}}',()=>escapeXml(inventory[i]?.description))).join(''))
+  xml = xml.replace(rowPattern, () => Array.from({length:Math.max(12,inventory.length)}, (_,i) => row.replace('{{ITEM_QUANTITY}}',()=>escapeXml(inventory[i]?.quantity)).replace('{{ITEM_DESCRIPTION}}',()=>escapeXml(inventory[i]?.description))).join(''))
   const values = {
     FILED_DATE:dateLabel(reservation.createdAt), USAGE_DATE:dateLabel(reservation.date),
     SUBJECT:reservation.subject, USAGE_TIME:`${reservation.start} – ${reservation.end}`,
@@ -56,7 +56,7 @@ export async function downloadReservationForm(reservation) {
     }).catch(error=>{templatePromise=undefined;throw error})
     const bytes=fillReservationForm(await templatePromise,reservation,renderSignature(reservation.instructorSignature))
     const url=URL.createObjectURL(new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}))
-    const link=document.createElement('a');link.href=url;link.download=`HM-Reservation-${reservation.date}-${reservation.id}.docx`;link.click()
+    const link=document.createElement('a');link.href=url;link.download=`HM-Reservation-${reservation.date}-${reservation.id}.docx`;document.body.appendChild(link);link.click();link.remove()
     setTimeout(()=>URL.revokeObjectURL(url),30000)
-  } catch { throw new Error('Your booking is saved, but the form could not be downloaded. Try the Download filled form button again.') }
+  } catch { throw new Error('The filled form could not be downloaded. Please try again.') }
 }

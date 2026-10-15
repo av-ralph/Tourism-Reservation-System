@@ -9,7 +9,7 @@
 .instructor-request p { margin: 6px 0; color: #47566a; }
 .instructor-request small { display: block; margin-top: 6px; color: #47566a; overflow-wrap: anywhere; }
 .instructor-decision strong { display: block; color: #06266b; margin-bottom: 12px; }
-.instructor-decision button { min-height: 42px; }
+.instructor-decision button { min-height: 42px; display: block; width: 100%; margin-top: 10px; text-align: center; }
 .instructor-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 .instructor-filters button { border: 1px solid #bac4d1; background: #fff; color: #06266b; border-radius: 8px; min-height: 42px; padding: 10px 14px; }
 .instructor-filters button.active { border-color: #be6a3d; background: #fff0e5; font-weight: 700; }
