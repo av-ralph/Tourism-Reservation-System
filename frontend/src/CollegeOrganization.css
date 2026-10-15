@@ -1,6 +1,7 @@
 .college-organization .organization-people{list-style:none;margin:8px 0 4px;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .college-organization .organization-people li{display:flex;align-items:center;gap:12px;min-width:0;margin:0;padding:10px;border:1px solid #d6dfeb;border-radius:9px;background:#f8fafc;color:#253247;font-size:14px;line-height:1.45}
 .college-organization .organization-people li span:last-child{overflow-wrap:anywhere}
+.college-organization .organization-empty{margin:8px 0 4px;padding:14px 16px;border:1px solid #d6dfeb;border-radius:9px;background:#f8fafc;color:#405671;font-size:14px}
 .organization-avatar{display:grid;place-items:center;flex:none;width:48px;height:48px;border-radius:50%;border:1px solid #c7d4e4;object-fit:cover;background:#eaf0f7;color:#547095}
 .organization-avatar svg{width:25px;height:25px}
 .organization-editor fieldset{border:0;margin:0;padding:0;min-width:0}

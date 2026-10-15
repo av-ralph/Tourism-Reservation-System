@@ -5,5 +5,5 @@ function PersonAvatar({photo}){
 }
 
 export default function CollegeOrganization({groups}){
- return <section className="college-section college-organization"><h2>College organization</h2><p className="source-note">Meet the people who guide and support Cristal e-College.</p>{groups.map((group,index)=><details key={group.title+index}><summary>{group.title}</summary><ul className="organization-people">{group.items.map((person,personIndex)=><li key={person.name+personIndex}><PersonAvatar photo={person.photo}/><span>{person.name}</span></li>)}</ul></details>)}</section>
+ return <section className="college-section college-organization"><h2>College organization</h2><p className="source-note">Meet the people who guide and support Cristal e-College.</p>{groups.map((group,index)=><details key={group.title+index}><summary>{group.title}</summary>{group.items.length?<ul className="organization-people">{group.items.map((person,personIndex)=><li key={person.name+personIndex}><PersonAvatar photo={person.photo}/><span>{person.name}</span></li>)}</ul>:<p className="organization-empty">Details will be added by the college.</p>}</details>)}</section>
 }

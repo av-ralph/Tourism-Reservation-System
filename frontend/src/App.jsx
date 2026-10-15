@@ -1,7 +1,7 @@
 import { downloadReservationForm } from './reservation-form'
 import CollegeText from './CollegeText'
 import CollegeOrganization from './CollegeOrganization'
-import { defaultOrganization } from './organization-defaults'
+import { defaultOrganization, includeOrganizationSections } from './organization-defaults'
 import { useEffect, useState } from 'react'
 import './App.css'
 import './StudentSite.css'
@@ -27,7 +27,7 @@ function UserPortal(){
  const [loading,setLoading]=useState(API_CONFIGURED),[bookingView,setBookingView]=useState('All')
  const [schedule,setSchedule]=useState([]),[menuOpen,setMenuOpen]=useState(false),[scheduleFacility,setScheduleFacility]=useState('All spaces'),[scheduleDate,setScheduleDate]=useState('')
  const [organization,setOrganization]=useState(null),[page,setPage]=useState('Dashboard'),[category,setCategory]=useState('All facilities'),[search,setSearch]=useState(''),[data,setData]=useState({reservations:[],reports:[],utilization:[]}),[modal,setModal]=useState(null),[notice,setNotice]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false)
- useEffect(()=>{if(page!=='About CeC'||!API_CONFIGURED)return;let active=true;const loadOrganization=()=>api('organization').then(result=>{if(active)setOrganization(result.groups)}).catch(()=>{});loadOrganization();window.addEventListener('focus',loadOrganization);return()=>{active=false;window.removeEventListener('focus',loadOrganization)}},[page])
+ useEffect(()=>{if(page!=='About CeC'||!API_CONFIGURED)return;let active=true;const loadOrganization=()=>api('organization').then(result=>{if(active)setOrganization(result.groups?includeOrganizationSections(result.groups):null)}).catch(()=>{});loadOrganization();window.addEventListener('focus',loadOrganization);return()=>{active=false;window.removeEventListener('focus',loadOrganization)}},[page])
  useEffect(()=>{if(!API_CONFIGURED)return;api('instructors').then(setInstructors).catch(()=>{})},[])
  useEffect(()=>{if(!menuOpen)return;const closeOnEscape=e=>{if(e.key==='Escape'){setMenuOpen(false);document.querySelector('.student-site .mobile-menu')?.focus()}};const closeOutside=e=>{if(!e.target.closest('.student-site .student-header'))setMenuOpen(false)};document.addEventListener('keydown',closeOnEscape);document.addEventListener('pointerdown',closeOutside);return()=>{document.removeEventListener('keydown',closeOnEscape);document.removeEventListener('pointerdown',closeOutside)}},[menuOpen])
  async function refresh(){if(!API_CONFIGURED)return;setLoading(true);try{const [records,slots,spaces]=await Promise.all([api('records'),api('schedule'),api('facilities').then(spaces=>{setFacilityInfo(spaces);setFacilities(spaces.map(f=>[f.name,f.category,'',f.description]));return spaces})]);setData(records);setSchedule(slots);setFacilityInfo(spaces);setFacilities(spaces.map(f=>[f.name,f.category,'',f.description]));setError('')}catch{setError('Reservation service unavailable. Please check that the server is running.')}finally{setLoading(false)}}

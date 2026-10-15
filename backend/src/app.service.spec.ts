@@ -37,9 +37,12 @@ describe('reservations',()=>{
   const groups=[{title:'Laboratory team',items:[{name:'Example Person – Laboratory In-Charge',photo:''}]}];
   expect(await service.saveCollegeOrganization({groups})).toEqual({groups});
   expect(await new AppService().collegeOrganization()).toEqual({groups});
+  const withHeadings=[{title:'The Founders',items:[]},...groups,{title:'Faculty and Staff',items:[]}];
+  expect(await service.saveCollegeOrganization({groups:withHeadings})).toEqual({groups:withHeadings});
+  await expect(service.saveCollegeOrganization({groups:[{title:'Other group',items:[]}]})).rejects.toThrow('between 1 and 30 people');
   await expect(service.saveCollegeOrganization({groups:[{title:'',items:groups[0].items}]})).rejects.toThrow('group name');
   await expect(service.saveCollegeOrganization({groups:[{title:'Laboratory team',items:[{name:'Example Person',photo:'https://example.com/photo.jpg'}]}]})).rejects.toThrow('JPEG portrait');
-  expect(await new AppService().collegeOrganization()).toEqual({groups});
+  expect(await new AppService().collegeOrganization()).toEqual({groups:withHeadings});
  });
  it('lets administrators manage instructor keys without granting administrator key access',async()=>{
   process.env.HM_ADMIN_KEY='test-super-key';

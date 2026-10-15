@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { defaultOrganization } from './organization-defaults'
+import { defaultOrganization, emptyOrganizationSections, includeOrganizationSections } from './organization-defaults'
 import './CollegeOrganization.css'
 
 export default function AdminCollegeOrganization({request}){
  const [groups,setGroups]=useState(defaultOrganization),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[uploading,setUploading]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('')
- useEffect(()=>{let active=true;request('organization').then(result=>{if(active)setGroups(result.groups??defaultOrganization())}).catch(e=>{if(active)setError(e.message)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[request])
+ useEffect(()=>{let active=true;request('organization').then(result=>{if(active)setGroups(result.groups?includeOrganizationSections(result.groups):defaultOrganization())}).catch(e=>{if(active)setError(e.message)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[request])
  function changeGroup(index,value){setGroups(current=>current.map((group,i)=>i===index?{...group,title:value}:group));setNotice('')}
  function changePerson(groupIndex,personIndex,changes){setGroups(current=>current.map((group,i)=>i===groupIndex?{...group,items:group.items.map((person,j)=>j===personIndex?{...person,...changes}:person)}:group));setNotice('')}
  function addGroup(){if(groups.length>=20){setError('You can add up to 20 groups.');return}setGroups(current=>[...current,{title:'',items:[{name:'',photo:''}]}]);setNotice('')}
@@ -28,7 +28,7 @@ export default function AdminCollegeOrganization({request}){
  }
  async function save(event){
   event.preventDefault();setError('');setNotice('');
-  if(!groups.length||groups.some(group=>!group.title.trim()||!group.items.length||group.items.some(person=>!person.name.trim()))){setError('Every group needs a name and at least one person with a name and role.');return}
+  if(!groups.length||groups.some(group=>!group.title.trim()||(!group.items.length&&!emptyOrganizationSections.includes(group.title.trim()))||group.items.some(person=>!person.name.trim()))){setError('Every group needs a name. Add at least one person to each group except The Founders and Faculty and Staff.');return}
   setBusy(true);
   try{const result=await request('organization',{method:'PATCH',body:JSON.stringify({groups})});setGroups(result.groups);setNotice('College organization saved. The user page now shows these changes.')}
   catch(e){setError(e.message)}finally{setBusy(false)}

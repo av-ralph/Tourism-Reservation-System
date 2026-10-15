@@ -76,6 +76,10 @@
   ],
   "organization": [
     {
+      "title": "The Founders",
+      "items": []
+    },
+    {
       "title": "Board of Trustees",
       "items": [
         "Chairman- Victoriano B. Tirol, III, Ph.D.",
@@ -162,6 +166,10 @@
         "Melchora A. Bonao – Assistant Librarian",
         "John Jorge Cacho, CPA – Junior Accountant"
       ]
+    },
+    {
+      "title": "Faculty and Staff",
+      "items": []
     }
   ],
   "rules": [

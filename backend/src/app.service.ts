@@ -32,7 +32,8 @@ export class AppService {
    if(typeof title!=='string'||!title.trim()||title.trim().length>120)throw new BadRequestException('Enter a group name of up to 120 characters.');
    if(titles.has(title.trim().toLowerCase()))throw new BadRequestException('Organization group names must be unique.');
    titles.add(title.trim().toLowerCase());
-   if(!Array.isArray(raw.items)||raw.items.length<1||raw.items.length>30)throw new BadRequestException('Each group needs between 1 and 30 people.');
+   const mayBeEmpty=['The Founders','Faculty and Staff'].includes(title.trim());
+   if(!Array.isArray(raw.items)||(!mayBeEmpty&&raw.items.length<1)||raw.items.length>30)throw new BadRequestException('Each group needs between 1 and 30 people, except The Founders and Faculty and Staff.');
    people+=raw.items.length;
    const items=raw.items.map(item=>{
     if(!item||typeof item!=='object'||Array.isArray(item))throw new BadRequestException('Invalid organization person.');
