@@ -1,7 +1,15 @@
 import { unzipSync, zipSync, strFromU8, strToU8 } from 'fflate'
-import {drawSignature,SIGNATURE_WIDTH,SIGNATURE_HEIGHT} from './signature-utils'
-const escapeXml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[char]))
-const dateLabel = value => value ? new Date(value.length === 10 ? value + 'T00:00:00+08:00' : value).toLocaleDateString('en-PH', {timeZone:'Asia/Manila',year:'numeric',month:'short',day:'numeric'}) : ''
+import {drawSignature,signatureIsMeaningful,SIGNATURE_WIDTH,SIGNATURE_HEIGHT} from './signature-utils.js'
+// Strip characters that XML 1.0 cannot represent, including pasted control characters.
+const escapeXml = value => Array.from(String(value ?? '')).filter(char => {
+  const code=char.codePointAt(0)
+  return code===9||code===10||code===13||(code>=32&&code<=0xd7ff)||(code>=0xe000&&code<=0xfffd)||(code>=0x10000&&code<=0x10ffff)
+}).join('').replace(/[&<>"'{}]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;','{':'&#123;','}':'&#125;'}[char]))
+const dateLabel = value => {
+  if(!value)return ''
+  const date=new Date(value.length===10?value+'T00:00:00+08:00':value)
+  return Number.isNaN(date.getTime())?'':date.toLocaleDateString('en-PH',{timeZone:'Asia/Manila',year:'numeric',month:'short',day:'numeric'})
+}
 export function reservationInventory(equipment) {
   const lines = String(equipment || 'None').split(/\r?\n/).filter(line => line.trim())
   return lines.map(line => {
@@ -12,6 +20,7 @@ export function reservationInventory(equipment) {
 }
 export function fillReservationForm(template, reservation, signatureImage) {
   const files = unzipSync(template)
+  if(!files['word/document.xml'])throw new Error('The form template is not a valid Word document.')
   let xml = strFromU8(files['word/document.xml'])
   const rowPattern = /<w:tr\b[^>]*>(?:(?!<\/w:tr>)[\s\S])*?\{\{ITEM_QUANTITY\}\}(?:(?!<\/w:tr>)[\s\S])*?<\/w:tr>/
   const row = xml.match(rowPattern)?.[0]
@@ -20,28 +29,30 @@ export function fillReservationForm(template, reservation, signatureImage) {
   xml = xml.replace(rowPattern, () => Array.from({length:Math.max(12,inventory.length)}, (_,i) => row.replace('{{ITEM_QUANTITY}}',()=>escapeXml(inventory[i]?.quantity)).replace('{{ITEM_DESCRIPTION}}',()=>escapeXml(inventory[i]?.description))).join(''))
   const values = {
     FILED_DATE:dateLabel(reservation.createdAt), USAGE_DATE:dateLabel(reservation.date),
-    SUBJECT:reservation.subject, USAGE_TIME:`${reservation.start} – ${reservation.end}`,
-    PURPOSE:`${reservation.purpose}\nFacility: ${reservation.facility}`,
-    CONTACT_DETAILS:`Requested by: ${reservation.name} | Email: ${reservation.email}${reservation.studentId ? ' | ID: '+reservation.studentId : ''}`,
+    SUBJECT:reservation.subject, USAGE_TIME:[reservation.start,reservation.end].filter(Boolean).join(' – '),
+    PURPOSE:reservation.purpose, FACILITY:reservation.facility,
+    CONTACT_DETAILS:`Requested by: ${reservation.name||''}\nEmail: ${reservation.email||''}${reservation.studentId ? ' | ID: '+reservation.studentId : ''}`,
+    SIGNED_DATE:signatureImage?dateLabel(reservation.instructorReviewedAt):'',
   }
   for (const [key,value] of Object.entries(values)) xml=xml.replaceAll('{{'+key+'}}',()=>escapeXml(value).replace(/\r?\n/g,'</w:t><w:br/><w:t xml:space="preserve">'))
   let signatureRun=''
   if(signatureImage){
     const cx=1828800,cy=548640
-    signatureRun=`<w:r><w:br/><w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="999" name="Instructor signature"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="1" name="Instructor signature"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rIdInstructorSignature"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`
+    signatureRun=`<w:r><w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="999" name="Instructor signature"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="1" name="Instructor signature"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rIdInstructorSignature"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`
     const rels='word/_rels/document.xml.rels'
     files[rels]=strToU8(strFromU8(files[rels]).replace('</Relationships>','<Relationship Id="rIdInstructorSignature" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/instructor-signature.png"/></Relationships>'))
     files['word/media/instructor-signature.png']=signatureImage
   }
-  xml=xml.replaceAll('{{INSTRUCTOR}}',()=>escapeXml(reservation.instructor)+(signatureRun?`</w:t></w:r>${signatureRun}<w:r><w:t>`:''))
+  xml=xml.replaceAll('{{INSTRUCTOR}}',()=>escapeXml(signatureImage?(reservation.instructorReviewedBy||reservation.instructor):reservation.instructor))
+  xml=xml.replace(/<w:r\b[^>]*>(?:(?!<\/w:r>)[\s\S])*?\{\{SIGNATURE\}\}(?:(?!<\/w:r>)[\s\S])*?<\/w:r>/,()=>signatureRun||'<w:r><w:br/></w:r>')
   files['word/document.xml']=strToU8(xml)
   return zipSync(files)
 }
 function renderSignature(value){
   if(!value)return null
   let strokes
-  try{strokes=JSON.parse(value)}catch{return null}
-  if(!Array.isArray(strokes))return null
+  try{strokes=JSON.parse(value)}catch{throw new Error('The saved instructor signature cannot be read. Please contact the laboratory office.')}
+  if(!Array.isArray(strokes)||!strokes.every(stroke=>Array.isArray(stroke)&&stroke.every(point=>Array.isArray(point)&&point.length===2&&point.every(Number.isFinite)))||!signatureIsMeaningful(strokes))throw new Error('The saved instructor signature is invalid. Please contact the laboratory office.')
   const canvas=document.createElement('canvas');canvas.width=SIGNATURE_WIDTH;canvas.height=SIGNATURE_HEIGHT
   drawSignature(canvas.getContext('2d'),strokes)
   const base64=canvas.toDataURL('image/png').split(',')[1]
@@ -50,13 +61,16 @@ function renderSignature(value){
 let templatePromise
 export async function downloadReservationForm(reservation) {
   try {
-    templatePromise ||= fetch('/documents/reservation-template.docx').then(async response => {
+    templatePromise ||= fetch('/documents/reservation-template.docx?v=2').then(async response => {
       if (!response.ok) throw new Error('The form template could not be loaded.')
       return new Uint8Array(await response.arrayBuffer())
     }).catch(error=>{templatePromise=undefined;throw error})
     const bytes=fillReservationForm(await templatePromise,reservation,renderSignature(reservation.instructorSignature))
     const url=URL.createObjectURL(new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}))
-    const link=document.createElement('a');link.href=url;link.download=`HM-Reservation-${reservation.date}-${reservation.id}.docx`;document.body.appendChild(link);link.click();link.remove()
+    const link=document.createElement('a');link.href=url;link.download=`HM-Utilization-${reservation.date||'undated'}-${reservation.id||'form'}.docx`.replace(/[<>:"/\\|?*]/g,'-');document.body.appendChild(link);link.click();link.remove()
     setTimeout(()=>URL.revokeObjectURL(url),30000)
-  } catch { throw new Error('The filled form could not be downloaded. Please try again.') }
+  } catch (error) {
+    templatePromise=undefined
+    throw new Error(error.message?.startsWith('The saved instructor')?error.message:'The filled form could not be downloaded. Please try again.',{cause:error})
+  }
 }
