@@ -14,6 +14,7 @@ import './StudentMenu.css'
 import './ApprovalFlow.css'
 import './StaffHeader.css'
 import './StaffExperience.css'
+import './LogoBranding.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
