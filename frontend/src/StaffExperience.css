@@ -17,7 +17,10 @@
 
 .admin-shell .sidebar nav button {
   min-height: 48px;
+  gap: 8px;
+  padding-inline: 10px;
   margin-bottom: 0;
+  font-size: 13px;
   font-weight: 600;
 }
 
