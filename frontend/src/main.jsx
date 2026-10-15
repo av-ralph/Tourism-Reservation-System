@@ -13,6 +13,7 @@ import './DeviceLayouts.css'
 import './StudentMenu.css'
 import './ApprovalFlow.css'
 import './StaffHeader.css'
+import './StaffExperience.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

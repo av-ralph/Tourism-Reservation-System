@@ -1,0 +1,322 @@
+/* Shared finishing layer for the administrator and instructor workspaces. */
+.admin-shell {
+  background: #f3f6fa;
+}
+
+.admin-shell .sidebar .portal-label {
+  margin-top: 28px;
+  margin-bottom: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.admin-shell .sidebar nav {
+  gap: 4px;
+}
+
+.admin-shell .sidebar nav button {
+  min-height: 48px;
+  margin-bottom: 0;
+  font-weight: 600;
+}
+
+.admin-shell .sidebar nav button.selected {
+  box-shadow: 0 3px 8px #b94f1d1c;
+}
+
+.admin-shell .admin-sidebar-bottom {
+  gap: 12px;
+}
+
+.admin-shell .admin-staff-card {
+  box-shadow: none;
+}
+
+.admin-shell .workspace > header {
+  height: 76px;
+  padding-inline: clamp(22px, 2.8vw, 42px);
+}
+
+.admin-shell .workspace main {
+  max-width: 1500px;
+  padding: 38px clamp(22px, 2.8vw, 42px) 56px;
+}
+
+.admin-shell .page-heading {
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #d5deea;
+}
+
+.admin-shell .page-heading .eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #385675 !important;
+  font-size: 11px;
+  letter-spacing: 1.35px;
+}
+
+.admin-shell .page-heading .eyebrow::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: #e76626;
+}
+
+.admin-shell .page-heading h1 {
+  margin-bottom: 7px;
+  font-size: clamp(27px, 2.3vw, 34px);
+  letter-spacing: -.8px;
+}
+
+.admin-shell .page-heading p {
+  max-width: 720px;
+  margin-bottom: 0;
+  color: #415a77;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.admin-shell .admin-metrics {
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.admin-shell .metric {
+  min-width: 0;
+  min-height: 164px;
+  padding: 21px 22px;
+  border: 1px solid #c4d1e0;
+  border-top: 3px solid #245486;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 7px #15385c08;
+}
+
+.admin-shell .metric:first-child {
+  border-top-color: #e76626;
+}
+
+.admin-shell .metric:hover {
+  border-color: #8ba7c5;
+  box-shadow: 0 7px 18px #15385c12;
+}
+
+.admin-shell .metric-top {
+  margin-bottom: 0;
+  color: #38526d;
+  font-weight: 600;
+}
+
+.admin-shell .metric-value {
+  margin: 12px 0 8px;
+  color: #06266b;
+  font-size: 34px;
+  line-height: 1.1;
+}
+
+.admin-shell .metric small {
+  color: #526780 !important;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.admin-shell.instructor-shell .metric > span {
+  display: block;
+  color: #38526d;
+  font-size: 14px;
+}
+
+.admin-shell .records,
+.admin-shell .college-section {
+  border: 1px solid #c4d1e0;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 2px 9px #15385c08;
+}
+
+.admin-shell .records {
+  padding: 28px 30px;
+}
+
+.admin-shell .section-heading {
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.admin-shell .section-heading h2 {
+  margin-bottom: 6px;
+  font-size: 21px;
+}
+
+.admin-shell .section-heading p {
+  margin-bottom: 0;
+  color: #526780;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.admin-shell.instructor-shell .instructor-request-list {
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.admin-shell.instructor-shell .instructor-request {
+  grid-template-columns: minmax(190px, 1.2fr) minmax(190px, 1fr) minmax(170px, .8fr);
+  gap: 22px;
+  padding: 22px 24px;
+  border-color: #c4d1e0;
+  border-radius: 11px;
+  background: #fbfcfe;
+}
+
+.admin-shell.instructor-shell .instructor-request h3 {
+  margin: 10px 0 7px;
+  font-size: 18px;
+}
+
+.admin-shell.instructor-shell .instructor-request p,
+.admin-shell.instructor-shell .instructor-request small {
+  line-height: 1.55;
+}
+
+.admin-shell.instructor-shell .instructor-request > div:nth-child(2) {
+  overflow-wrap: anywhere;
+}
+
+.admin-shell.instructor-shell .instructor-request > div:nth-child(2) > strong {
+  display: block;
+  margin-bottom: 7px;
+  color: #183758;
+}
+
+.admin-shell.instructor-shell .instructor-decision {
+  padding-left: 20px;
+  border-left: 1px solid #dce4ee;
+}
+
+.admin-shell.instructor-shell .instructor-decision strong {
+  margin-bottom: 10px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.admin-shell.instructor-shell .instructor-decision button {
+  min-height: 42px;
+  margin-top: 8px;
+  padding: 9px 10px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.admin-shell .table-wrap {
+  overflow-x: auto;
+  border-color: #c4d1e0;
+}
+
+.admin-shell th {
+  background: #edf2f8;
+  color: #2d4765 !important;
+}
+
+.admin-shell td {
+  border-bottom-color: #e2e8f0;
+}
+
+.admin-shell .admin-management-toolbar,
+.admin-shell .admin-attention,
+.admin-shell .admin-callout {
+  box-shadow: 0 2px 9px #15385c08;
+}
+
+@media (max-width: 1180px) {
+  .admin-shell.instructor-shell .instructor-request {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-shell.instructor-shell .instructor-decision {
+    grid-column: 1 / -1;
+    padding: 16px 0 0;
+    border-left: 0;
+    border-top: 1px solid #dce4ee;
+  }
+
+  .admin-shell.instructor-shell .instructor-decision button {
+    display: inline-flex;
+    width: auto;
+    min-width: 170px;
+    align-items: center;
+    justify-content: center;
+    margin: 4px 8px 0 0;
+  }
+}
+
+@media (max-width: 850px) {
+  .admin-shell .workspace > header {
+    height: auto;
+    min-height: 58px;
+  }
+
+  .admin-shell .workspace main {
+    padding: 28px 22px 44px;
+  }
+
+  .admin-shell .admin-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .admin-shell.instructor-shell .instructor-request {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-shell.instructor-shell .instructor-decision {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-shell .workspace main {
+    padding: 24px 16px 40px;
+  }
+
+  .admin-shell .page-heading {
+    align-items: stretch;
+    padding-bottom: 20px;
+  }
+
+  .admin-shell .page-heading h1 {
+    font-size: 27px;
+  }
+
+  .admin-shell .records {
+    padding: 20px 18px;
+  }
+
+  .admin-shell .metric {
+    min-height: 148px;
+    padding: 17px;
+  }
+
+  .admin-shell.instructor-shell .instructor-request {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 420px) {
+  .admin-shell .admin-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-shell.instructor-shell .instructor-decision button {
+    width: 100%;
+    margin-right: 0;
+  }
+}
