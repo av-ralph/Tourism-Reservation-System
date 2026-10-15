@@ -1,11 +1,21 @@
 /* Carry the college masthead colors into both staff workspaces. */
 .admin-shell .sidebar {
-  background: #224f7c;
+  background: linear-gradient(165deg, #25527f, #1d456f);
   border-right-color: #173e68;
   color: #fff;
 }
 .admin-shell .sidebar .brand {
   border-bottom-color: #ffffff36;
+  align-items: center;
+  gap: 12px;
+}
+.admin-shell .sidebar .brand img {
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 3px 12px #0a2b4a30;
+}
+.admin-shell .sidebar .brand span {
+  line-height: 1.3;
 }
 .admin-shell .sidebar .brand span,
 .admin-shell .sidebar .brand small,
@@ -21,14 +31,26 @@
 .admin-shell .sidebar nav .admin-nav-icon {
   color: #f2f6fb;
 }
+.admin-shell .sidebar nav button {
+  justify-content: flex-start;
+  min-height: 48px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  transition: background .15s ease, box-shadow .15s ease;
+}
+.admin-shell .sidebar nav .admin-nav-icon {
+  width: 20px;
+  flex-basis: 20px;
+  color: #dce8f5;
+}
 .admin-shell .sidebar nav button:hover {
   background: #ffffff1c;
   color: #fff;
 }
 .admin-shell .sidebar nav button.selected {
   background: #e76626;
-  border-color: #f58d58;
-  box-shadow: inset 4px 0 #fff;
+  border-color: #e76626;
+  box-shadow: 0 5px 12px #0b2d4b30;
   color: #fff;
 }
 .admin-shell .sidebar nav button.selected .admin-nav-icon,
@@ -47,7 +69,10 @@
   border-top-color: #ffffff36;
 }
 .admin-shell .admin-staff-card {
-  background: #ffffff17;
+  background: #ffffff18;
+  border: 1px solid #ffffff26;
+  border-radius: 11px;
+  padding: 12px;
   color: #fff !important;
 }
 .admin-shell .admin-staff-card small {
@@ -56,6 +81,7 @@
 .admin-shell .admin-staff-card > span {
   background: #fff;
   color: #224f7c;
+  border-radius: 50%;
 }
 .admin-shell .admin-sidebar-bottom > a {
   color: #f2f6fb;
