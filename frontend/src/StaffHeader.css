@@ -26,22 +26,22 @@
   color: #fff;
 }
 .admin-shell .sidebar nav button.selected {
-  background: #fff;
-  border-color: #fff;
-  box-shadow: inset 4px 0 #e76626;
-  color: #173e68;
+  background: #e76626;
+  border-color: #f58d58;
+  box-shadow: inset 4px 0 #fff;
+  color: #fff;
 }
 .admin-shell .sidebar nav button.selected .admin-nav-icon,
 .admin-shell .sidebar nav button.selected .admin-nav-label {
-  color: #173e68;
+  color: #fff;
 }
 .admin-shell .sidebar nav em {
   background: #ffffff2b;
   color: #fff;
 }
 .admin-shell .sidebar nav button.selected em {
-  background: #fce4d7;
-  color: #9d3d15;
+  background: #fff;
+  color: #a53c12;
 }
 .admin-shell .admin-sidebar-bottom {
   border-top-color: #ffffff36;
