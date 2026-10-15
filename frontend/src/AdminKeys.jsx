@@ -10,13 +10,13 @@ export default function AdminKeys({ request, canManageAdmins = false }) {
   e.preventDefault(); const form = e.currentTarget, fields = Object.fromEntries(new FormData(form))
   if (!canManageAdmins) fields.role = 'instructor'
   setBusy(true); setError(''); setNotice('')
-  try { await request('keys', { method: 'POST', body: JSON.stringify(fields) }); setKeys(await request('keys')); form.reset(); setCustomKey(''); setShowCustomKey(false); setNotice('Access key created. Share it securely with the intended person.') }
+  try { const saved = await request('keys', { method: 'POST', body: JSON.stringify(fields) }); setKeys(current => [...current, { ...saved, key: fields.key }]); form.reset(); setCustomKey(''); setShowCustomKey(false); setNotice('Access key created. Share it securely with the intended person.') }
   catch (e) { setError(e.message) } finally { setBusy(false) }
  }
  async function revoke(row) {
   if (!window.confirm(`Revoke access for ${row.name}?`)) return
   setBusy(true); setError(''); setNotice('')
-  try { await request(`keys/${row.id}`, { method: 'DELETE' }); setKeys(await request('keys')); setNotice('Access revoked. This key can no longer sign in.') }
+  try { await request(`keys/${row.id}`, { method: 'DELETE' }); setKeys(current => current.filter(key => key.id !== row.id)); setNotice('Access revoked. This key can no longer sign in.') }
   catch (e) { setError(e.message) } finally { setBusy(false) }
  }
  return <section className="panel"><h2>{canManageAdmins ? 'Staff access' : 'Instructor access'}</h2><p>{canManageAdmins ? 'Create and manage administrator or instructor keys.' : 'Create a key for each instructor. Instructors can review requests and schedules; an administrator gives final approval.'} Instructors sign in at <a href="/instructor">/instructor</a>.</p>

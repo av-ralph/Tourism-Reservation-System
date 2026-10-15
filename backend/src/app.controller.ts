@@ -22,7 +22,7 @@ export class AppController {
  @Post('api/utilization') utilization(@Body() body:unknown,@Headers('x-user-session') token?:string){return this.appService.createForUser('utilization',body,token);}
  @Delete('api/reservations/:id') cancel(@Param('id') id:string,@Headers('x-user-session') token?:string){return this.appService.cancelForUser(id,token);}
  @Header('Cache-Control','no-store')
- @Get('api/admin/records') async adminRecords(@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);const identity=await this.appService.adminIdentity(key);return {...await this.appService.records(),...identity};}
+ @Get('api/admin/records') adminRecords(@Headers('authorization') key?:string){return this.appService.adminRecords(key);}
  @Header('Cache-Control','no-store')
  @Get('api/instructor/records') instructorRecords(@Headers('authorization') key?:string){return this.appService.instructorRecords(key);}
  @Patch('api/instructor/reservations/:id/review') instructorReview(@Param('id') id:string,@Body() body:unknown,@Headers('authorization') key?:string){return this.appService.reviewAsInstructor(id,body,key);}

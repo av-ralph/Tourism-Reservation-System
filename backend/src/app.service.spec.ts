@@ -49,6 +49,8 @@ describe('reservations',()=>{
    await expect(service.createStaffKey({name:'Another Admin',key:'another-admin-key-123',role:'admin'},adminAuth)).rejects.toThrow('instructor keys only');
    await expect(service.createStaffKey({name:'Default Admin',key:'default-admin-key-123'},adminAuth)).rejects.toThrow('instructor keys only');
    const instructor=await service.createStaffKey({name:'Instructor B',key:'instructor-b-key-123',role:'instructor'},adminAuth);
+   expect((await service.adminRecords(adminAuth)).role).toBe('admin');
+   await expect(service.adminRecords('Bearer instructor-b-key-123')).rejects.toThrow('Instructor keys cannot access');
    expect((await service.listStaffKeys(adminAuth)).map(row=>row.name)).toEqual(['Instructor B']);
    expect((await service.listStaffKeys('Bearer test-super-key')).map(row=>row.name)).toEqual(['Office Admin','Instructor B']);
    await expect(service.listStaffKeys('Bearer instructor-b-key-123')).rejects.toThrow('Instructor keys cannot access');

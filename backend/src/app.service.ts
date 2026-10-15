@@ -13,7 +13,8 @@ export class AppService {
  getHello(){return 'HM Laboratory reservation service';}
  private reservationStatus(row:Row){return row.status==='Awaiting signature'?(row.instructorDecision==='Approved'?'Awaiting admin':row.instructorDecision==='Declined'?'Rejected':'Awaiting instructor'):row.status;}
  private publicReservation(row:Row):Row{return {...row,status:this.reservationStatus(row)};}
- async records(){const data=await this.storage.read();return {reservations:data.reservations.map(row=>this.publicReservation(row)),reports:data.reports,utilization:data.utilization,facilities:this.facilitiesFrom(data)};}
+ async records(data?:Store){data??=await this.storage.read();return {reservations:data.reservations.map(row=>this.publicReservation(row)),reports:data.reports,utilization:data.utilization,facilities:this.facilitiesFrom(data)};}
+ async adminRecords(authorization?:string){const data=await this.storage.read();const identity=await this.adminIdentity(authorization,data);if(identity.role==='instructor')throw new ForbiddenException('Instructor keys cannot access administrator actions.');return {...await this.records(data),...identity};}
  private facilitiesFrom(data:Store){return [...facilityCatalog.map(f=>({...f,...data.facilities.find(row=>row.id===f.id)})),...data.facilities.filter(row=>!facilityCatalog.some(f=>f.id===row.id))].filter(f=>(f as Row).deleted!=='true');}
  async listFacilities(){return this.facilitiesFrom(await this.storage.read()).map(f=>{const row=f as Row;const {photo,...details}=row;return {...details,photo:photo?`/api/facilities/${encodeURIComponent(row.id!)}/photo?v=${createHash('sha256').update(photo).digest('hex').slice(0,16)}`:''};});}
  async listInstructors(){return (await this.storage.read()).adminKeys.filter(row=>row.role==='instructor').map(row=>({id:row.id,name:row.name})).sort((a,b)=>a.name!.localeCompare(b.name!));}
@@ -56,20 +57,21 @@ export class AppService {
   return readFileSync(keyFile,'utf8').trim();
  }
  private keyHash(key:string){return createHash('sha256').update(key).digest('hex');}
- async authorizeStaff(authorization?:string){
+ async authorizeStaff(authorization?:string,data?:Store){
   const value=(authorization||'').replace(/^Bearer /,''),expected=Buffer.from(this.adminKey()),actual=Buffer.from(value);
   if(actual.length===expected.length&&timingSafeEqual(actual,expected))return 'superadmin';
   if(!value||value.length>256)throw new UnauthorizedException('Enter a valid administrator access key.');
-  const hash=this.keyHash(value),data=await this.storage.read();
-  const staff=data.adminKeys.find(row=>row.hash===hash);
+  const hash=this.keyHash(value),records=data??await this.storage.read();
+  const staff=records.adminKeys.find(row=>row.hash===hash);
   if(staff)return staff.role==='instructor'?'instructor':'admin';
   throw new UnauthorizedException('Enter a valid administrator access key.');
  }
  async authorizeAdmin(authorization?:string){const role=await this.authorizeStaff(authorization);if(role==='instructor')throw new ForbiddenException('Instructor keys cannot access administrator actions.');return role;}
  async authorizeInstructor(authorization?:string){const role=await this.authorizeStaff(authorization);if(role!=='instructor')throw new ForbiddenException('Enter an instructor access key.');return role;}
  private profileId(role:string,authorization?:string){return role==='superadmin'?'super-admin-profile':'profile-'+this.keyHash((authorization||'').replace(/^Bearer /,''));}
- async adminIdentity(authorization?:string){
-  const role=await this.authorizeStaff(authorization),data=await this.storage.read(),profile=data.adminProfiles.find(row=>row.id===this.profileId(role,authorization));
+ async adminIdentity(authorization?:string,data?:Store){
+  data??=await this.storage.read();
+  const role=await this.authorizeStaff(authorization,data),profile=data.adminProfiles.find(row=>row.id===this.profileId(role,authorization));
   const hash=this.keyHash((authorization||'').replace(/^Bearer /,'')),admin=data.adminKeys.find(row=>row.hash===hash);
   if(role!=='superadmin'&&!admin)throw new UnauthorizedException('Enter a valid administrator access key.');
   return {role,adminName:profile?.name||(role==='superadmin'?'Super admin':admin!.name),adminPhoto:profile?.photo||'',adminEmail:profile?.email||''};
@@ -83,7 +85,7 @@ export class AppService {
   if(typeof photo!=='string'||photo.length>220000||(photo!==''&&!/^data:image\/jpeg;base64,\/9j\/[A-Za-z0-9+/]*={0,2}$/.test(photo)))throw new BadRequestException('Choose a valid JPEG profile photo under 165 KB.');
   const id=this.profileId(role,authorization);
   await this.storage.mutate(data=>{if(role!=='superadmin'&&!data.adminKeys.some(row=>'profile-'+row.hash===id))throw new UnauthorizedException('Admin access has been revoked.');data.adminProfiles=data.adminProfiles.filter(row=>row.id!==id);data.adminProfiles.push({id,name:name.trim(),email:email.trim(),photo,updatedAt:new Date().toISOString()});});
-  return this.adminIdentity(authorization);
+  return {role,adminName:name.trim(),adminPhoto:photo,adminEmail:email.trim()};
  }
  async authorizeSuperAdmin(authorization?:string){if(await this.authorizeAdmin(authorization)!=='superadmin')throw new ForbiddenException('Only the super admin can manage access keys.');}
  private encryptAdminKey(key:string){
@@ -99,7 +101,7 @@ export class AppService {
  async listStaffKeys(authorization?:string){const role=await this.authorizeAdmin(authorization);const keys=await this.listAdminKeys();return role==='superadmin'?keys:keys.filter(row=>row.role==='instructor');}
  async createStaffKey(input:unknown,authorization?:string){const role=await this.authorizeAdmin(authorization);if(role!=='superadmin'&&(!input||typeof input!=='object'||Array.isArray(input)||(input as Record<string,unknown>).role!=='instructor'))throw new ForbiddenException('Administrators can create instructor keys only.');return this.createAdminKey(input);}
  async revokeStaffKey(id:string,authorization?:string){const role=await this.authorizeAdmin(authorization);return this.revokeAdminKey(id,role);}
- async instructorRecords(authorization?:string){await this.authorizeInstructor(authorization);const identity=await this.adminIdentity(authorization),data=await this.storage.read(),hash=this.keyHash((authorization||'').replace(/^Bearer /,'')),instructor=data.adminKeys.find(row=>row.hash===hash);return {...identity,reservations:data.reservations.filter(row=>!row.instructorKeyId||row.instructorKeyId===instructor?.id).map(row=>{const reservation=this.publicReservation(row);delete reservation.owner;return reservation;}),facilities:this.facilitiesFrom(data).map(facility=>{const details={...facility} as Row;delete details.photo;return details;})};}
+ async instructorRecords(authorization?:string){const data=await this.storage.read(),identity=await this.adminIdentity(authorization,data);if(identity.role!=='instructor')throw new ForbiddenException('Enter an instructor access key.');const hash=this.keyHash((authorization||'').replace(/^Bearer /,'')),instructor=data.adminKeys.find(row=>row.hash===hash);return {...identity,reservations:data.reservations.filter(row=>!row.instructorKeyId||row.instructorKeyId===instructor?.id).map(row=>{const reservation=this.publicReservation(row);delete reservation.owner;return reservation;}),facilities:this.facilitiesFrom(data).map(facility=>{const details={...facility} as Row;delete details.photo;return details;})};}
  private validateSignature(value:unknown){
   if(!Array.isArray(value)||value.length<1||value.length>20)throw new BadRequestException('Draw your signature before approving the request.');
   let count=0,length=0,minX=600,maxX=0,minY=180,maxY=0;
@@ -118,13 +120,13 @@ export class AppService {
   return JSON.stringify(value);
  }
  async reviewAsInstructor(id:string,input:unknown,authorization?:string){
-  await this.authorizeInstructor(authorization);
+  const identity=await this.adminIdentity(authorization);
+  if(identity.role!=='instructor')throw new ForbiddenException('Enter an instructor access key.');
   if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid instructor review.');
   const {decision,note,signature}=input as Record<string,unknown>;
   if(!['Approved','Declined'].includes(String(decision)))throw new BadRequestException('Choose approve or decline.');
   if(typeof note!=='string'||note.length>1000||(decision==='Declined'&&!note.trim()))throw new BadRequestException('Explain why the request was declined.');
   const validatedSignature=decision==='Approved'?this.validateSignature(signature):'';
-  const identity=await this.adminIdentity(authorization);
   return this.storage.mutate(data=>{
    const reservation=data.reservations.find(row=>row.id===id);
    if(!reservation)throw new NotFoundException('Reservation not found.');
