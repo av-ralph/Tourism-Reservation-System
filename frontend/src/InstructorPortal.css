@@ -1,4 +1,3 @@
-.instructor-shell .sidebar nav button { justify-content: space-between; }
 .admin-shell.instructor-shell .admin-metrics { grid-template-columns: repeat(3,minmax(0,1fr)); }
 .instructor-shell .metric { text-align: left; }
 .instructor-shell .metric > span { color: #47566a; font-size: 13px; font-weight: 600; }
