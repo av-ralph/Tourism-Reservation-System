@@ -43,6 +43,9 @@
   flex-basis: 20px;
   color: #dce8f5;
 }
+.admin-shell .sidebar nav .admin-nav-label {
+  text-align: left;
+}
 .admin-shell .sidebar nav button:hover {
   background: #ffffff1c;
   color: #fff;
