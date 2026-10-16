@@ -28,6 +28,7 @@ export class AppService {
   row.quantity=String(raw.quantity);
   if(!['Draft','Available','Unavailable'].includes(String(raw.status)))throw new BadRequestException('Choose Draft, Available, or Unavailable.');
   if(raw.status==='Available'&&Number(row.quantity)===0)throw new BadRequestException('Available items need a quantity above zero.');
+  if(raw.status==='Available'&&row.unit==='not recorded')throw new BadRequestException('Set a verified unit before making this item available.');
   row.status=String(raw.status);return row;
  }
  createInventory(input:unknown){return this.storage.mutate(data=>{const row={...this.validateInventory(input),id:randomUUID(),createdAt:new Date().toISOString()};data.inventory.push(row);return row;});}

@@ -38,7 +38,7 @@ def main(path):
                 "name": name,
                 "category": category,
                 "quantity": actual if re.fullmatch(r"\d+", actual) else "0",
-                "unit": cells[6] or cells[4] or "pc",
+                "unit": cells[6] or "not recorded",
                 "model": cells[1],
                 "serial": cells[2],
                 "notes": cells[9],

@@ -38,6 +38,7 @@ describe('reservations',()=>{
   try{
    expect(draft?.status).toBe('Draft');
    expect(await service.listInventory()).toEqual([]);
+   await expect(service.updateInventory(draft!.id!,{status:'Available',unit:'not recorded'})).rejects.toThrow('verified unit');
    await service.updateInventory(draft!.id!,{status:'Available'});
    expect((await service.listInventory()).some(entry=>entry.id===draft!.id)).toBe(true);
    const item=await service.createInventory({name:'Test mixing bowl',category:'Kitchen',quantity:'2',unit:'pcs',status:'Available',notes:''});
