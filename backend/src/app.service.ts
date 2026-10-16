@@ -18,7 +18,7 @@ export class AppService {
  async adminRecords(authorization?:string){const data=await this.storage.read();const identity=await this.adminIdentity(authorization,data);if(identity.role==='instructor')throw new ForbiddenException('Instructor keys cannot access administrator actions.');return {...await this.records(data),...identity};}
  async adminInventory(){return this.inventoryFrom(await this.storage.read());}
  private inventoryFrom(data:Store){return [...inventoryCatalog.map(item=>({...item,...data.inventory.find(row=>row.id===item.id)})),...data.inventory.filter(row=>!inventoryCatalog.some(item=>item.id===row.id))].filter(item=>item.deleted!=='true');}
- async listInventory(){return this.inventoryFrom(await this.storage.read()).filter(item=>item.status==='Available'&&Number(item.quantity)>0).map(({id,name,category,quantity,unit})=>({id,name,category,quantity,unit}));}
+ async listInventory(){return this.inventoryFrom(await this.storage.read()).filter(item=>item.status==='Available'&&Number(item.quantity)>0).map(({id,name,category,model,quantity,unit})=>({id,name,category,model,quantity,unit}));}
  private validateInventory(input:unknown):Row{
   if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid inventory item.');
   const raw=input as Record<string,unknown>, row:Row={};

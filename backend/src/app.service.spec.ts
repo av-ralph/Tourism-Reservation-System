@@ -41,7 +41,7 @@ describe('reservations',()=>{
    await service.updateInventory(draft!.id!,{status:'Available'});
    expect((await service.listInventory()).some(entry=>entry.id===draft!.id)).toBe(true);
    const item=await service.createInventory({name:'Test mixing bowl',category:'Kitchen',quantity:'2',unit:'pcs',status:'Available',notes:''});
-   expect(await service.listInventory()).toContainEqual({id:item.id,name:'Test mixing bowl',category:'Kitchen',quantity:'2',unit:'pcs'});
+   expect(await service.listInventory()).toContainEqual({id:item.id,name:'Test mixing bowl',category:'Kitchen',model:'',quantity:'2',unit:'pcs'});
    await service.createAdminKey({name:'Instructor',key:'instructor-test-key-123',role:'instructor'});
    const token='11111111-1111-4111-8111-111111111111';
    const request={...booking,inventoryItems:[{id:item.id,quantity:2}]};
