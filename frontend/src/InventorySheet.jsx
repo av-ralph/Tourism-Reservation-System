@@ -13,7 +13,7 @@ export default function InventorySheet({items,request,onChange,onEdit}){
  const columns=useMemo(()=>[
   {field:'name',headerName:'Item / equipment',minWidth:230,pinned:'left',editable:true},
   {field:'category',headerName:'Category',minWidth:155,editable:true},
-  {field:'quantity',headerName:'Booking stock',minWidth:145,editable:true,filter:'agNumberColumnFilter',cellDataType:'number'},
+  {field:'quantity',headerName:'Booking stock',minWidth:145,editable:true,filter:'agNumberColumnFilter',cellDataType:'number',valueGetter:params=>Number(params.data?.quantity??0)},
   {field:'unit',headerName:'Unit',minWidth:105,editable:true},
   {field:'status',headerName:'Student availability',minWidth:175,editable:true,cellEditor:'agSelectCellEditor',cellEditorParams:{values:['Draft','Available','Unavailable']}},
   {field:'model',headerName:'Model',minWidth:180,editable:true},
