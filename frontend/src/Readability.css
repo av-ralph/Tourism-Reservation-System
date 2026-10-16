@@ -22,7 +22,7 @@
 :is(.student-site,.admin-shell) .status-Cancelled{color:#3e4c60!important;background:#e9edf2;border-color:#9aa8bb}
 .admin-shell :is(.admin-attention,.review-request-button){border-color:#bf8058;color:#783912;background:#fff0e3}
 .admin-shell .review-request-button{font-size:14px;font-weight:600}
-.admin-shell :is(.eyebrow,.portal-label,.admin-date,.admin-results,.metric small,.admin-staff-card small){font-size:12px;color:#46566b!important}
+.admin-shell :is(.eyebrow,.portal-label,.admin-results,.metric small,.admin-staff-card small){font-size:12px;color:#46566b!important}
 .admin-shell .sidebar nav button.selected{border-color:#bf8058;background:#ffeadc}
 .admin-shell .admin-review-summary dl>div{display:contents}
 .admin-shell .admin-review-summary dt{font-weight:600}
