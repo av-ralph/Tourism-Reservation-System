@@ -24,3 +24,12 @@
 /* College orange sign-out action with black lettering. */
 .admin-shell .admin-sidebar-bottom>button{background:#fa6020;border-color:#fa6020;color:#000}
 .admin-shell .admin-sidebar-bottom>button:hover{background:#e95519;border-color:#e95519;color:#000}
+
+.staff-password-panel{margin-top:24px;max-width:740px}
+.staff-password-panel fieldset{display:grid;gap:16px;border:0;padding:0;margin:0}
+.staff-password-panel label{display:grid;gap:8px}
+.staff-password-panel input:not([type=checkbox]){width:100%}
+.staff-password-panel small{color:#5b6f89;margin-top:-8px}
+.staff-password-panel .staff-password-reveal{display:flex;align-items:center;gap:9px}
+.staff-password-panel .staff-password-reveal input{width:auto}
+.staff-password-panel .primary{justify-self:start}

@@ -77,6 +77,10 @@ export class AppService {
   return readFileSync(keyFile,'utf8').trim();
  }
  private keyHash(key:string){return createHash('sha256').update(key).digest('hex');}
+ private validateStaffPassword(key:unknown){
+  if(typeof key!=='string'||key.length<10||key.length>32||!/^[A-Za-z0-9!@#$%^&*_-]+$/.test(key)||!/[a-z]/.test(key)||!/[A-Z]/.test(key)||!/[0-9]/.test(key)||!/[!@#$%^&*_-]/.test(key))throw new BadRequestException('Use 10–32 characters with an uppercase letter, a lowercase letter, a number, and a symbol (! @ # $ % ^ & * _ -).');
+  return key;
+ }
  async authorizeStaff(authorization?:string,data?:Store){
   const value=(authorization||'').replace(/^Bearer /,''),expected=Buffer.from(this.adminKey()),actual=Buffer.from(value);
   if(actual.length===expected.length&&timingSafeEqual(actual,expected))return 'superadmin';
@@ -106,6 +110,30 @@ export class AppService {
   const id=this.profileId(role,authorization);
   await this.storage.mutate(data=>{if(role!=='superadmin'&&!data.adminKeys.some(row=>'profile-'+row.hash===id))throw new UnauthorizedException('Admin access has been revoked.');data.adminProfiles=data.adminProfiles.filter(row=>row.id!==id);data.adminProfiles.push({id,name:name.trim(),email:email.trim(),photo,updatedAt:new Date().toISOString()});});
   return {role,adminName:name.trim(),adminPhoto:photo,adminEmail:email.trim()};
+ }
+ async changeStaffKey(authorization:string|undefined,input:unknown){
+  const role=await this.authorizeStaff(authorization);
+  if(role==='superadmin')throw new ForbiddenException('The super administrator key is managed in server settings.');
+  if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Enter your current and new access keys.');
+  const {currentKey,newKey}=input as Record<string,unknown>;
+  if(typeof currentKey!=='string'||typeof newKey!=='string')throw new BadRequestException('Enter your current and new access keys.');
+  const value=(authorization||'').replace(/^Bearer /,'');
+  if(currentKey!==value)throw new UnauthorizedException('Your current access key is incorrect.');
+  this.validateStaffPassword(newKey);
+  if(newKey===currentKey)throw new BadRequestException('Choose a different access key.');
+  const oldHash=this.keyHash(currentKey),newHash=this.keyHash(newKey);
+  if(newHash===this.keyHash(this.adminKey()))throw new ConflictException('This access key is already in use.');
+  await this.storage.mutate(data=>{
+   const row=data.adminKeys.find(entry=>entry.hash===oldHash&&entry.role===role);
+   if(!row)throw new UnauthorizedException('Your access key is no longer valid.');
+   if(data.adminKeys.some(entry=>entry.hash===newHash))throw new ConflictException('This access key is already in use.');
+   const profile=data.adminProfiles.find(entry=>entry.id==='profile-'+oldHash);
+   if(profile)profile.id='profile-'+newHash;
+   row.hash=newHash;
+   row.encryptedKey=this.encryptAdminKey(newKey);
+   row.updatedAt=new Date().toISOString();
+  });
+  return {success:true};
  }
  async authorizeSuperAdmin(authorization?:string){if(await this.authorizeAdmin(authorization)!=='superadmin')throw new ForbiddenException('Only the super admin can manage access keys.');}
  private encryptAdminKey(key:string){
@@ -166,12 +194,12 @@ export class AppService {
   const role=(input as Record<string,unknown>).role??'admin';
   if(!['admin','instructor'].includes(String(role)))throw new BadRequestException('Choose an administrator or instructor role.');
   if(typeof name!=='string'||!name.trim()||name.trim().length>80)throw new BadRequestException('Enter a staff name of up to 80 characters.');
-  if(typeof key!=='string'||key.length<16||key.length>128||!/^[A-Za-z0-9_-]+$/.test(key))throw new BadRequestException('Use 16–128 letters, numbers, hyphens, or underscores for the key.');
-  const hash=this.keyHash(key);
+  const validatedKey=this.validateStaffPassword(key);
+  const hash=this.keyHash(validatedKey);
   if(hash===this.keyHash(this.adminKey()))throw new ConflictException('This access key is already in use.');
   return this.storage.mutate(data=>{
    if(data.adminKeys.some(row=>row.hash===hash||row.name!.toLowerCase()===name.trim().toLowerCase()))throw new ConflictException('This admin name or key is already in use.');
-   const row={id:randomUUID(),name:name.trim(),hash,role:String(role),encryptedKey:this.encryptAdminKey(key),createdAt:new Date().toISOString()};data.adminKeys.push(row);
+   const row={id:randomUUID(),name:name.trim(),hash,role:String(role),encryptedKey:this.encryptAdminKey(validatedKey),createdAt:new Date().toISOString()};data.adminKeys.push(row);
    return {id:row.id,name:row.name,role:row.role,createdAt:row.createdAt};
   });
  }

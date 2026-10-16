@@ -14,21 +14,21 @@ describe('reservations',()=>{
    expect(await service.authorizeAdmin('Bearer test-super-key')).toBe('superadmin');
    expect(await service.adminIdentity('Bearer test-super-key')).toMatchObject({role:'superadmin',adminName:'Super admin'});
    expect(()=>service.createAdminKey({name:'Staff',key:'short'})).toThrow();
-   const row=await service.createAdminKey({name:'Staff',key:'staff-custom-key-123'});
-   expect(await new AppService().authorizeAdmin('Bearer staff-custom-key-123')).toBe('admin');
-   expect(await service.adminIdentity('Bearer staff-custom-key-123')).toMatchObject({role:'admin',adminName:'Staff'});
-   await expect(service.authorizeSuperAdmin('Bearer staff-custom-key-123')).rejects.toThrow('Only the super admin');
-   await expect(service.createAdminKey({name:'Other',key:'staff-custom-key-123'})).rejects.toThrow('already in use');
-   expect((await new AppService().listAdminKeys())[0]?.key).toBe('staff-custom-key-123');
+   const row=await service.createAdminKey({name:'Staff',key:'StaffCustom1!'});
+   expect(await new AppService().authorizeAdmin('Bearer StaffCustom1!')).toBe('admin');
+   expect(await service.adminIdentity('Bearer StaffCustom1!')).toMatchObject({role:'admin',adminName:'Staff'});
+   await expect(service.authorizeSuperAdmin('Bearer StaffCustom1!')).rejects.toThrow('Only the super admin');
+   await expect(service.createAdminKey({name:'Other',key:'StaffCustom1!'})).rejects.toThrow('already in use');
+   expect((await new AppService().listAdminKeys())[0]?.key).toBe('StaffCustom1!');
    const stored=await import('node:fs/promises').then(fs=>fs.readFile(join(dir,'records.json'),'utf8'));
-   expect(stored).not.toContain('staff-custom-key-123');
-   await service.updateAdminProfile('Bearer staff-custom-key-123',{name:'Staff member',email:'staff@example.com',photo:''});
-   expect(await new AppService().adminIdentity('Bearer staff-custom-key-123')).toMatchObject({adminName:'Staff member',adminEmail:'staff@example.com'});
+   expect(stored).not.toContain('StaffCustom1!');
+   await service.updateAdminProfile('Bearer StaffCustom1!',{name:'Staff member',email:'staff@example.com',photo:''});
+   expect(await new AppService().adminIdentity('Bearer StaffCustom1!')).toMatchObject({adminName:'Staff member',adminEmail:'staff@example.com'});
    expect(await service.adminIdentity('Bearer test-super-key')).toMatchObject({adminName:'Super admin'});
-   await expect(service.updateAdminProfile('Bearer staff-custom-key-123',{name:'Staff',email:'invalid',photo:''})).rejects.toThrow('email');
-   await expect(service.updateAdminProfile('Bearer staff-custom-key-123',{name:'Staff',email:'',photo:'https://invalid'})).rejects.toThrow('photo');
+   await expect(service.updateAdminProfile('Bearer StaffCustom1!',{name:'Staff',email:'invalid',photo:''})).rejects.toThrow('email');
+   await expect(service.updateAdminProfile('Bearer StaffCustom1!',{name:'Staff',email:'',photo:'https://invalid'})).rejects.toThrow('photo');
    await service.revokeAdminKey(row.id);
-   await expect(service.authorizeAdmin('Bearer staff-custom-key-123')).rejects.toThrow('valid administrator');
+   await expect(service.authorizeAdmin('Bearer StaffCustom1!')).rejects.toThrow('valid administrator');
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
  it('persists records across restart',async()=>{await service.create('reservations',booking);expect((await new AppService().records()).reservations).toHaveLength(1);});
@@ -47,7 +47,7 @@ describe('reservations',()=>{
    await expect(service.createInventory({name:'Unspecified',category:'Kitchen',quantity:'1',unit:'not recorded',status:'Available'})).rejects.toThrow('verified unit');
    const item=await service.createInventory({name:'Test mixing bowl',category:'Kitchen',quantity:'2',unit:'pcs',status:'Available',notes:''});
    expect(await service.listInventory()).toContainEqual({id:item.id,name:'Test mixing bowl',category:'Kitchen',model:'',quantity:'2',unit:'pcs'});
-   await service.createAdminKey({name:'Instructor',key:'instructor-test-key-123',role:'instructor'});
+   await service.createAdminKey({name:'Instructor',key:'InstructorTest1!',role:'instructor'});
    const token='11111111-1111-4111-8111-111111111111';
    const request={...booking,inventoryItems:[{id:item.id,quantity:2}]};
    const saved=await service.createForUser('reservations',request,token);
@@ -74,28 +74,28 @@ describe('reservations',()=>{
  it('lets administrators manage instructor keys without granting administrator key access',async()=>{
   process.env.HM_ADMIN_KEY='test-super-key';
   try{
-   const admin=await service.createStaffKey({name:'Office Admin',key:'office-admin-key-123',role:'admin'},'Bearer test-super-key');
-   const adminAuth='Bearer office-admin-key-123';
-   await expect(service.createStaffKey({name:'Another Admin',key:'another-admin-key-123',role:'admin'},adminAuth)).rejects.toThrow('instructor keys only');
-   await expect(service.createStaffKey({name:'Default Admin',key:'default-admin-key-123'},adminAuth)).rejects.toThrow('instructor keys only');
-   const instructor=await service.createStaffKey({name:'Instructor B',key:'instructor-b-key-123',role:'instructor'},adminAuth);
+   const admin=await service.createStaffKey({name:'Office Admin',key:'OfficeAdmin1!',role:'admin'},'Bearer test-super-key');
+   const adminAuth='Bearer OfficeAdmin1!';
+   await expect(service.createStaffKey({name:'Another Admin',key:'AnotherAdmin1!',role:'admin'},adminAuth)).rejects.toThrow('instructor keys only');
+   await expect(service.createStaffKey({name:'Default Admin',key:'DefaultAdmin1!'},adminAuth)).rejects.toThrow('instructor keys only');
+   const instructor=await service.createStaffKey({name:'Instructor B',key:'InstructorB1!',role:'instructor'},adminAuth);
    expect((await service.adminRecords(adminAuth)).role).toBe('admin');
-   await expect(service.adminRecords('Bearer instructor-b-key-123')).rejects.toThrow('Instructor keys cannot access');
+   await expect(service.adminRecords('Bearer InstructorB1!')).rejects.toThrow('Instructor keys cannot access');
    expect((await service.listStaffKeys(adminAuth)).map(row=>row.name)).toEqual(['Instructor B']);
    expect((await service.listStaffKeys('Bearer test-super-key')).map(row=>row.name)).toEqual(['Office Admin','Instructor B']);
-   await expect(service.listStaffKeys('Bearer instructor-b-key-123')).rejects.toThrow('Instructor keys cannot access');
-   await expect(service.createStaffKey({name:'Instructor C',key:'instructor-c-key-123',role:'instructor'},'Bearer instructor-b-key-123')).rejects.toThrow('Instructor keys cannot access');
+   await expect(service.listStaffKeys('Bearer InstructorB1!')).rejects.toThrow('Instructor keys cannot access');
+   await expect(service.createStaffKey({name:'Instructor C',key:'InstructorC1!',role:'instructor'},'Bearer InstructorB1!')).rejects.toThrow('Instructor keys cannot access');
    await expect(service.revokeStaffKey(admin.id,adminAuth)).rejects.toThrow('instructor keys only');
    await service.revokeStaffKey(instructor.id,adminAuth);
-   await expect(service.authorizeInstructor('Bearer instructor-b-key-123')).rejects.toThrow('valid administrator');
+   await expect(service.authorizeInstructor('Bearer InstructorB1!')).rejects.toThrow('valid administrator');
    expect(await service.authorizeAdmin(adminAuth)).toBe('admin');
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
  it('separates instructor review from final admin approval',async()=>{
   process.env.HM_ADMIN_KEY='test-super-key';
   try{
-   await service.createAdminKey({name:'Faculty A',key:'faculty-access-key-123',role:'instructor'});
-   const key='Bearer faculty-access-key-123',reservation=await service.create('reservations',booking);
+   await service.createAdminKey({name:'Faculty A',key:'FacultyAccess1!',role:'instructor'});
+   const key='Bearer FacultyAccess1!',reservation=await service.create('reservations',booking);
    expect((await service.instructorRecords(key)).reservations).toHaveLength(1);
    expect((await service.records()).reservations[0]?.status).toBe('Awaiting instructor');
    await expect(service.authorizeInstructor('Bearer test-super-key')).rejects.toThrow('instructor access key');
@@ -114,17 +114,17 @@ describe('reservations',()=>{
  it('routes public requests to their selected instructor before admin review',async()=>{
   process.env.HM_ADMIN_KEY='test-super-key';
   try{
-   const first=await service.createAdminKey({name:'Instructor One',key:'instructor-one-key-123',role:'instructor'});
-   await service.createAdminKey({name:'Instructor Two',key:'instructor-two-key-123',role:'instructor'});
+   const first=await service.createAdminKey({name:'Instructor One',key:'InstructorOne1!',role:'instructor'});
+   await service.createAdminKey({name:'Instructor Two',key:'InstructorTwo1!',role:'instructor'});
    const owner='12345678-1234-1234-1234-123456789012';
    await expect(service.createForUser('reservations',{...booking,instructor:'Unknown Instructor'},owner)).rejects.toThrow('listed instructor');
    const row=await service.createForUser('reservations',{...booking,instructor:'Instructor One'},owner);
    expect(row.instructorKeyId).toBe(first.id);
-   expect((await service.instructorRecords('Bearer instructor-one-key-123')).reservations).toHaveLength(1);
-   expect((await service.instructorRecords('Bearer instructor-two-key-123')).reservations).toHaveLength(0);
-   await expect(service.reviewAsInstructor(row.id!,{decision:'Approved',note:'',signature},'Bearer instructor-two-key-123')).rejects.toThrow('another instructor');
+   expect((await service.instructorRecords('Bearer InstructorOne1!')).reservations).toHaveLength(1);
+   expect((await service.instructorRecords('Bearer InstructorTwo1!')).reservations).toHaveLength(0);
+   await expect(service.reviewAsInstructor(row.id!,{decision:'Approved',note:'',signature},'Bearer InstructorTwo1!')).rejects.toThrow('another instructor');
    await expect(service.reviewReservation(row.id!,{action:'Rejected',note:'Too early'})).rejects.toThrow('instructor');
-   await service.reviewAsInstructor(row.id!,{decision:'Approved',note:'',signature},'Bearer instructor-one-key-123');
+   await service.reviewAsInstructor(row.id!,{decision:'Approved',note:'',signature},'Bearer InstructorOne1!');
    expect((await service.userRecords(owner)).reservations[0]?.status).toBe('Awaiting admin');
    expect((await service.reviewReservation(row.id!,{action:'Approved',note:'',signatureConfirmed:true})).status).toBe('Approved');
    const changed=await service.adminUpdate('reservations',row.id!,{purpose:'Changed activity'});
@@ -136,9 +136,9 @@ describe('reservations',()=>{
  it('ends the flow when an instructor declines a request',async()=>{
   process.env.HM_ADMIN_KEY='test-super-key';
   try{
-   await service.createAdminKey({name:'Instructor One',key:'instructor-one-key-123',role:'instructor'});
+   await service.createAdminKey({name:'Instructor One',key:'InstructorOne1!',role:'instructor'});
    const row=await service.create('reservations',{...booking,instructor:'Instructor One'});
-   await service.reviewAsInstructor(row.id!,{decision:'Declined',note:'The lab is unsuitable.'},'Bearer instructor-one-key-123');
+   await service.reviewAsInstructor(row.id!,{decision:'Declined',note:'The lab is unsuitable.'},'Bearer InstructorOne1!');
    expect((await service.records()).reservations[0]).toMatchObject({status:'Rejected',reviewNote:'The lab is unsuitable.'});
    await expect(service.reviewReservation(row.id!,{action:'Approved',note:'',signatureConfirmed:true})).rejects.toThrow('instructor');
    await expect(service.create('reservations',{...booking,instructor:'Instructor One'})).resolves.toBeDefined();
@@ -147,8 +147,8 @@ describe('reservations',()=>{
  it('blocks simultaneous overlapping bookings',async()=>{const results=await Promise.allSettled([service.create('reservations',booking),service.create('reservations',booking)]);expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(1);});
  it('requires email and terms but permits omitted ID',async()=>{await expect(service.create('reservations',{...booking,email:''})).rejects.toThrow('email address');await expect(service.create('reservations',{...booking,termsAccepted:false})).rejects.toThrow('Terms and Conditions');const withoutId={...booking};delete (withoutId as Partial<typeof booking>).studentId;expect((await service.create('reservations',withoutId)).studentId).toBe('');});
  it('releases cancelled times and permits adjacent sessions',async()=>{const row=await service.create('reservations',booking);await service.create('reservations',{...booking,start:'10:00',end:'11:00'});await service.cancel(row.id!);await expect(service.create('reservations',booking)).resolves.toBeDefined();});
- it('admin CRUD preserves ownership and rejects conflicting edits',async()=>{await service.createAdminKey({name:'Instructor',key:'instructor-test-key-123',role:'instructor'});const first=await service.create('reservations',booking,'owner');const second=await service.adminCreate('reservations',{...booking,start:'10:00',end:'11:00'});await expect(service.adminUpdate('reservations',second.id!,{start:'09:30'})).rejects.toThrow('already reserved');const edited=await service.adminUpdate('reservations',first.id!,{purpose:'Updated practice',owner:'attacker',status:'Approved'});expect(edited.owner).toBe('owner');expect(edited.status).toBe('Awaiting instructor');expect(edited.purpose).toBe('Updated practice');await service.adminDelete('reservations',first.id!);expect((await service.records()).reservations).toHaveLength(1);await expect(service.adminDelete('reservations','missing')).rejects.toThrow('not found');});
- it('supports facility CRUD and prevents deleting referenced facilities',async()=>{await service.createAdminKey({name:'Instructor',key:'instructor-test-key-123',role:'instructor'});const facility=await service.createFacility({name:'Practice Room',category:'Events',description:'Practice space',status:'Available',reason:''});await service.adminCreate('reservations',{...booking,facility:facility.name});await expect(service.deleteFacility(facility.id!)).rejects.toThrow('existing records');await expect(service.createFacility({name:'practice room',category:'Events',description:'Duplicate',status:'Available',reason:''})).rejects.toThrow('already exists');const empty=await service.createFacility({name:'Empty Room',category:'Events',description:'Space',status:'Available',reason:''});await service.deleteFacility(empty.id!);expect((await service.listFacilities()).some(f=>f.id===empty.id)).toBe(false);});
+ it('admin CRUD preserves ownership and rejects conflicting edits',async()=>{await service.createAdminKey({name:'Instructor',key:'InstructorTest1!',role:'instructor'});const first=await service.create('reservations',booking,'owner');const second=await service.adminCreate('reservations',{...booking,start:'10:00',end:'11:00'});await expect(service.adminUpdate('reservations',second.id!,{start:'09:30'})).rejects.toThrow('already reserved');const edited=await service.adminUpdate('reservations',first.id!,{purpose:'Updated practice',owner:'attacker',status:'Approved'});expect(edited.owner).toBe('owner');expect(edited.status).toBe('Awaiting instructor');expect(edited.purpose).toBe('Updated practice');await service.adminDelete('reservations',first.id!);expect((await service.records()).reservations).toHaveLength(1);await expect(service.adminDelete('reservations','missing')).rejects.toThrow('not found');});
+ it('supports facility CRUD and prevents deleting referenced facilities',async()=>{await service.createAdminKey({name:'Instructor',key:'InstructorTest1!',role:'instructor'});const facility=await service.createFacility({name:'Practice Room',category:'Events',description:'Practice space',status:'Available',reason:''});await service.adminCreate('reservations',{...booking,facility:facility.name});await expect(service.deleteFacility(facility.id!)).rejects.toThrow('existing records');await expect(service.createFacility({name:'practice room',category:'Events',description:'Duplicate',status:'Available',reason:''})).rejects.toThrow('already exists');const empty=await service.createFacility({name:'Empty Room',category:'Events',description:'Space',status:'Available',reason:''});await service.deleteFacility(empty.id!);expect((await service.listFacilities()).some(f=>f.id===empty.id)).toBe(false);});
  it('admin report and utilization edits validate input',async()=>{const report=await service.adminCreate('reports',{...booking,date:'2020-01-01',type:'Damage',details:'Broken tray'});await expect(service.adminUpdate('reports',report.id!,{email:'invalid'})).rejects.toThrow('email');await service.adminUpdate('reports',report.id!,{details:'Broken plate'});await service.adminDelete('reports',report.id!);const visit=await service.adminCreate('utilization',{...booking,date:'2020-01-01',attendees:'10'});await expect(service.adminUpdate('utilization',visit.id!,{attendees:'0'})).rejects.toThrow('Participants');await service.adminDelete('utilization',visit.id!);expect((await service.records()).utilization).toHaveLength(0);});
  it('validates facility photos and permits removal',async()=>{const base={name:'Photo Room',category:'Events',description:'A room',status:'Available',reason:''};await expect(service.createFacility({...base,photo:'data:image/svg+xml;base64,unsafe'})).rejects.toThrow('valid JPEG');await expect(service.createFacility({...base,photo:'x'.repeat(220001)})).rejects.toThrow('valid JPEG');const row=await service.createFacility({...base,photo:''});expect((await service.updateFacility(row.id!,{description:'New description'})).photo).toBe('');});
  it('returns lightweight versioned photo URLs and image bytes',async()=>{const photo='data:image/jpeg;base64,/9j/AA==';const row=await service.createFacility({name:'Cached Photo Room',category:'Events',description:'Room',status:'Available',reason:'',photo});const before=(await service.listFacilities()).find(f=>f.id===row.id)!;expect(before.photo).toMatch(/^\/api\/facilities\/.+\/photo\?v=/);expect(JSON.stringify(before)).not.toContain('base64');expect(await service.facilityPhoto(row.id!)).toEqual(Buffer.from('/9j/AA==','base64'));await service.updateFacility(row.id!,{photo:'data:image/jpeg;base64,/9j/AQ=='});const after=(await service.listFacilities()).find(f=>f.id===row.id)!;expect(after.photo).not.toBe(before.photo);await service.updateFacility(row.id!,{photo:''});await expect(service.facilityPhoto(row.id!)).rejects.toThrow('not found');});

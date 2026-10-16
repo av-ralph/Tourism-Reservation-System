@@ -39,6 +39,7 @@ export class AppController {
  @Patch('api/admin/manage/:kind/:id') async editAdmin(@Param('kind') kind:string,@Param('id') id:string,@Body() body:unknown,@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return kind==='facilities'?this.appService.updateFacility(id,body):this.appService.adminUpdate(kind,id,body);}
  @Delete('api/admin/manage/:kind/:id') async deleteAdmin(@Param('kind') kind:string,@Param('id') id:string,@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return kind==='facilities'?this.appService.deleteFacility(id):this.appService.adminDelete(kind,id);}
  @Patch('api/admin/profile') async profile(@Body() body:unknown,@Headers('authorization') key?:string){return this.appService.updateAdminProfile(key,body);}
+ @Patch('api/admin/access-key') async changeAccessKey(@Body() body:unknown,@Headers('authorization') key?:string){return this.appService.changeStaffKey(key,body);}
  @Header('Cache-Control','no-store')
  @Get('api/admin/keys') keys(@Headers('authorization') key?:string){return this.appService.listStaffKeys(key);}
  @Post('api/admin/keys') addKey(@Body() body:unknown,@Headers('authorization') key?:string){return this.appService.createStaffKey(body,key);}
