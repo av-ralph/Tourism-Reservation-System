@@ -6,6 +6,10 @@
   min-width: 0;
 }
 
+.student-site .college-header .student-header .nav-portal-name {
+  margin: 0;
+}
+
 .student-site .nav-hm-logo {
   display: block;
   width: 36px;
