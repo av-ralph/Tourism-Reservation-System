@@ -1,0 +1,18 @@
+.student-site .equipment-controls{display:grid;grid-template-columns:minmax(0,1fr) 170px;gap:12px;margin:14px 0 8px}
+.student-site .equipment-controls label{margin:0;min-width:0}
+.student-site .equipment-result-count{margin:0 0 12px;color:#46607e;font-size:13px}
+.student-site .equipment-entry{grid-template-columns:minmax(0,1fr) 125px auto;align-items:start;padding:14px;border:1px solid #c6d2e1;border-radius:10px;background:#fff}
+.student-site .equipment-entry label{min-width:0}
+.student-site .equipment-entry button{align-self:center;margin:0}
+.student-site .equipment-entry .field-hint{display:block;margin-top:4px}
+.student-site .equipment-error{display:block;color:#ad321e;font-size:12px;line-height:1.4;margin-top:4px}
+.student-site .equipment-no-match{color:#526984;font-size:13px}
+@media(max-width:600px){
+ .student-site .equipment-controls{grid-template-columns:1fr}
+ .student-site .equipment-entry{grid-template-columns:minmax(0,1fr) 105px}
+ .student-site .equipment-entry button{grid-column:1/-1;justify-self:start}
+}
+@media(max-width:380px){
+ .student-site .equipment-entry{grid-template-columns:1fr}
+ .student-site .equipment-entry button{grid-column:1}
+}
