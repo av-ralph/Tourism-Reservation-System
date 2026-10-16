@@ -40,6 +40,7 @@
 .admin-shell .reservation-request-section .search{flex:none;width:min(320px,100%);margin-left:0}
 @media(max-width:1050px){
  .admin-shell .reservation-table-wrap{overflow:visible;border:0;background:transparent}
+ .admin-shell .reservation-table-wrap > .reservation-table{min-width:0;width:100%}
  .admin-shell .reservation-table,.admin-shell .reservation-table tbody,.admin-shell .reservation-table tr,.admin-shell .reservation-table td{display:block;min-width:0;width:100%}
  .admin-shell .reservation-table thead{display:none}
  .admin-shell .reservation-table tr{margin-bottom:12px;padding:8px 0;border:1px solid #c6d4e4;border-radius:12px;background:#fff;box-shadow:0 3px 10px #15385c0a;overflow:hidden}
