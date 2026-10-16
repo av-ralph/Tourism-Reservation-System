@@ -34,9 +34,10 @@
 .admin-shell .reservation-table-more button{width:100%;padding:7px 8px;border:0;border-radius:5px;background:transparent;color:#24415f;font-size:12px;text-align:left}
 .admin-shell .reservation-table-more button:hover{background:#edf3f9}
 .admin-shell .reservation-table-more .reservation-table-delete{color:#a83d27}
-.admin-shell .reservation-request-section .section-heading{display:flex;flex-wrap:wrap;gap:14px}
-.admin-shell .reservation-request-section .filters{flex:1 1 620px}
-.admin-shell .reservation-request-section .search{flex:0 1 280px;margin-left:auto}
+.admin-shell .reservation-request-section .section-heading{display:flex;flex-direction:column;align-items:stretch;gap:14px}
+.admin-shell .reservation-request-section .filters{flex:none;width:100%;align-items:center}
+.admin-shell .reservation-request-section .filters button{flex:none;align-self:auto}
+.admin-shell .reservation-request-section .search{flex:none;width:min(320px,100%);margin-left:0}
 @media(max-width:760px){
  .admin-shell .reservation-table-wrap{overflow:visible;border:0;background:transparent}
  .admin-shell .reservation-table,.admin-shell .reservation-table tbody,.admin-shell .reservation-table tr,.admin-shell .reservation-table td{display:block;min-width:0;width:100%}
@@ -50,6 +51,6 @@
  .admin-shell .reservation-table .reservation-table-subtitle,.admin-shell .reservation-table .reservation-table-muted{margin-top:2px}
  .admin-shell .reservation-table-actions{max-width:none;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
  .admin-shell .reservation-table-more{grid-column:1 / -1}
- .admin-shell .reservation-request-section .search{flex:1 1 100%;margin-left:0}
+ .admin-shell .reservation-request-section .search{width:100%}
 }
 @media(max-width:430px){.admin-shell .reservation-table td{grid-template-columns:78px minmax(0,1fr);padding:10px}.admin-shell .reservation-table-actions{grid-template-columns:1fr}}
