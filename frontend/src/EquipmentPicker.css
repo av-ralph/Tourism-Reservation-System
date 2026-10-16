@@ -10,11 +10,17 @@
 .student-site .equipment-quantity label{display:block;margin:0 0 5px;color:#334c6c;font-size:11px;font-weight:600}
 .student-site .equipment-stepper{display:flex;align-items:stretch;height:40px;border:1px solid #aabed5;border-radius:8px;overflow:hidden;background:#fff}
 .student-site .equipment-stepper button{width:32px;padding:0;border:0;background:#f0f5fa;color:#123367;font-size:19px;font-weight:600}
-.student-site .equipment-stepper button:disabled{color:#95a4b6}
+.student-site .equipment-stepper button:disabled{color:#95a4b6;cursor:not-allowed;opacity:1}
 .student-site .equipment-stepper input{width:58px;min-width:0;padding:4px;border:0;border-left:1px solid #d2dce8;border-right:1px solid #d2dce8;border-radius:0;text-align:center}
 .student-site .equipment-remove{padding:8px 0;border:0;background:none;color:#9c4528;font-size:12px;text-decoration:underline}
 .student-site .equipment-error{display:block;max-width:150px;color:#a52d1d;font-size:11px;line-height:1.4;margin-top:4px}
-.student-site .equipment-browse-heading{margin:18px 0 10px}
+.student-site .equipment-max-note{display:block;color:#526984;font-size:11px;line-height:1.4;margin-top:4px}
+.student-site .equipment-browse{margin-top:18px;border:1px solid #c6d2e1;border-radius:10px;background:#fff;overflow:hidden}
+.student-site .equipment-browse-heading{display:flex;margin:0;padding:14px;cursor:pointer;list-style:none}
+.student-site .equipment-browse-heading::-webkit-details-marker{display:none}
+.student-site .equipment-browse-heading b{display:inline-block;margin-left:8px;color:#0c2e69;font-size:18px;line-height:12px;transition:transform .2s}
+.student-site .equipment-browse[open] .equipment-browse-heading b{transform:rotate(180deg)}
+.student-site .equipment-browse-content{padding:0 14px 14px;border-top:1px solid #e3e9f1}
 .student-site .equipment-controls{display:grid;grid-template-columns:minmax(0,1fr) 150px 125px;gap:10px}
 .student-site .equipment-controls label{min-width:0;margin:0;color:#334c6c;font-size:12px}
 .student-site .equipment-controls :is(input,select){margin-top:5px}

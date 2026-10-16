@@ -45,15 +45,18 @@ export default function EquipmentPicker({inventory,inventoryStatus,onRetryInvent
         <div className="equipment-stepper">
          <button type="button" aria-label={`Decrease quantity for ${selected.name}`} disabled={Number(item.quantity)<=1} onClick={()=>updateQuantity(item.id,String(Number(item.quantity)-1))}>−</button>
          <input id={`equipment-quantity-${item.id}`} type="number" inputMode="numeric" min="1" max={stock} step="1" required value={item.quantity} aria-invalid={Boolean(error)} onChange={event=>updateQuantity(item.id,event.target.value)}/>
-         <button type="button" aria-label={`Increase quantity for ${selected.name}`} disabled={Number(item.quantity)>=stock||!item.quantity} onClick={()=>updateQuantity(item.id,String(Number(item.quantity)+1))}>+</button>
+         <button type="button" aria-label={`Increase quantity for ${selected.name}`} title={Number(item.quantity)>=stock?'Maximum available quantity reached':undefined} disabled={Number(item.quantity)>=stock||!item.quantity} onClick={()=>updateQuantity(item.id,String(Number(item.quantity)+1))}>+</button>
         </div>
+        {Number(item.quantity)===stock&&<small className="equipment-max-note">Maximum available</small>}
         {error&&<small className="equipment-error" role="alert">{error}</small>}
        </div>
        <button type="button" className="equipment-remove" aria-label={`Remove ${selected.name}`} onClick={()=>remove(item.id)}>Remove</button>
       </div>
      })}
     </section>}
-    <div className="equipment-browse-heading"><strong>Browse available items</strong><span>{inventory.length} items</span></div>
+    <details className="equipment-browse">
+    <summary className="equipment-browse-heading"><strong>Browse available items</strong><span>{inventory.length} items <b aria-hidden="true">⌄</b></span></summary>
+    <div className="equipment-browse-content">
     <div className="equipment-controls">
      <label>Search<input type="search" value={query} onChange={event=>{setQuery(event.target.value);resetLimit()}} placeholder="Try “toaster” or “kitchen”" autoComplete="off"/></label>
      <label>Category<select value={category} onChange={event=>{setCategory(event.target.value);resetLimit()}}><option value="all">All categories</option>{categories.map(value=><option key={value} value={value}>{value}</option>)}</select></label>
@@ -68,6 +71,8 @@ export default function EquipmentPicker({inventory,inventoryStatus,onRetryInvent
     </div>:<p className="equipment-no-match">No items match. Try another search or category.</p>}
     {visibleCount<sorted.length&&<button type="button" className="equipment-more secondary" onClick={()=>setVisibleCount(count=>count+PAGE_SIZE)}>Show more items</button>}
     {items.length>=22&&<p className="field-hint">You’ve reached the 22-item limit. Remove an item to choose another.</p>}
+    </div>
+    </details>
    </>}
  </fieldset>
 }
