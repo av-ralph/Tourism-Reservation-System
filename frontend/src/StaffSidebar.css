@@ -7,7 +7,7 @@
 @media(min-width:851px){
  .admin-shell.sidebar-collapsed .sidebar{width:78px;padding:28px 10px;overflow:hidden}
  .admin-shell.sidebar-collapsed .workspace{margin-left:78px;width:calc(100% - 78px)}
- .admin-shell.sidebar-collapsed .sidebar .brand{margin:-25px -10px 0;padding:12px 10px;justify-content:center;min-height:76px}
+ .admin-shell.sidebar-collapsed .sidebar .brand{margin:-28px -10px 0;padding:12px 10px;justify-content:center;min-height:76px}
  .admin-shell.sidebar-collapsed .sidebar .brand img{width:46px;flex:none}
  .admin-shell.sidebar-collapsed .sidebar .brand span,.admin-shell.sidebar-collapsed .sidebar .portal-label,.admin-shell.sidebar-collapsed .sidebar nav .admin-nav-label{display:none}
  .admin-shell.sidebar-collapsed .sidebar nav{width:100%;margin-top:12px;padding:2px 0 8px;gap:3px;overflow-x:hidden;overflow-y:auto;scrollbar-width:none}
