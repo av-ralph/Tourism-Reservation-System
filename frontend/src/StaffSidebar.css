@@ -1,0 +1,25 @@
+.admin-shell .staff-header-breadcrumb{display:flex;align-items:center;gap:14px;min-width:0}
+.admin-shell .staff-sidebar-toggle{width:36px;height:36px;flex:none;display:grid;place-items:center;border:1px solid #ffffff66;border-radius:9px;background:#ffffff16;color:#fff;cursor:pointer}
+.admin-shell .staff-sidebar-toggle:hover{background:#ffffff30}
+.admin-shell .staff-sidebar-toggle svg{width:19px;height:19px;transition:transform .18s ease}
+.admin-shell.sidebar-collapsed .staff-sidebar-toggle svg{transform:rotate(180deg)}
+
+@media(min-width:851px){
+ .admin-shell.sidebar-collapsed .sidebar{width:78px;padding:28px 10px}
+ .admin-shell.sidebar-collapsed .workspace{margin-left:78px;width:calc(100% - 78px)}
+ .admin-shell.sidebar-collapsed .sidebar .brand{margin:-25px -10px 0;padding:12px 10px;justify-content:center;min-height:76px}
+ .admin-shell.sidebar-collapsed .sidebar .brand img{width:46px;flex:none}
+ .admin-shell.sidebar-collapsed .sidebar .brand span,.admin-shell.sidebar-collapsed .sidebar .portal-label,.admin-shell.sidebar-collapsed .sidebar nav .admin-nav-label{display:none}
+ .admin-shell.sidebar-collapsed .sidebar nav{margin-top:24px;gap:7px}
+ .admin-shell.sidebar-collapsed .sidebar nav button{width:54px;min-height:50px;padding:8px;justify-content:center;position:relative}
+ .admin-shell.sidebar-collapsed .sidebar nav .admin-nav-icon{width:22px;flex-basis:22px;display:grid;place-items:center}
+ .admin-shell.sidebar-collapsed .sidebar nav button.selected:before{left:-10px}
+ .admin-shell.sidebar-collapsed .sidebar nav em{position:absolute;right:0;top:-5px;min-width:17px;padding:1px 4px}
+ .admin-shell.sidebar-collapsed .admin-sidebar-bottom{padding:14px 0;align-items:center;gap:12px}
+ .admin-shell.sidebar-collapsed .admin-staff-card{justify-content:center;width:100%;padding:14px 0 0}
+ .admin-shell.sidebar-collapsed .admin-staff-card>div,.admin-shell.sidebar-collapsed .admin-sidebar-bottom>a{display:none}
+ .admin-shell.sidebar-collapsed .admin-sidebar-bottom>button{width:46px;height:46px;padding:0;font-size:0;display:grid;place-items:center}
+ .admin-shell.sidebar-collapsed .admin-sidebar-bottom>button:before{content:'⏻';font-size:21px;line-height:1}
+}
+
+@media(max-width:850px){.admin-shell .staff-sidebar-toggle{display:none}}

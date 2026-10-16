@@ -16,6 +16,7 @@ import './StaffHeader.css'
 import './StaffExperience.css'
 import './LogoBranding.css'
 import './ModalExperience.css'
+import './StaffSidebar.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
