@@ -38,7 +38,7 @@
 .admin-shell .reservation-request-section .filters{flex:none;width:100%;align-items:center}
 .admin-shell .reservation-request-section .filters button{flex:none;align-self:auto}
 .admin-shell .reservation-request-section .search{flex:none;width:min(320px,100%);margin-left:0}
-@media(max-width:760px){
+@media(max-width:1050px){
  .admin-shell .reservation-table-wrap{overflow:visible;border:0;background:transparent}
  .admin-shell .reservation-table,.admin-shell .reservation-table tbody,.admin-shell .reservation-table tr,.admin-shell .reservation-table td{display:block;min-width:0;width:100%}
  .admin-shell .reservation-table thead{display:none}
