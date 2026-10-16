@@ -32,15 +32,19 @@ describe('reservations',()=>{
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
  it('persists records across restart',async()=>{await service.create('reservations',booking);expect((await new AppService().records()).reservations).toHaveLength(1);});
- it('publishes reviewed inventory and enforces available booking quantities',async()=>{
-  const draft=(await service.adminInventory()).find(item=>item.id==='report-0-3');
+ it('publishes positive report stock and enforces available booking quantities',async()=>{
+  const catalog=await service.adminInventory();
+  const reported=catalog.find(item=>item.id==='report-0-3');
+  const missingUnit=catalog.find(item=>item.status==='Available'&&item.unit==='not recorded');
+  const zeroStock=catalog.find(item=>item.status==='Draft'&&Number(item.quantity)===0);
   process.env.HM_ADMIN_KEY='test-super-key';
   try{
-   expect(draft?.status).toBe('Draft');
-   expect(await service.listInventory()).toEqual([]);
-   await expect(service.updateInventory(draft!.id!,{status:'Available',unit:'not recorded'})).rejects.toThrow('verified unit');
-   await service.updateInventory(draft!.id!,{status:'Available'});
-   expect((await service.listInventory()).some(entry=>entry.id===draft!.id)).toBe(true);
+   expect(reported?.status).toBe('Available');
+   expect((await service.listInventory()).some(entry=>entry.id===reported!.id)).toBe(true);
+   expect((await service.listInventory()).find(entry=>entry.id===missingUnit!.id)?.unit).toBe('item');
+   expect((await service.listInventory()).some(entry=>entry.id===zeroStock!.id)).toBe(false);
+   await expect(service.updateInventory(zeroStock!.id!,{status:'Available'})).rejects.toThrow('quantity above zero');
+   await expect(service.createInventory({name:'Unspecified',category:'Kitchen',quantity:'1',unit:'not recorded',status:'Available'})).rejects.toThrow('verified unit');
    const item=await service.createInventory({name:'Test mixing bowl',category:'Kitchen',quantity:'2',unit:'pcs',status:'Available',notes:''});
    expect(await service.listInventory()).toContainEqual({id:item.id,name:'Test mixing bowl',category:'Kitchen',model:'',quantity:'2',unit:'pcs'});
    await service.createAdminKey({name:'Instructor',key:'instructor-test-key-123',role:'instructor'});

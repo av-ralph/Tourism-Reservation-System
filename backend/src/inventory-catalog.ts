@@ -1,7 +1,7 @@
 // Extracted from the supplied 2nd Sem A.Y. 2025–2026 HM Laboratory Inventory Report.
-// Report fields preserve the Word table; booking stock requires administrator verification.
+// Report fields preserve the Word table. Positive reported stock is published at the owner's request.
 import type { Row } from './record-store.js';
-export const inventoryCatalog: Row[] = [
+const reportInventoryCatalog: Row[] = [
   {
     "id": "report-0-3",
     "name": "2-burner electric stove",
@@ -9423,3 +9423,7 @@ export const inventoryCatalog: Row[] = [
     "status": "Draft"
   }
 ];
+export const inventoryCatalog: Row[] = reportInventoryCatalog.map(item => ({
+  ...item,
+  status: Number(item.quantity) > 0 ? 'Available' : 'Draft',
+}));

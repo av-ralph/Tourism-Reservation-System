@@ -2,7 +2,7 @@
 
 Usage: python scripts/import_inventory_report.py path/to/report.docx
 The report's previous, actual, and required cells are preserved verbatim.
-Blank actual quantities remain unpublished drafts with zero booking stock.
+Zero actual quantities remain unpublished drafts with zero booking stock.
 """
 
 import json
@@ -56,11 +56,15 @@ def main(path):
     output = Path(__file__).resolve().parents[1] / "backend/src/inventory-catalog.ts"
     output.write_text(
         "// Extracted from the supplied 2nd Sem A.Y. 2025–2026 HM Laboratory Inventory Report.\n"
-        "// Report fields preserve the Word table; booking stock requires administrator verification.\n"
+        "// Report fields preserve the Word table. Positive reported stock is published at the owner's request.\n"
         "import type { Row } from './record-store.js';\n"
-        "export const inventoryCatalog: Row[] = "
+        "const reportInventoryCatalog: Row[] = "
         + json.dumps(rows, ensure_ascii=False, indent=2)
-        + ";\n",
+        + ";\n"
+        + "export const inventoryCatalog: Row[] = reportInventoryCatalog.map(item => ({\n"
+        + "  ...item,\n"
+        + "  status: Number(item.quantity) > 0 ? 'Available' : 'Draft',\n"
+        + "}));\n",
         encoding="utf-8",
     )
     print(f"Wrote {len(rows)} report items to {output}")

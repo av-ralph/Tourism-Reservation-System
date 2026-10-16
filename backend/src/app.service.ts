@@ -18,7 +18,7 @@ export class AppService {
  async adminRecords(authorization?:string){const data=await this.storage.read();const identity=await this.adminIdentity(authorization,data);if(identity.role==='instructor')throw new ForbiddenException('Instructor keys cannot access administrator actions.');return {...await this.records(data),...identity};}
  async adminInventory(){return this.inventoryFrom(await this.storage.read());}
  private inventoryFrom(data:Store){return [...inventoryCatalog.map(item=>({...item,...data.inventory.find(row=>row.id===item.id)})),...data.inventory.filter(row=>!inventoryCatalog.some(item=>item.id===row.id))].filter(item=>item.deleted!=='true');}
- async listInventory(){return this.inventoryFrom(await this.storage.read()).filter(item=>item.status==='Available'&&Number(item.quantity)>0).map(({id,name,category,model,quantity,unit})=>({id,name,category,model,quantity,unit}));}
+ async listInventory(){return this.inventoryFrom(await this.storage.read()).filter(item=>item.status==='Available'&&Number(item.quantity)>0).map(({id,name,category,model,quantity,unit})=>({id,name,category,model,quantity,unit:unit==='not recorded'?'item':unit}));}
  private validateInventory(input:unknown):Row{
   if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid inventory item.');
   const raw=input as Record<string,unknown>, row:Row={};
@@ -28,7 +28,7 @@ export class AppService {
   row.quantity=String(raw.quantity);
   if(!['Draft','Available','Unavailable'].includes(String(raw.status)))throw new BadRequestException('Choose Draft, Available, or Unavailable.');
   if(raw.status==='Available'&&Number(row.quantity)===0)throw new BadRequestException('Available items need a quantity above zero.');
-  if(raw.status==='Available'&&row.unit==='not recorded')throw new BadRequestException('Set a verified unit before making this item available.');
+  if(raw.status==='Available'&&row.unit==='not recorded'&&!(typeof raw.id==='string'&&inventoryCatalog.some(item=>item.id===raw.id&&Number(item.reportActualQuantity)>0)))throw new BadRequestException('Set a verified unit before making this item available.');
   row.status=String(raw.status);return row;
  }
  createInventory(input:unknown){return this.storage.mutate(data=>{const row={...this.validateInventory(input),id:randomUUID(),createdAt:new Date().toISOString()};data.inventory.push(row);return row;});}
