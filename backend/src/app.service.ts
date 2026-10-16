@@ -5,6 +5,7 @@ import { randomUUID, randomBytes, timingSafeEqual, createHash, createCipheriv, c
 import { RecordStore } from './record-store.js';
 import type { Row, Store } from './record-store.js';
 import { facilityCatalog } from './facility-catalog.js';
+import { inventoryCatalog } from './inventory-catalog.js';
 
 @Injectable()
 export class AppService {
@@ -15,6 +16,23 @@ export class AppService {
  private publicReservation(row:Row):Row{return {...row,status:this.reservationStatus(row)};}
  async records(data?:Store){data??=await this.storage.read();return {reservations:data.reservations.map(row=>this.publicReservation(row)),reports:data.reports,utilization:data.utilization,facilities:this.facilitiesFrom(data)};}
  async adminRecords(authorization?:string){const data=await this.storage.read();const identity=await this.adminIdentity(authorization,data);if(identity.role==='instructor')throw new ForbiddenException('Instructor keys cannot access administrator actions.');return {...await this.records(data),...identity};}
+ async adminInventory(){return this.inventoryFrom(await this.storage.read());}
+ private inventoryFrom(data:Store){return [...inventoryCatalog.map(item=>({...item,...data.inventory.find(row=>row.id===item.id)})),...data.inventory.filter(row=>!inventoryCatalog.some(item=>item.id===row.id))].filter(item=>item.deleted!=='true');}
+ async listInventory(){return this.inventoryFrom(await this.storage.read()).filter(item=>item.status==='Available'&&Number(item.quantity)>0).map(({id,name,category,quantity,unit})=>({id,name,category,quantity,unit}));}
+ private validateInventory(input:unknown):Row{
+  if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid inventory item.');
+  const raw=input as Record<string,unknown>, row:Row={};
+  for(const [key,max] of [['name',120],['category',100],['unit',30]] as const){if(typeof raw[key]!=='string'||!raw[key].trim()||raw[key].length>max)throw new BadRequestException('Enter a valid '+key+'.');row[key]=raw[key].trim();}
+  for(const [key,max] of [['model',120],['serial',120],['notes',500]] as const){if(raw[key]!==undefined&&(typeof raw[key]!=='string'||raw[key].length>max))throw new BadRequestException('Invalid '+key+'.');row[key]=typeof raw[key]==='string'?raw[key].trim():'';}
+  if(!/^(0|[1-9]\d{0,4})$/.test(String(raw.quantity)))throw new BadRequestException('Quantity must be a whole number from 0 to 99999.');
+  row.quantity=String(raw.quantity);
+  if(!['Draft','Available','Unavailable'].includes(String(raw.status)))throw new BadRequestException('Choose Draft, Available, or Unavailable.');
+  if(raw.status==='Available'&&Number(row.quantity)===0)throw new BadRequestException('Available items need a quantity above zero.');
+  row.status=String(raw.status);return row;
+ }
+ createInventory(input:unknown){return this.storage.mutate(data=>{const row={...this.validateInventory(input),id:randomUUID(),createdAt:new Date().toISOString()};data.inventory.push(row);return row;});}
+ updateInventory(id:string,input:unknown){if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid inventory item.');return this.storage.mutate(data=>{const old=this.inventoryFrom(data).find(row=>row.id===id);if(!old)throw new NotFoundException('Inventory item not found.');const row={...old,...this.validateInventory({...old,...input}),updatedAt:new Date().toISOString()};data.inventory=data.inventory.filter(item=>item.id!==id);data.inventory.push(row);return row;});}
+ deleteInventory(id:string){return this.storage.mutate(data=>{const old=this.inventoryFrom(data).find(row=>row.id===id);if(!old)throw new NotFoundException('Inventory item not found.');if(data.reservations.some(r=>r.inventorySelection?.includes('"'+id+'"')))throw new ConflictException('This item is used in a reservation. Mark it unavailable instead.');data.inventory=data.inventory.filter(row=>row.id!==id);if(inventoryCatalog.some(row=>row.id===id))data.inventory.push({...old,deleted:'true'});return {success:true};});}
  private facilitiesFrom(data:Store){return [...facilityCatalog.map(f=>({...f,...data.facilities.find(row=>row.id===f.id)})),...data.facilities.filter(row=>!facilityCatalog.some(f=>f.id===row.id))].filter(f=>(f as Row).deleted!=='true');}
  async listFacilities(){return this.facilitiesFrom(await this.storage.read()).map(f=>{const row=f as Row;const {photo,...details}=row;return {...details,photo:photo?`/api/facilities/${encodeURIComponent(row.id!)}/photo?v=${createHash('sha256').update(photo).digest('hex').slice(0,16)}`:''};});}
  async listInstructors(){return (await this.storage.read()).adminKeys.filter(row=>row.role==='instructor').map(row=>({id:row.id,name:row.name})).sort((a,b)=>a.name!.localeCompare(b.name!));}
@@ -219,6 +237,23 @@ export class AppService {
  }
  create(kind:'reservations'|'reports'|'utilization',input:unknown,owner?:string,requireInstructor=false){return this.storage.mutate(data=>{
   const r=this.validateRecord(kind,input,data,undefined,requireInstructor);
+  if(kind==='reservations'&&owner){
+   const raw=(input as Record<string,unknown>).inventoryItems;
+   if(!Array.isArray(raw)||raw.length>22)throw new BadRequestException('Choose up to 22 listed inventory items.');
+   const selected=new Set<string>(),lines:string[]=[],selection:{id:string;quantity:number}[]=[];
+   for(const entry of raw){
+    if(!entry||typeof entry!=='object'||Array.isArray(entry))throw new BadRequestException('Invalid equipment selection.');
+    const item=entry as Record<string,unknown>,id=item.id,quantity=Number(item.quantity);
+    if(typeof id!=='string'||!Number.isSafeInteger(quantity)||quantity<1||selected.has(id))throw new BadRequestException('Choose each equipment item once with a valid quantity.');
+    const available=this.inventoryFrom(data).find(row=>row.id===id&&row.status==='Available');
+    if(!available)throw new BadRequestException('An equipment item is no longer available. Please refresh the list.');
+    const reserved=data.reservations.filter(row=>!['Cancelled','Rejected'].includes(this.reservationStatus(row)!)&&row.date===r.date&&row.start!<r.end!&&row.end!>r.start!).reduce((total,row)=>{try{return total+(JSON.parse(row.inventorySelection||'[]') as {id:string;quantity:number}[]).filter(pick=>pick.id===id).reduce((sum,pick)=>sum+pick.quantity,0)}catch{return total}},0);
+    if(quantity+reserved>Number(available.quantity))throw new ConflictException(`${available.name} has only ${Math.max(0,Number(available.quantity)-reserved)} ${available.unit} available at that time.`);
+    selected.add(id);selection.push({id,quantity});lines.push(`${quantity} | ${available.name}`);
+   }
+   if(lines.join('\n').length>2000)throw new BadRequestException('The equipment list is too long. Select fewer items.');
+   r.equipment=lines.join('\n')||'None';r.inventorySelection=JSON.stringify(selection);
+  }
   r.id=randomUUID();r.createdAt=new Date().toISOString();if(owner)r.owner=owner;if(kind==='reservations')r.status='Awaiting instructor';if(kind==='reports')r.status='Open';data[kind].push(r);return r;
  });}
  private recordKind(kind:string):'reservations'|'reports'|'utilization'{if(!['reservations','reports','utilization'].includes(kind))throw new BadRequestException('Invalid record type.');return kind as 'reservations'|'reports'|'utilization';}
@@ -230,6 +265,7 @@ export class AppService {
     updated.status='Awaiting instructor';
     for(const field of ['instructorDecision','instructorNote','instructorReviewedBy','instructorReviewedAt','instructorSignature','reviewNote','reviewedAt'])delete updated[field];
    }
+   if(old.equipment!==updated.equipment)delete updated.inventorySelection;
   }data[type]=data[type].map(row=>row.id===id?updated:row);return updated;});}
  adminDelete(kind:string,id:string){const type=this.recordKind(kind);return this.storage.mutate(data=>{if(!data[type].some(r=>r.id===id))throw new NotFoundException('Record not found.');data[type]=data[type].filter(r=>r.id!==id);return {success:true};});}
  createFacility(input:unknown){return this.storage.mutate(data=>{const fields=this.validateFacility(input);if(this.facilitiesFrom(data).some(f=>f.name.toLowerCase()===fields.name!.toLowerCase()))throw new ConflictException('A facility with this name already exists.');const row={...fields,id:randomUUID(),createdAt:new Date().toISOString()};data.facilities.push(row);return row;});}

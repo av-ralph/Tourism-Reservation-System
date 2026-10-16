@@ -4,7 +4,7 @@ import {join} from 'node:path';
 import {AppService} from './app.service.js';
 describe('reservations',()=>{
  let dir:string,service:AppService;
- const booking={facility:'Hot Kitchen',name:'Test',studentId:'TEST',date:'2099-10-10',start:'09:00',end:'10:00',purpose:'Practice',subject:'Culinary',instructor:'Instructor',equipment:'None',email:'student@example.com',termsAccepted:true};
+ const booking={facility:'Hot Kitchen',name:'Test',studentId:'TEST',date:'2099-10-10',start:'09:00',end:'10:00',purpose:'Practice',subject:'Culinary',instructor:'Instructor',equipment:'None',inventoryItems:[],email:'student@example.com',termsAccepted:true};
  const signature=[[[10,10],[24,30],[40,18],[57,42],[75,24],[94,49],[112,31],[130,55]]];
  beforeEach(async()=>{dir=await mkdtemp(join(tmpdir(),'hm-test-'));process.env.HM_STORAGE='file';process.env.HM_DATA_FILE=join(dir,'records.json');service=new AppService();});
  afterEach(async()=>{delete process.env.HM_STORAGE;delete process.env.HM_DATA_FILE;await rm(dir,{recursive:true,force:true,maxRetries:5,retryDelay:200});});
@@ -32,6 +32,28 @@ describe('reservations',()=>{
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
  it('persists records across restart',async()=>{await service.create('reservations',booking);expect((await new AppService().records()).reservations).toHaveLength(1);});
+ it('publishes reviewed inventory and enforces available booking quantities',async()=>{
+  const draft=(await service.adminInventory()).find(item=>item.id==='report-0-3');
+  process.env.HM_ADMIN_KEY='test-super-key';
+  try{
+   expect(draft?.status).toBe('Draft');
+   expect(await service.listInventory()).toEqual([]);
+   await service.updateInventory(draft!.id!,{status:'Available'});
+   expect((await service.listInventory()).some(entry=>entry.id===draft!.id)).toBe(true);
+   const item=await service.createInventory({name:'Test mixing bowl',category:'Kitchen',quantity:'2',unit:'pcs',status:'Available',notes:''});
+   expect(await service.listInventory()).toContainEqual({id:item.id,name:'Test mixing bowl',category:'Kitchen',quantity:'2',unit:'pcs'});
+   await service.createAdminKey({name:'Instructor',key:'instructor-test-key-123',role:'instructor'});
+   const token='11111111-1111-4111-8111-111111111111';
+   const request={...booking,inventoryItems:[{id:item.id,quantity:2}]};
+   const saved=await service.createForUser('reservations',request,token);
+   expect(saved.equipment).toBe('2 | Test mixing bowl');
+   await expect(service.createForUser('reservations',{...request,start:'10:00',end:'11:00',inventoryItems:[{id:item.id,quantity:3}]},token)).rejects.toThrow('only');
+   await expect(service.createForUser('reservations',{...request,facility:'Cold Kitchen',start:'09:30',end:'10:30',inventoryItems:[{id:item.id,quantity:1}]},token)).rejects.toThrow('only 0');
+   await expect(service.deleteInventory(item.id)).rejects.toThrow('used in a reservation');
+   await service.updateInventory(item.id,{status:'Unavailable'});
+   expect((await service.listInventory()).some(entry=>entry.id===item.id)).toBe(false);
+  }finally{delete process.env.HM_ADMIN_KEY;}
+ });
  it('saves and validates the public college organization',async()=>{
   expect(await service.collegeOrganization()).toEqual({groups:null});
   const groups=[{title:'Laboratory team',items:[{name:'Example Person – Laboratory In-Charge',photo:''}]}];

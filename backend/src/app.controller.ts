@@ -8,6 +8,8 @@ export class AppController {
  @Get('api/facilities') facilities(){return this.appService.listFacilities();}
  @Get('api/instructors') instructors(){return this.appService.listInstructors();}
  @Header('Cache-Control','no-store')
+ @Get('api/inventory') inventory(){return this.appService.listInventory();}
+ @Header('Cache-Control','no-store')
  @Get('api/organization') organization(){return this.appService.collegeOrganization();}
  @Header('Cache-Control','no-store')
  @Get('api/admin/organization') async adminOrganization(@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return this.appService.collegeOrganization();}
@@ -23,6 +25,11 @@ export class AppController {
  @Delete('api/reservations/:id') cancel(@Param('id') id:string,@Headers('x-user-session') token?:string){return this.appService.cancelForUser(id,token);}
  @Header('Cache-Control','no-store')
  @Get('api/admin/records') adminRecords(@Headers('authorization') key?:string){return this.appService.adminRecords(key);}
+ @Header('Cache-Control','no-store')
+ @Get('api/admin/inventory') async adminInventory(@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return this.appService.adminInventory();}
+ @Post('api/admin/inventory') async addInventory(@Body() body:unknown,@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return this.appService.createInventory(body);}
+ @Patch('api/admin/inventory/:id') async editInventory(@Param('id') id:string,@Body() body:unknown,@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return this.appService.updateInventory(id,body);}
+ @Delete('api/admin/inventory/:id') async removeInventory(@Param('id') id:string,@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return this.appService.deleteInventory(id);}
  @Header('Cache-Control','no-store')
  @Get('api/instructor/records') instructorRecords(@Headers('authorization') key?:string){return this.appService.instructorRecords(key);}
  @Patch('api/instructor/reservations/:id/review') instructorReview(@Param('id') id:string,@Body() body:unknown,@Headers('authorization') key?:string){return this.appService.reviewAsInstructor(id,body,key);}
