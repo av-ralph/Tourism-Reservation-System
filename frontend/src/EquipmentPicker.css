@@ -1,18 +1,43 @@
-.student-site .equipment-controls{display:grid;grid-template-columns:minmax(0,1fr) 170px;gap:12px;margin:14px 0 8px}
-.student-site .equipment-controls label{margin:0;min-width:0}
-.student-site .equipment-result-count{margin:0 0 12px;color:#46607e;font-size:13px}
-.student-site .equipment-entry{grid-template-columns:minmax(0,1fr) 125px auto;align-items:start;padding:14px;border:1px solid #c6d2e1;border-radius:10px;background:#fff}
-.student-site .equipment-entry label{min-width:0}
-.student-site .equipment-entry button{align-self:center;margin:0}
-.student-site .equipment-entry .field-hint{display:block;margin-top:4px}
-.student-site .equipment-error{display:block;color:#ad321e;font-size:12px;line-height:1.4;margin-top:4px}
-.student-site .equipment-no-match{color:#526984;font-size:13px}
-@media(max-width:600px){
- .student-site .equipment-controls{grid-template-columns:1fr}
- .student-site .equipment-entry{grid-template-columns:minmax(0,1fr) 105px}
- .student-site .equipment-entry button{grid-column:1/-1;justify-self:start}
+.student-site .equipment-fields{min-width:0}
+.student-site .equipment-section-heading,.student-site .equipment-browse-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#0c2e69;font-size:14px}
+.student-site .equipment-section-heading span,.student-site .equipment-browse-heading span{color:#526984;font-size:12px;font-weight:500}
+.student-site .equipment-selected{margin:16px 0 22px;padding:14px;border:1px solid #b6c9df;border-radius:12px;background:#eaf1f9}
+.student-site .equipment-selected-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:14px;padding:12px 0;border-top:1px solid #cddbec}
+.student-site .equipment-section-heading+.equipment-selected-row{margin-top:12px}
+.student-site .equipment-selected-details{min-width:0}
+.student-site .equipment-selected-details strong,.student-site .equipment-result strong{display:block;color:#102e60;font-size:13px;line-height:1.4}
+.student-site .equipment-selected-details small,.student-site .equipment-result small{display:block;color:#526984;font-size:12px;line-height:1.5;margin-top:3px}
+.student-site .equipment-quantity label{display:block;margin:0 0 5px;color:#334c6c;font-size:11px;font-weight:600}
+.student-site .equipment-stepper{display:flex;align-items:stretch;height:40px;border:1px solid #aabed5;border-radius:8px;overflow:hidden;background:#fff}
+.student-site .equipment-stepper button{width:32px;padding:0;border:0;background:#f0f5fa;color:#123367;font-size:19px;font-weight:600}
+.student-site .equipment-stepper button:disabled{color:#95a4b6}
+.student-site .equipment-stepper input{width:58px;min-width:0;padding:4px;border:0;border-left:1px solid #d2dce8;border-right:1px solid #d2dce8;border-radius:0;text-align:center}
+.student-site .equipment-remove{padding:8px 0;border:0;background:none;color:#9c4528;font-size:12px;text-decoration:underline}
+.student-site .equipment-error{display:block;max-width:150px;color:#a52d1d;font-size:11px;line-height:1.4;margin-top:4px}
+.student-site .equipment-browse-heading{margin:18px 0 10px}
+.student-site .equipment-controls{display:grid;grid-template-columns:minmax(0,1fr) 150px 125px;gap:10px}
+.student-site .equipment-controls label{min-width:0;margin:0;color:#334c6c;font-size:12px}
+.student-site .equipment-controls :is(input,select){margin-top:5px}
+.student-site .equipment-result-count{margin:12px 0 8px;color:#526984;font-size:12px}
+.student-site .equipment-results{border:1px solid #c6d2e1;border-radius:10px;background:#fff}
+.student-site .equipment-result{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border-bottom:1px solid #e3e9f1}
+.student-site .equipment-result:last-child{border-bottom:0}
+.student-site .equipment-result>div{min-width:0}
+.student-site .equipment-result span{display:block;margin-top:3px;color:#567a57;font-size:11px}
+.student-site .equipment-result button{flex:none;min-width:76px;margin:0;padding:8px 10px;font-size:12px}
+.student-site .equipment-result .equipment-added{border:1px solid #c3d6c9;border-radius:8px;background:#eaf5ed;color:#27613a}
+.student-site .equipment-more{display:block;width:100%;margin-top:10px}
+.student-site .equipment-no-match{margin:10px 0;color:#526984;font-size:13px}
+@media(max-width:650px){
+ .student-site .equipment-controls{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .student-site .equipment-controls label:first-child{grid-column:1/-1}
+ .student-site .equipment-selected-row{grid-template-columns:minmax(0,1fr) auto}
+ .student-site .equipment-selected-details{grid-column:1/-1}
+ .student-site .equipment-remove{justify-self:end}
 }
 @media(max-width:380px){
- .student-site .equipment-entry{grid-template-columns:1fr}
- .student-site .equipment-entry button{grid-column:1}
+ .student-site .equipment-controls{grid-template-columns:1fr}
+ .student-site .equipment-controls label:first-child{grid-column:1}
+ .student-site .equipment-result{align-items:flex-start}
+ .student-site .equipment-result button{min-width:62px}
 }
