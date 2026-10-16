@@ -5,18 +5,19 @@
 .admin-shell.sidebar-collapsed .staff-sidebar-toggle svg{transform:rotate(180deg)}
 
 @media(min-width:851px){
- .admin-shell.sidebar-collapsed .sidebar{width:78px;padding:28px 10px}
+ .admin-shell.sidebar-collapsed .sidebar{width:78px;padding:28px 10px;overflow:hidden}
  .admin-shell.sidebar-collapsed .workspace{margin-left:78px;width:calc(100% - 78px)}
  .admin-shell.sidebar-collapsed .sidebar .brand{margin:-25px -10px 0;padding:12px 10px;justify-content:center;min-height:76px}
  .admin-shell.sidebar-collapsed .sidebar .brand img{width:46px;flex:none}
  .admin-shell.sidebar-collapsed .sidebar .brand span,.admin-shell.sidebar-collapsed .sidebar .portal-label,.admin-shell.sidebar-collapsed .sidebar nav .admin-nav-label{display:none}
- .admin-shell.sidebar-collapsed .sidebar nav{margin-top:24px;gap:7px}
- .admin-shell.sidebar-collapsed .sidebar nav button{width:54px;min-height:50px;padding:8px;justify-content:center;position:relative}
+ .admin-shell.sidebar-collapsed .sidebar nav{width:100%;margin-top:12px;padding:2px 0 8px;gap:3px;overflow-x:hidden;overflow-y:auto;scrollbar-width:none}
+ .admin-shell.sidebar-collapsed .sidebar nav::-webkit-scrollbar{display:none}
+ .admin-shell.sidebar-collapsed .sidebar nav button{width:100%;min-height:42px;padding:7px;justify-content:center;position:relative;overflow:hidden}
  .admin-shell.sidebar-collapsed .sidebar nav .admin-nav-icon{width:22px;flex-basis:22px;display:grid;place-items:center}
- .admin-shell.sidebar-collapsed .sidebar nav button.selected:before{left:-10px}
- .admin-shell.sidebar-collapsed .sidebar nav em{position:absolute;right:0;top:-5px;min-width:17px;padding:1px 4px}
- .admin-shell.sidebar-collapsed .admin-sidebar-bottom{padding:14px 0;align-items:center;gap:12px}
- .admin-shell.sidebar-collapsed .admin-staff-card{justify-content:center;width:100%;padding:14px 0 0}
+ .admin-shell.sidebar-collapsed .sidebar nav button.selected:before{left:0}
+ .admin-shell.sidebar-collapsed .sidebar nav em{position:absolute;right:1px;top:1px;min-width:16px;padding:0 3px}
+ .admin-shell.sidebar-collapsed .admin-sidebar-bottom{padding:10px 0 0;align-items:center;gap:8px}
+ .admin-shell.sidebar-collapsed .admin-staff-card{justify-content:center;width:100%;padding:0}
  .admin-shell.sidebar-collapsed .admin-staff-card>div,.admin-shell.sidebar-collapsed .admin-sidebar-bottom>a{display:none}
  .admin-shell.sidebar-collapsed .admin-sidebar-bottom>button{width:46px;height:46px;padding:0;font-size:0;display:grid;place-items:center}
  .admin-shell.sidebar-collapsed .admin-sidebar-bottom>button:before{content:'⏻';font-size:21px;line-height:1}
