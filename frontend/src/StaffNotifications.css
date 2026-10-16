@@ -12,6 +12,8 @@
 .admin-shell .staff-notification-item{display:grid;grid-template-columns:8px minmax(0,1fr) 16px;align-items:center;gap:11px;width:100%;padding:12px;border:0;border-radius:8px;background:#fff;text-align:left;color:#24415e}
 .admin-shell .staff-notification-item:hover,.admin-shell .staff-notification-item:focus-visible{background:#f2f6fb}
 .admin-shell .staff-notification-item strong{display:block;margin-bottom:4px;color:#183758;font-size:13px;line-height:1.35}
+.admin-shell .workspace > header .staff-notification-panel strong{color:#183758}
+.admin-shell .workspace > header .staff-notification-heading strong{color:#06266b}
 .admin-shell .staff-notification-item small{display:block;color:#526780;font-size:11px;line-height:1.4;overflow-wrap:anywhere}
 .admin-shell .staff-notification-dot{width:8px;height:8px;align-self:start;margin-top:5px;border-radius:50%;background:#e76626}
 .admin-shell .staff-notification-completed .staff-notification-dot{background:#8aa6c3}
