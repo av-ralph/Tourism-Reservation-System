@@ -6,6 +6,11 @@
 .inventory-sheet-toolbar p{margin:0;color:#526984;font-size:.8rem;line-height:1.5}
 .inventory-sheet-toolbar button{flex:none}
 .inventory-sheet-grid{height:min(68vh,660px);min-height:360px;min-width:0;border:1px solid #c7d4e4;border-radius:12px;overflow:hidden}
+.ag-filter-menu .ag-filter-body-wrapper{min-width:250px;padding:14px;overflow:visible}
+.ag-filter-menu .ag-filter-select .ag-picker-field-wrapper{min-height:38px}
+.ag-filter-menu .ag-input-field-search-icon{display:none}
+.ag-filter-menu .ag-input-field-search .ag-input-field-input{height:40px;padding:8px 34px 8px 12px;border:1px solid #aebed2;border-radius:7px;font-size:14px;line-height:20px;outline:none}
+.ag-filter-menu .ag-input-field-search .ag-input-field-input:focus{border-color:#e76626;outline:2px solid #f5d0bc;outline-offset:1px}
 .inventory-sheet-loading{padding:2rem;color:#526984}
 .inventory-sheet-message{margin:.5rem 0;padding:.65rem .8rem;border:1px solid #c7d4e4;border-radius:8px;background:#f3f7fb;color:#24415e;font-size:.82rem}
 .inventory-sheet-edit{min-height:30px;padding:4px 10px;border:1px solid #b8c8dc;border-radius:7px;background:#fff;color:#18365c;cursor:pointer}
