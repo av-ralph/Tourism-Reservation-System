@@ -7,14 +7,14 @@ export function defaultOrganization(){
 export const emptyOrganizationSections=['The Founders','Faculty and Staff']
 
 export function includeOrganizationSections(groups){
- const result=[...groups]
- if(!result.some(group=>group.title?.trim().toLowerCase()==='the founders')){
-  const board=result.findIndex(group=>group.title?.trim().toLowerCase()==='board of trustees')
-  result.splice(board<0?0:board,0,{title:'The Founders',items:[]})
+ const result=groups.filter(group=>group&&typeof group.title==='string').map(group=>({...group,items:Array.isArray(group.items)?group.items:[]}))
+ function place(title,anchor,after){
+  const index=result.findIndex(group=>group.title.trim().toLowerCase()===title.toLowerCase())
+  const group=index<0?{title,items:[]}:result.splice(index,1)[0]
+  const anchorIndex=result.findIndex(item=>item.title.trim().toLowerCase()===anchor.toLowerCase())
+  result.splice(anchorIndex<0?(after?result.length:0):anchorIndex+(after?1:0),0,group)
  }
- if(!result.some(group=>group.title?.trim().toLowerCase()==='faculty and staff')){
-  const technical=result.findIndex(group=>group.title?.trim().toLowerCase()==='technical, staff & assistant positions')
-  result.splice(technical<0?result.length:technical+1,0,{title:'Faculty and Staff',items:[]})
- }
+ place('The Founders','Board of Trustees',false)
+ place('Faculty and Staff','Technical, Staff & Assistant Positions',true)
  return result
 }
