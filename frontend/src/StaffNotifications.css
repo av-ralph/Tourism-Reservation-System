@@ -2,20 +2,30 @@
 .admin-shell .staff-notification-trigger{position:relative;display:grid;place-items:center;width:40px;height:40px;border:1px solid #ffffff70;border-radius:10px;background:#ffffff16;color:#fff;padding:0}
 .admin-shell .staff-notification-trigger:hover,.admin-shell .staff-notification-trigger[aria-expanded=true]{background:#ffffff30}
 .admin-shell .staff-notification-trigger svg{width:21px;height:21px}
+.admin-shell .staff-notification-trigger.has-new{box-shadow:0 0 0 3px #f7ac6938}
 .admin-shell .staff-notification-count{position:absolute;top:-7px;right:-8px;display:grid;place-items:center;min-width:20px;height:20px;padding:0 4px;border:2px solid #224f7c;border-radius:20px;background:#e76626;color:#fff;font-size:10px;font-weight:800;line-height:1}
 .admin-shell .staff-notification-panel{position:absolute;z-index:30;top:calc(100% + 15px);right:0;width:min(360px,calc(100vw - 28px));max-height:min(480px,calc(100vh - 100px));overflow:auto;border:1px solid #c4d1e0;border-radius:13px;background:#fff;color:#183758;box-shadow:0 18px 46px #0b2d4b36}
 .admin-shell .staff-notification-heading{display:flex;align-items:start;justify-content:space-between;gap:12px;padding:17px 18px;border-bottom:1px solid #dce4ee}
 .admin-shell .staff-notification-heading strong{display:block;font-size:16px;color:#06266b}
 .admin-shell .staff-notification-heading small{display:block;margin-top:3px;color:#526780;font-size:12px}
 .admin-shell .staff-notification-heading button{border:0;background:transparent;color:#526780;font-size:24px;line-height:1;padding:0 2px}
+.admin-shell .staff-notification-live{display:flex;align-items:center;gap:6px;padding:9px 18px;border-bottom:1px solid #e4ebf3;background:#f7fafc;color:#486786;font-size:11px;font-weight:600}
+.admin-shell .staff-notification-live>span{width:7px;height:7px;border-radius:50%;background:#2c9e66}
+.admin-shell .staff-notification-live small{color:#6a7f97;font-size:11px;font-weight:400}
 .admin-shell .staff-notification-list{padding:6px}
+.admin-shell .staff-notification-section{display:flex;align-items:center;gap:8px;padding:11px 12px 5px;color:#385473;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.admin-shell .staff-notification-section b{display:grid;place-items:center;min-width:20px;height:20px;border-radius:6px;background:#fff0e5;color:#a64014;font-size:11px}
+.admin-shell .staff-notification-recent{margin-top:7px;padding-top:14px;border-top:1px solid #e4ebf3}
 .admin-shell .staff-notification-item{display:grid;grid-template-columns:8px minmax(0,1fr) 16px;align-items:center;gap:11px;width:100%;padding:12px;border:0;border-radius:8px;background:#fff;text-align:left;color:#24415e}
 .admin-shell .staff-notification-item:hover,.admin-shell .staff-notification-item:focus-visible{background:#f2f6fb}
 .admin-shell .staff-notification-item strong{display:block;margin-bottom:4px;color:#183758;font-size:13px;line-height:1.35}
+.admin-shell .staff-notification-item strong em{display:inline-block;margin-left:7px;padding:2px 5px;border-radius:4px;background:#fff0e5;color:#a64014;font-size:10px;font-style:normal}
 .admin-shell .workspace > header .staff-notification-panel strong{color:#183758}
 .admin-shell .workspace > header .staff-notification-heading strong{color:#06266b}
 .admin-shell .staff-notification-item small{display:block;color:#526780;font-size:11px;line-height:1.4;overflow-wrap:anywhere}
 .admin-shell .staff-notification-dot{width:8px;height:8px;align-self:start;margin-top:5px;border-radius:50%;background:#e76626}
 .admin-shell .staff-notification-completed .staff-notification-dot{background:#8aa6c3}
 .admin-shell .staff-notification-empty{margin:0;padding:22px 16px;color:#526780;font-size:13px;line-height:1.5}
+.admin-shell .staff-notification-view-all{display:flex;align-items:center;justify-content:space-between;width:100%;padding:13px 18px;border:0;border-top:1px solid #e4ebf3;background:#fff;color:#a64014;font-size:12px;font-weight:700;text-align:left}
+.admin-shell .staff-notification-view-all:hover{background:#fff7f1}
 @media(max-width:600px){.admin-shell .staff-notification-trigger{width:36px;height:36px}.admin-shell .staff-notification-panel{position:fixed;top:132px;right:14px;width:calc(100vw - 28px);max-height:calc(100vh - 150px)}}
