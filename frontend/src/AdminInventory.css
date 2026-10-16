@@ -1,4 +1,14 @@
 .inventory-page{min-width:0}
+.inventory-view-switch{display:inline-flex;gap:3px;padding:4px;border:1px solid #c7d4e4;border-radius:10px;background:#f2f6fb}
+.inventory-view-switch button{border:0;border-radius:7px;padding:9px 15px;background:transparent;color:#385473;font-size:.84rem;font-weight:700;cursor:pointer}
+.inventory-view-switch button.selected{background:#fff;color:#a64014;box-shadow:0 1px 5px #17375b1c}
+.inventory-sheet-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:.4rem 0 .75rem}
+.inventory-sheet-toolbar p{margin:0;color:#526984;font-size:.8rem;line-height:1.5}
+.inventory-sheet-toolbar button{flex:none}
+.inventory-sheet-grid{height:min(68vh,660px);min-height:360px;min-width:0;border:1px solid #c7d4e4;border-radius:12px;overflow:hidden}
+.inventory-sheet-loading{padding:2rem;color:#526984}
+.inventory-sheet-message{margin:.5rem 0;padding:.65rem .8rem;border:1px solid #c7d4e4;border-radius:8px;background:#f3f7fb;color:#24415e;font-size:.82rem}
+.inventory-sheet-edit{min-height:30px;padding:4px 10px;border:1px solid #b8c8dc;border-radius:7px;background:#fff;color:#18365c;cursor:pointer}
 .inventory-overview{display:flex;flex-wrap:wrap;gap:.65rem;margin:1.2rem 0;color:#18365c}
 .inventory-overview>*{padding:.55rem .8rem;border:1px solid #c7d4e4;border-radius:9px;background:#f4f7fb;font-size:.85rem}
 .inventory-controls{display:grid;grid-template-columns:minmax(180px,2fr) repeat(3,minmax(130px,1fr));gap:.75rem;align-items:end;margin-bottom:1rem}
@@ -34,4 +44,4 @@
 .inventory-source dt{font-size:.73rem;font-weight:700;color:#526984}
 .inventory-source dd{margin:.15rem 0 0;overflow-wrap:anywhere}
 @media(max-width:900px){.inventory-controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:600px){.inventory-controls{grid-template-columns:1fr}.inventory-pagination{justify-content:space-between}.inventory-table-wrap{max-height:62vh}.inventory-source dl{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.inventory-controls{grid-template-columns:1fr}.inventory-pagination{justify-content:space-between}.inventory-table-wrap{max-height:62vh}.inventory-source dl{grid-template-columns:repeat(2,minmax(0,1fr))}.inventory-sheet-toolbar{align-items:flex-start;flex-direction:column}.inventory-sheet-grid{height:60vh;min-height:320px}}
