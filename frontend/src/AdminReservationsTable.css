@@ -1,0 +1,55 @@
+.admin-shell .reservation-table-wrap{border-radius:12px;overflow-x:auto}
+.admin-shell .reservation-table{width:100%;min-width:780px;table-layout:fixed;border-collapse:separate;border-spacing:0}
+.admin-shell .reservation-table-caption{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.admin-shell .reservation-table th{padding:14px 16px;background:#eaf0f7;color:#26456a!important;font-size:11px;font-weight:700;letter-spacing:.04em;text-align:left}
+.admin-shell .reservation-table th:nth-child(1){width:24%}
+.admin-shell .reservation-table th:nth-child(2){width:22%}
+.admin-shell .reservation-table th:nth-child(3){width:16%}
+.admin-shell .reservation-table th:nth-child(4){width:18%}
+.admin-shell .reservation-table th:nth-child(5){width:20%}
+.admin-shell .reservation-table td{padding:18px 16px;border-bottom:1px solid #dce5ef;vertical-align:top;font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+.admin-shell .reservation-table tbody tr:nth-child(even){background:#f8fafc}
+.admin-shell .reservation-table tbody tr:hover{background:#f2f7fc}
+.admin-shell .reservation-table tbody tr:last-child td{border-bottom:0}
+.admin-shell .reservation-table :is(.reservation-table-title,.reservation-table-person,.reservation-table-date){display:block;color:#092b65;font-size:14px;line-height:1.4}
+.admin-shell .reservation-table :is(.reservation-table-subtitle,.reservation-table-muted){display:block;margin-top:6px;color:#465e79;font-size:12px;line-height:1.4}
+.admin-shell .reservation-table .reservation-table-subtitle{overflow-wrap:anywhere}
+.admin-shell .reservation-table .badge{display:inline-block;white-space:normal;line-height:1.35}
+.admin-shell .reservation-table-details{margin-top:12px}
+.admin-shell .reservation-table-details summary,.admin-shell .reservation-table-more summary{color:#174d83;font-size:12px;font-weight:600;cursor:pointer}
+.admin-shell .reservation-table-details summary:hover,.admin-shell .reservation-table-more summary:hover{text-decoration:underline}
+.admin-shell .reservation-table-details dl{margin:10px 0 0;padding:12px;border:1px solid #dce5ef;border-radius:8px;background:#fff}
+.admin-shell .reservation-table-details dl>div+div{margin-top:9px}
+.admin-shell .reservation-table-details dt{color:#5b7088;font-size:11px;font-weight:700}
+.admin-shell .reservation-table-details dd{margin:2px 0 0;color:#24415f;font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere}
+.admin-shell .reservation-table .reservation-actions-cell{min-width:0;width:auto}
+.admin-shell .reservation-table-actions{display:grid;gap:7px;max-width:180px}
+.admin-shell .reservation-table-actions>button{min-height:36px;padding:7px 10px;border-radius:7px;font-size:12px;font-weight:700;text-align:center}
+.admin-shell .reservation-table-actions .review-request-button{width:100%;border:1px solid #e76626;background:#e76626;color:#fff}
+.admin-shell .reservation-table-actions .review-request-button:hover{background:#ce551d}
+.admin-shell .reservation-table-actions .reservation-table-view{border:1px solid #aabdd3;background:#fff;color:#0b3674}
+.admin-shell .reservation-table-actions .reservation-table-view:hover{background:#eef5fc}
+.admin-shell .reservation-table-more{margin-top:3px}
+.admin-shell .reservation-table-more>div{display:grid;gap:2px;margin-top:7px;padding:5px;border:1px solid #dce5ef;border-radius:8px;background:#fff}
+.admin-shell .reservation-table-more button{width:100%;padding:7px 8px;border:0;border-radius:5px;background:transparent;color:#24415f;font-size:12px;text-align:left}
+.admin-shell .reservation-table-more button:hover{background:#edf3f9}
+.admin-shell .reservation-table-more .reservation-table-delete{color:#a83d27}
+.admin-shell .reservation-request-section .section-heading{display:flex;flex-wrap:wrap;gap:14px}
+.admin-shell .reservation-request-section .filters{flex:1 1 620px}
+.admin-shell .reservation-request-section .search{flex:0 1 280px;margin-left:auto}
+@media(max-width:760px){
+ .admin-shell .reservation-table-wrap{overflow:visible;border:0;background:transparent}
+ .admin-shell .reservation-table,.admin-shell .reservation-table tbody,.admin-shell .reservation-table tr,.admin-shell .reservation-table td{display:block;min-width:0;width:100%}
+ .admin-shell .reservation-table thead{display:none}
+ .admin-shell .reservation-table tr{margin-bottom:12px;padding:8px 0;border:1px solid #c6d4e4;border-radius:12px;background:#fff;box-shadow:0 3px 10px #15385c0a;overflow:hidden}
+ .admin-shell .reservation-table tbody tr:nth-child(even){background:#fff}
+ .admin-shell .reservation-table td{display:grid;grid-template-columns:94px minmax(0,1fr);gap:4px 10px;padding:10px 14px;border:0}
+ .admin-shell .reservation-table td::before{content:attr(data-label);grid-column:1;grid-row:1 / span 6;margin:2px 0 0;color:#5b7088;font-size:11px;font-weight:700}
+ .admin-shell .reservation-table td>*{grid-column:2}
+ .admin-shell .reservation-table td+td{border-top:1px solid #edf1f6}
+ .admin-shell .reservation-table .reservation-table-subtitle,.admin-shell .reservation-table .reservation-table-muted{margin-top:2px}
+ .admin-shell .reservation-table-actions{max-width:none;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+ .admin-shell .reservation-table-more{grid-column:1 / -1}
+ .admin-shell .reservation-request-section .search{flex:1 1 100%;margin-left:0}
+}
+@media(max-width:430px){.admin-shell .reservation-table td{grid-template-columns:78px minmax(0,1fr);padding:10px}.admin-shell .reservation-table-actions{grid-template-columns:1fr}}

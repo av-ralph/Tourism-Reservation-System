@@ -17,6 +17,7 @@ import './StaffExperience.css'
 import './LogoBranding.css'
 import './ModalExperience.css'
 import './StaffSidebar.css'
+import './AdminReservationsTable.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
