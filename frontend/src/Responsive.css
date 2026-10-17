@@ -107,6 +107,8 @@
  .admin-shell .review-decision{grid-template-columns:1fr}
  .student-site .booking-progress li{font-size:10px;overflow-wrap:anywhere}
  .admin-login.admin-signin{padding:20px 14px}
+ .admin-login .signin-card{padding:25px 18px}
+ .admin-login .signin-card h1{font-size:24px}
 }
 @media(max-height:500px) and (orientation:landscape){
  .student-site .student-header{position:static}
