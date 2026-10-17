@@ -1,5 +1,5 @@
 /* Shared staff phone layout. Keep the current page and notifications readable. */
-.admin-signin .signin-footer { text-align:center; }
+.admin-signin .signin-footer { justify-content:center; text-align:center; }
 
 @media (max-width: 600px) {
   .admin-shell .sidebar .admin-sidebar-bottom { display: none; }
