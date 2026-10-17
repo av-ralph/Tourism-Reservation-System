@@ -91,6 +91,20 @@ describe('reservations',()=>{
    expect(await service.authorizeAdmin(adminAuth)).toBe('admin');
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
+ it('persists profile photos separately for administrators and instructors',async()=>{
+  process.env.HM_ADMIN_KEY='test-super-key';
+  const photo='data:image/jpeg;base64,/9j/AA==';
+  try{
+   await service.createStaffKey({name:'Office Admin',key:'OfficeAdmin1!',role:'admin'},'Bearer test-super-key');
+   await service.createStaffKey({name:'Testing instructor',key:'InstructorB1!',role:'instructor'},'Bearer test-super-key');
+   await service.updateAdminProfile('Bearer OfficeAdmin1!',{name:'Office Admin',email:'',photo});
+   await service.updateAdminProfile('Bearer InstructorB1!',{name:'Testing instructor',email:'',photo});
+   const restarted=new AppService();
+   expect((await restarted.adminRecords('Bearer OfficeAdmin1!')).adminPhoto).toBe(photo);
+   expect((await restarted.instructorRecords('Bearer InstructorB1!')).adminPhoto).toBe(photo);
+   expect((await restarted.adminRecords('Bearer test-super-key')).adminPhoto).toBe('');
+  }finally{delete process.env.HM_ADMIN_KEY;}
+ });
  it('separates instructor review from final admin approval',async()=>{
   process.env.HM_ADMIN_KEY='test-super-key';
   try{
