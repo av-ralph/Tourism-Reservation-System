@@ -18,6 +18,16 @@ export function reservationInventory(equipment) {
     return match ? {quantity:match[1],description:match[2]} : {quantity:'',description:line}
   })
 }
+export function reservationArea(facility) {
+  const name=String(facility||'').trim().toLowerCase()
+  if(name==='bar area')return 'BAR'
+  if(name==='dining area')return 'DINING'
+  if(name==='front office area')return 'FRONT_OFFICE'
+  if(name==='hot kitchen'||name==='cold kitchen'||name==='kitchen area')return 'KITCHEN'
+  if(name==='laundry area')return 'LAUNDRY'
+  if(name==='rooms'||name==='harmonia mini-hotel'||name==='lunara mini-hotel')return 'ROOMS'
+  return 'OTHER'
+}
 export function fillReservationForm(template, reservation, signatureImage) {
   const files = unzipSync(template)
   if(!files['word/document.xml'])throw new Error('The form template is not a valid Word document.')
@@ -27,6 +37,8 @@ export function fillReservationForm(template, reservation, signatureImage) {
   if (!row) throw new Error('The reservation form template is unavailable.')
   const inventory = reservationInventory(reservation.equipment)
   xml = xml.replace(rowPattern, () => Array.from({length:Math.max(12,inventory.length)}, (_,i) => row.replace('{{ITEM_QUANTITY}}',()=>escapeXml(inventory[i]?.quantity)).replace('{{ITEM_DESCRIPTION}}',()=>escapeXml(inventory[i]?.description))).join(''))
+  const checkedArea=reservationArea(reservation.facility)
+  for(const area of ['BAR','DINING','FRONT_OFFICE','KITCHEN','LAUNDRY','ROOMS','OTHER'])xml=xml.replaceAll(`{{CHECK_${area}}}`,()=>area===checkedArea?'☒':'☐')
   const values = {
     FILED_DATE:dateLabel(reservation.createdAt), USAGE_DATE:dateLabel(reservation.date),
     SUBJECT:reservation.subject, USAGE_TIME:[reservation.start,reservation.end].filter(Boolean).join(' – '),
@@ -61,7 +73,7 @@ function renderSignature(value){
 let templatePromise
 export async function downloadReservationForm(reservation) {
   try {
-    templatePromise ||= fetch('/documents/reservation-template.docx?v=2').then(async response => {
+    templatePromise ||= fetch('/documents/reservation-template.docx?v=3').then(async response => {
       if (!response.ok) throw new Error('The form template could not be loaded.')
       return new Uint8Array(await response.arrayBuffer())
     }).catch(error=>{templatePromise=undefined;throw error})

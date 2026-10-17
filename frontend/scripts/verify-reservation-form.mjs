@@ -1,12 +1,30 @@
 import assert from 'node:assert/strict'
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs'
 import {unzipSync,strFromU8} from 'fflate'
-import {fillReservationForm} from '../src/reservation-form.js'
+import {fillReservationForm,reservationArea} from '../src/reservation-form.js'
 const template=readFileSync(new URL('../public/documents/reservation-template.docx',import.meta.url))
 const record={id:'test',createdAt:'2026-10-09T14:00:00Z',date:'2026-10-15',start:'09:00',end:'11:00',subject:'Food & Beverage',purpose:'Practice <plating> $&',facility:'Hot Kitchen',name:'Sample Student',email:'sample@example.com',studentId:'2026-001',instructor:'Sample Instructor',equipment:'2 | Mixing bowls\n4 | Measuring cups\nTray $& (quantity unspecified)'}
 const original=unzipSync(template),result=unzipSync(fillReservationForm(template,record)),xml=strFromU8(result['word/document.xml'])
+const templateXml=strFromU8(original['word/document.xml'])
 for(const key of Object.keys(original)) if(key!=='word/document.xml') assert.deepEqual(result[key],original[key],key+' preserved')
 assert(!xml.includes('{{'))
+assert.equal((xml.match(/☒/g)||[]).length,1)
+assert.equal((xml.match(/☐/g)||[]).length,6)
+for(const marker of ['USAGE_DATE','USAGE_TIME','SUBJECT','PURPOSE','ITEM_QUANTITY','ITEM_DESCRIPTION']){
+  const index=templateXml.indexOf(`{{${marker}}}`)
+  assert(index>=0,marker)
+  const paragraph=templateXml.slice(templateXml.lastIndexOf('<w:p',index),templateXml.indexOf('</w:p>',index))
+  assert(paragraph.includes('<w:jc w:val="center"/>'),`${marker} centered`)
+  assert(paragraph.includes('<w:b/>'),`${marker} bold`)
+}
+const areaLabels={BAR:'Bar Area',DINING:'Dining Area',FRONT_OFFICE:'Front Office Area',KITCHEN:'Kitchen Area',LAUNDRY:'Laundry Area',ROOMS:'Rooms',OTHER:'Other'}
+for(const [facility,area] of [['Bar Area','BAR'],['Dining Area','DINING'],['Front Office Area','FRONT_OFFICE'],['Hot Kitchen','KITCHEN'],['Cold Kitchen','KITCHEN'],['Laundry Area','LAUNDRY'],['Harmonia Mini-Hotel','ROOMS'],['Lunara Mini-Hotel','ROOMS'],['Mini Function Room','OTHER'],['Computer Laboratory MH 302','OTHER']]){
+  assert.equal(reservationArea(facility),area)
+  const filled=strFromU8(unzipSync(fillReservationForm(template,{...record,facility}))['word/document.xml'])
+  assert.equal((filled.match(/☒/g)||[]).length,1,facility)
+  assert(filled.slice(filled.indexOf('☒'),filled.indexOf('☒')+450).includes(areaLabels[area]),`${facility} checked area`)
+  assert(filled.includes(facility),facility)
+}
 for(const text of ['Food &amp; Beverage','Practice &lt;plating&gt; $&amp;','Hot Kitchen','Sample Student','Sample Instructor','sample@example.com','2026-001','Mixing bowls','Measuring cups','Tray $&amp; (quantity unspecified)'])assert(xml.includes(text),text)
 assert.equal((xml.match(/<w:tr\b/g)||[]).length,(strFromU8(original['word/document.xml']).match(/<w:tr\b/g)||[]).length+11)
 const long=fillReservationForm(template,{...record,studentId:'',equipment:Array.from({length:30},(_,i)=>`${i+1} | Item ${i+1}`).join('\n')})
