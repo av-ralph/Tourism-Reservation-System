@@ -1,0 +1,17 @@
+/* Admin-only phone layout. Keep the current page and notifications readable. */
+@media (max-width: 600px) {
+  .admin-shell:not(.instructor-shell) .sidebar .admin-sidebar-bottom { display: none; }
+  .admin-shell:not(.instructor-shell) .sidebar nav.is-open ~ .admin-sidebar-bottom { display: flex; }
+  .admin-shell:not(.instructor-shell) .workspace > header { display: flex; align-items: center; justify-content: space-between; gap:12px; padding:10px 16px; }
+  .admin-shell:not(.instructor-shell) .staff-header-breadcrumb { flex:1 1 auto; width:0; min-width:0; gap:0; overflow:hidden; white-space:nowrap; font-size:0; }
+  .admin-shell:not(.instructor-shell) .staff-header-breadcrumb > span { display:none; }
+  .admin-shell:not(.instructor-shell) .staff-header-breadcrumb > strong { display:block; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:14px; }
+  .admin-shell:not(.instructor-shell) .workspace > header .header-right { flex:none; gap:0; }
+  .admin-shell:not(.instructor-shell) .workspace > header .admin-date { display:none; }
+  .admin-shell:not(.instructor-shell) .staff-notification-trigger { width:44px; height:44px; }
+  .admin-shell:not(.instructor-shell) .staff-notification-panel { top:148px; right:14px; width:calc(100% - 28px); max-width:none; }
+  .admin-shell:not(.instructor-shell) .admin-schedule-controls :is(button,input,select) { min-height:44px; }
+  .admin-shell:not(.instructor-shell) .incident-filters { width:100%; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .admin-shell:not(.instructor-shell) .incident-filters button { min-width:0; min-height:44px; }
+  .admin-shell:not(.instructor-shell) .admin-management-toolbar .primary { width:100%; min-height:44px; }
+}

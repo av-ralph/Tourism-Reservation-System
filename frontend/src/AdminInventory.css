@@ -48,5 +48,20 @@
 .inventory-source dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.65rem;margin:.7rem 0 0}
 .inventory-source dt{font-size:.73rem;font-weight:700;color:#526984}
 .inventory-source dd{margin:.15rem 0 0;overflow-wrap:anywhere}
+.inventory-mobile-list{display:grid;gap:12px}
+.inventory-mobile-item{min-width:0;padding:15px;border:1px solid #c7d4e4;border-radius:11px;background:#fff}
+.inventory-mobile-item-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.inventory-mobile-item-heading>div{min-width:0}
+.inventory-mobile-item h3{margin:0 0 4px;color:#0a2d66;font-size:16px;line-height:1.35;overflow-wrap:anywhere}
+.inventory-mobile-item p{margin:0;color:#526984;font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+.inventory-mobile-item .inventory-status{flex:none}
+.inventory-mobile-item-stock{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:14px 0;padding:10px 12px;border-radius:8px;background:#f3f7fb;font-size:12px}
+.inventory-mobile-item-stock strong{color:#0a2d66;font-size:15px;text-align:right}
+.inventory-mobile-item details{margin:0 0 14px;border-bottom:1px solid #e2e9f2}
+.inventory-mobile-item summary{min-height:40px;padding:8px 0;color:#244f7d;font-size:13px;font-weight:700;cursor:pointer}
+.inventory-mobile-item dl{margin:0 0 12px;display:grid;gap:8px}
+.inventory-mobile-item dt{color:#5b7088;font-size:11px;font-weight:700}
+.inventory-mobile-item dd{margin:2px 0 0;color:#24415f;font-size:12px;overflow-wrap:anywhere}
+.inventory-mobile-item>.secondary{width:100%;min-height:44px}
 @media(max-width:900px){.inventory-controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:600px){.inventory-controls{grid-template-columns:1fr}.inventory-pagination{justify-content:space-between}.inventory-table-wrap{max-height:62vh}.inventory-source dl{grid-template-columns:repeat(2,minmax(0,1fr))}.inventory-sheet-toolbar{align-items:flex-start;flex-direction:column}.inventory-sheet-grid{height:60vh;min-height:320px}}
+@media(max-width:600px){.inventory-controls{grid-template-columns:1fr}.inventory-pagination{justify-content:space-between;flex-wrap:wrap}.inventory-pagination span{flex-basis:100%;order:-1;text-align:center}.inventory-pagination button{flex:1;min-width:0;min-height:44px}.inventory-table-wrap{max-height:62vh}.inventory-source dl{grid-template-columns:repeat(2,minmax(0,1fr))}.inventory-sheet-toolbar{align-items:flex-start;flex-direction:column}.inventory-sheet-grid{height:60vh;min-height:320px}}
