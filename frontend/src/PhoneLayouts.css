@@ -1,4 +1,6 @@
 /* Shared staff phone layout. Keep the current page and notifications readable. */
+.admin-signin .signin-footer { text-align:center; }
+
 @media (max-width: 600px) {
   .admin-shell .sidebar .admin-sidebar-bottom { display: none; }
   .admin-shell .sidebar nav.is-open ~ .admin-sidebar-bottom { display: flex; }
