@@ -16,3 +16,4 @@ backend/src/generated/
 .DS_Store
 
 .form-work/
+.vercel
