@@ -20,11 +20,9 @@ export class AppService {
   const data=await this.storage.read();
   const contactName='cristian jay m. pechon';
   const matches=(name:string)=>name.trim().replace(/\s+/g,' ').toLocaleLowerCase('en-PH')===contactName;
-  const profile=data.adminProfiles.find(row=>row.photo&&(
-   (row.id==='super-admin-profile'&&matches(row.name||''))||
-   data.adminKeys.some(key=>key.role==='admin'&&(row.id===this.staffProfileId(key.hash)||row.id==='profile-'+key.hash)&&(matches(row.name||'')||matches(key.name||'')))
-  ));
-  return {photo:profile?.photo||''};
+  const admins=data.adminKeys.filter(key=>key.role==='admin').map(key=>({key,profile:data.adminProfiles.find(row=>row.id===this.staffProfileId(key.hash)||row.id==='profile-'+key.hash)})).filter(entry=>entry.profile?.photo);
+  const contact=admins.find(entry=>matches(entry.key.name||'')||matches(entry.profile?.name||''));
+  return {photo:contact?.profile?.photo||(admins.length===1?admins[0].profile?.photo:'')||''};
  }
  async adminInventory(){return this.inventoryFrom(await this.storage.read());}
  private inventoryFrom(data:Store){return [...inventoryCatalog.map(item=>({...item,...data.inventory.find(row=>row.id===item.id)})),...data.inventory.filter(row=>!inventoryCatalog.some(item=>item.id===row.id))].filter(item=>item.deleted!=='true');}

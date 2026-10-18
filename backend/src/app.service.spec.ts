@@ -111,11 +111,24 @@ describe('reservations',()=>{
   try{
    await service.createStaffKey({name:'Cristian Jay M. Pechon',key:'OfficeAdmin1!',role:'admin'},'Bearer test-super-key');
    await service.createStaffKey({name:'Other Instructor',key:'InstructorB1!',role:'instructor'},'Bearer test-super-key');
+   await service.updateAdminProfile('Bearer test-super-key',{name:'Cristian Jay M. Pechon',email:'',photo});
    await service.updateAdminProfile('Bearer InstructorB1!',{name:'Cristian Jay M. Pechon',email:'',photo});
    expect(await service.publicContact()).toEqual({photo:''});
    await service.updateAdminProfile('Bearer OfficeAdmin1!',{name:'Cristian Jay M. Pechon',email:'',photo});
    expect(await service.publicContact()).toEqual({photo});
    await service.updateAdminProfile('Bearer OfficeAdmin1!',{name:'Cristian Jay M. Pechon',email:'',photo:''});
+   expect(await service.publicContact()).toEqual({photo:''});
+  }finally{delete process.env.HM_ADMIN_KEY;}
+ });
+ it('uses the sole regular admin photo when the account name differs from the contact name',async()=>{
+  process.env.HM_ADMIN_KEY='test-super-key';
+  const photo='data:image/jpeg;base64,/9j/AA==';
+  try{
+   await service.createStaffKey({name:'HM Admin',key:'OfficeAdmin1!',role:'admin'},'Bearer test-super-key');
+   await service.updateAdminProfile('Bearer OfficeAdmin1!',{name:'Laboratory Admin',email:'',photo});
+   expect(await service.publicContact()).toEqual({photo});
+   await service.createStaffKey({name:'Second Admin',key:'SecondAdmin1!',role:'admin'},'Bearer test-super-key');
+   await service.updateAdminProfile('Bearer SecondAdmin1!',{name:'Second Admin',email:'',photo});
    expect(await service.publicContact()).toEqual({photo:''});
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
