@@ -122,16 +122,33 @@ def signature_line(cell, value):
 
 
 reserved, noted = approval.rows[0].cells
-add_line(reserved, "Reserved by", bold=True, size=10, first=True)
+add_line(reserved, "Reserved by:", size=9, first=True)
 signature_line(reserved, "{{SIGNATURE}}")
 add_line(reserved, "{{INSTRUCTOR}}", bold=True, size=10)
 add_line(reserved, "Signature over printed name", size=8)
 add_line(reserved, "Date signed: {{SIGNED_DATE}}", size=8)
 
-add_line(noted, "Noted by", bold=True, size=10, first=True)
-signature_line(noted, " ")
-add_line(noted, "CRISTIAN JAY M. PECHON", bold=True, size=10)
-add_line(noted, "Laboratory In-Charge · Signature over printed name", size=8)
-add_line(noted, "Date: __________________", size=8)
+noted_box = noted.add_table(rows=4, cols=1)
+noted_box.autofit = False
+noted_box.columns[0].width = Inches(3.4)
+for index, (label, bold, size) in enumerate([
+    ("Noted by:", False, 9),
+    ("CRISTIAN JAY M. PECHON", True, 10),
+    ("Laboratory In-Charge", False, 8),
+    ("Signature over printed name / Date: __________", False, 8),
+]):
+    box_cell = noted_box.cell(index, 0)
+    box_cell.width = Inches(3.4)
+    box_cell.text = ""
+    paragraph = add_line(box_cell, label, bold=bold, size=size, first=True)
+    paragraph.paragraph_format.space_after = Pt(0)
+    borders = OxmlElement("w:tcBorders")
+    for edge in ("top", "left", "bottom", "right"):
+        line = OxmlElement("w:" + edge)
+        line.set(qn("w:val"), "single")
+        line.set(qn("w:sz"), "5")
+        line.set(qn("w:color"), "555555")
+        borders.append(line)
+    box_cell._tc.get_or_add_tcPr().append(borders)
 
 document.save(template_path)
