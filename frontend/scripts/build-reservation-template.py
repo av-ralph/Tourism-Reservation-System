@@ -95,9 +95,9 @@ for cell in approval.rows[0].cells:
     cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.TOP
 
 
-def add_line(cell, text, *, bold=False, size=9, first=False):
+def add_line(cell, text, *, bold=False, size=9, first=False, alignment=WD_ALIGN_PARAGRAPH.LEFT):
     paragraph = cell.paragraphs[0] if first else cell.add_paragraph()
-    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    paragraph.alignment = alignment
     paragraph.paragraph_format.space_before = Pt(0)
     paragraph.paragraph_format.space_after = Pt(2)
     run = paragraph.add_run(text)
@@ -111,7 +111,7 @@ def signature_line(cell, value):
     paragraph = add_line(cell, value)
     paragraph.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY
     paragraph.paragraph_format.line_spacing = Pt(48)
-    paragraph.paragraph_format.space_after = Pt(5)
+    paragraph.paragraph_format.space_after = Pt(4)
     border = OxmlElement("w:pBdr")
     bottom = OxmlElement("w:bottom")
     bottom.set(qn("w:val"), "single")
@@ -122,33 +122,27 @@ def signature_line(cell, value):
 
 
 reserved, noted = approval.rows[0].cells
-add_line(reserved, "Reserved by:", size=9, first=True)
+for cell, side in ((reserved, "right"), (noted, "left")):
+    properties = cell._tc.get_or_add_tcPr()
+    for old in properties.findall(qn("w:tcBorders")) + properties.findall(qn("w:tcMar")):
+        properties.remove(old)
+    margins = OxmlElement("w:tcMar")
+    margin = OxmlElement("w:" + side)
+    margin.set(qn("w:w"), "180")
+    margin.set(qn("w:type"), "dxa")
+    margins.append(margin)
+    properties.append(margins)
+
+add_line(reserved, "Reserved by", bold=True, size=9, first=True)
 signature_line(reserved, "{{SIGNATURE}}")
 add_line(reserved, "{{INSTRUCTOR}}", bold=True, size=10)
 add_line(reserved, "Signature over printed name", size=8)
 add_line(reserved, "Date signed: {{SIGNED_DATE}}", size=8)
 
-noted_box = noted.add_table(rows=4, cols=1)
-noted_box.autofit = False
-noted_box.columns[0].width = Inches(3.4)
-for index, (label, bold, size) in enumerate([
-    ("Noted by:", False, 9),
-    ("CRISTIAN JAY M. PECHON", True, 10),
-    ("Laboratory In-Charge", False, 8),
-    ("Signature over printed name / Date: __________", False, 8),
-]):
-    box_cell = noted_box.cell(index, 0)
-    box_cell.width = Inches(3.4)
-    box_cell.text = ""
-    paragraph = add_line(box_cell, label, bold=bold, size=size, first=True)
-    paragraph.paragraph_format.space_after = Pt(0)
-    borders = OxmlElement("w:tcBorders")
-    for edge in ("top", "left", "bottom", "right"):
-        line = OxmlElement("w:" + edge)
-        line.set(qn("w:val"), "single")
-        line.set(qn("w:sz"), "5")
-        line.set(qn("w:color"), "555555")
-        borders.append(line)
-    box_cell._tc.get_or_add_tcPr().append(borders)
+add_line(noted, "Noted by", bold=True, size=9, first=True)
+signature_line(noted, " ")
+add_line(noted, "CRISTIAN JAY M. PECHON", bold=True, size=10)
+add_line(noted, "Laboratory In-Charge · Signature over printed name", size=8)
+add_line(noted, "Date signed: __________________", size=8)
 
 document.save(template_path)
