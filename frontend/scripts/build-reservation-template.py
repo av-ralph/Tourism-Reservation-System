@@ -5,7 +5,9 @@ from pathlib import Path
 
 from docx import Document
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 from docx.shared import Inches, Pt
 
 
@@ -86,5 +88,50 @@ for table in document.tables[:2]:
                 paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 for run in paragraph.runs:
                     run.bold = True
+
+approval = document.tables[-1]
+for cell in approval.rows[0].cells:
+    cell.text = ""
+    cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.TOP
+
+
+def add_line(cell, text, *, bold=False, size=9, first=False):
+    paragraph = cell.paragraphs[0] if first else cell.add_paragraph()
+    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    paragraph.paragraph_format.space_before = Pt(0)
+    paragraph.paragraph_format.space_after = Pt(2)
+    run = paragraph.add_run(text)
+    run.font.name = "Times New Roman"
+    run.font.size = Pt(size)
+    run.bold = bold
+    return paragraph
+
+
+def signature_line(cell, value):
+    paragraph = add_line(cell, value)
+    paragraph.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY
+    paragraph.paragraph_format.line_spacing = Pt(48)
+    paragraph.paragraph_format.space_after = Pt(5)
+    border = OxmlElement("w:pBdr")
+    bottom = OxmlElement("w:bottom")
+    bottom.set(qn("w:val"), "single")
+    bottom.set(qn("w:sz"), "5")
+    bottom.set(qn("w:color"), "666666")
+    border.append(bottom)
+    paragraph._p.get_or_add_pPr().append(border)
+
+
+reserved, noted = approval.rows[0].cells
+add_line(reserved, "Reserved by", bold=True, size=10, first=True)
+signature_line(reserved, "{{SIGNATURE}}")
+add_line(reserved, "{{INSTRUCTOR}}", bold=True, size=10)
+add_line(reserved, "Instructor · Signature over printed name", size=8)
+add_line(reserved, "Date signed: {{SIGNED_DATE}}", size=8)
+
+add_line(noted, "Noted by", bold=True, size=10, first=True)
+signature_line(noted, " ")
+add_line(noted, "CRISTIAN JAY M. PECHON", bold=True, size=10)
+add_line(noted, "Laboratory In-Charge · Signature over printed name", size=8)
+add_line(noted, "Date: __________________", size=8)
 
 document.save(template_path)

@@ -44,7 +44,7 @@ export function fillReservationForm(template, reservation, signatureImage) {
     SUBJECT:reservation.subject, USAGE_TIME:[reservation.start,reservation.end].filter(Boolean).join(' – '),
     PURPOSE:reservation.purpose, FACILITY:reservation.facility,
     CONTACT_DETAILS:`Requested by: ${reservation.name||''}\nEmail: ${reservation.email||''}${reservation.studentId ? ' | ID: '+reservation.studentId : ''}`,
-    SIGNED_DATE:signatureImage?dateLabel(reservation.instructorReviewedAt):'',
+    SIGNED_DATE:signatureImage?dateLabel(reservation.instructorReviewedAt):'__________________',
   }
   for (const [key,value] of Object.entries(values)) xml=xml.replaceAll('{{'+key+'}}',()=>escapeXml(value).replace(/\r?\n/g,'</w:t><w:br/><w:t xml:space="preserve">'))
   let signatureRun=''
@@ -56,7 +56,7 @@ export function fillReservationForm(template, reservation, signatureImage) {
     files['word/media/instructor-signature.png']=signatureImage
   }
   xml=xml.replaceAll('{{INSTRUCTOR}}',()=>escapeXml(signatureImage?(reservation.instructorReviewedBy||reservation.instructor):reservation.instructor))
-  xml=xml.replace(/<w:r\b[^>]*>(?:(?!<\/w:r>)[\s\S])*?\{\{SIGNATURE\}\}(?:(?!<\/w:r>)[\s\S])*?<\/w:r>/,()=>signatureRun||'<w:r><w:br/></w:r>')
+  xml=xml.replace(/<w:r\b[^>]*>(?:(?!<\/w:r>)[\s\S])*?\{\{SIGNATURE\}\}(?:(?!<\/w:r>)[\s\S])*?<\/w:r>/,()=>signatureRun||'<w:r><w:t> </w:t></w:r>')
   files['word/document.xml']=strToU8(xml)
   return zipSync(files)
 }
@@ -73,7 +73,7 @@ function renderSignature(value){
 let templatePromise
 export async function downloadReservationForm(reservation) {
   try {
-    templatePromise ||= fetch('/documents/reservation-template.docx?v=4').then(async response => {
+    templatePromise ||= fetch('/documents/reservation-template.docx?v=5').then(async response => {
       if (!response.ok) throw new Error('The form template could not be loaded.')
       return new Uint8Array(await response.arrayBuffer())
     }).catch(error=>{templatePromise=undefined;throw error})
