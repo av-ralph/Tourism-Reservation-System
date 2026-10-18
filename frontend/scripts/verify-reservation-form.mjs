@@ -6,6 +6,9 @@ const template=readFileSync(new URL('../public/documents/reservation-template.do
 const record={id:'test',createdAt:'2026-10-09T14:00:00Z',date:'2026-10-15',start:'09:00',end:'11:00',subject:'Food & Beverage',purpose:'Practice <plating> $&',facility:'Hot Kitchen',name:'Sample Student',email:'sample@example.com',studentId:'2026-001',instructor:'Sample Instructor',equipment:'2 | Mixing bowls\n4 | Measuring cups\nTray $& (quantity unspecified)'}
 const original=unzipSync(template),result=unzipSync(fillReservationForm(template,record)),xml=strFromU8(result['word/document.xml'])
 const templateXml=strFromU8(original['word/document.xml'])
+const masthead=strFromU8(original['word/header2.xml'])
+for(const line of ['Cristal e-College','Academic Division','Hospitality Management'])assert(masthead.includes(line),`masthead: ${line}`)
+assert.equal((masthead.match(/<a:blip\b/g)||[]).length,2,'both logos appear in the masthead')
 for(const key of Object.keys(original)) if(key!=='word/document.xml') assert.deepEqual(result[key],original[key],key+' preserved')
 assert(!xml.includes('{{'))
 assert.equal((xml.match(/☒/g)||[]).length,1)

@@ -2,17 +2,44 @@
 
 from io import BytesIO
 from pathlib import Path
-from zipfile import ZipFile
 
 from docx import Document
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import Pt
+from docx.shared import Inches, Pt
 
 
-template_path = Path(__file__).resolve().parents[1] / "public/documents/reservation-template.docx"
+public_dir = Path(__file__).resolve().parents[1] / "public"
+template_path = public_dir / "documents/reservation-template.docx"
 source = template_path.read_bytes()
 document = Document(BytesIO(source))
+
+def add_masthead(document):
+    header = document.sections[0].header
+    if header.tables:
+        return
+    masthead = header.add_table(rows=1, cols=3, width=Inches(7.35))
+    masthead.autofit = False
+    for cell, width in zip(masthead.rows[0].cells, (Inches(1.1), Inches(5.15), Inches(1.1))):
+        cell.width = width
+        cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+        cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+        cell.paragraphs[0].paragraph_format.space_after = Pt(0)
+    masthead.cell(0, 0).paragraphs[0].add_run().add_picture(str(public_dir / "cec.png"), width=Inches(0.82))
+    center = masthead.cell(0, 1).paragraphs[0]
+    for index, (line, size) in enumerate((("Cristal e-College", 12), ("Academic Division", 10), ("Hospitality Management", 10))):
+        if index:
+            center.add_run().add_break()
+        run = center.add_run(line)
+        run.bold = True
+        run.font.name = "Times New Roman"
+        run.font.size = Pt(size)
+    masthead.cell(0, 2).paragraphs[0].add_run().add_picture(str(Path(__file__).resolve().parent / "assets/hm-form-logo.png"), width=Inches(0.82))
+    # The empty header paragraph came from the official form; use its space for the masthead.
+    header._element.remove(header.paragraphs[0]._element)
+
+
+add_masthead(document)
 
 area = document.paragraphs[11]
 area.clear()
@@ -60,10 +87,4 @@ for table in document.tables[:2]:
                 for run in paragraph.runs:
                     run.bold = True
 
-output = BytesIO()
-document.save(output)
-with ZipFile(BytesIO(source)) as old, ZipFile(BytesIO(output.getvalue())) as edited:
-    new_xml = edited.read("word/document.xml")
-    with ZipFile(template_path, "w") as final:
-        for part in old.infolist():
-            final.writestr(part, new_xml if part.filename == "word/document.xml" else old.read(part.filename))
+document.save(template_path)
