@@ -20,7 +20,7 @@ export class AppService {
   const data=await this.storage.read();
   const contactName='cristian jay m. pechon';
   const matches=(name:string)=>name.trim().replace(/\s+/g,' ').toLocaleLowerCase('en-PH')===contactName;
-  const admins=data.adminKeys.filter(key=>key.role==='admin').map(key=>({key,profile:data.adminProfiles.find(row=>row.id===this.staffProfileId(key.hash)||row.id==='profile-'+key.hash)})).filter(entry=>entry.profile?.photo);
+  const admins=data.adminKeys.filter(key=>key.role!=='instructor').map(key=>({key,profile:data.adminProfiles.find(row=>row.id===this.staffProfileId(key.hash)||row.id==='profile-'+key.hash)})).filter(entry=>entry.profile?.photo);
   const contact=admins.find(entry=>matches(entry.key.name||'')||matches(entry.profile?.name||''));
   return {photo:contact?.profile?.photo||(admins.length===1?admins[0].profile?.photo:'')||''};
  }

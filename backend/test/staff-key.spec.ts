@@ -14,6 +14,16 @@ function service() {
 }
 
 describe('staff access key changes', () => {
+ it('uses the saved photo of a legacy admin account for the public contact', async () => {
+  const { app, data } = service();
+  const key = 'OfficeAdmin1!';
+  await app.createAdminKey({ name: 'Cristian Jay M. Pechon', key, role: 'admin' });
+  delete data.adminKeys[0].role;
+  const photo = 'data:image/jpeg;base64,/9j/AA==';
+  await app.updateAdminProfile(`Bearer ${key}`, { name: 'Cristian Jay M. Pechon', email: '', photo });
+  expect(await app.publicContact()).toEqual({ photo });
+ });
+
  it('stores admin and instructor profiles with database-safe IDs', async () => {
   const { app, data } = service();
   const adminKey = 'AdminPass1!';
