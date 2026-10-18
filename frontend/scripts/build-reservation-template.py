@@ -125,7 +125,7 @@ reserved, noted = approval.rows[0].cells
 add_line(reserved, "Reserved by", bold=True, size=10, first=True)
 signature_line(reserved, "{{SIGNATURE}}")
 add_line(reserved, "{{INSTRUCTOR}}", bold=True, size=10)
-add_line(reserved, "Instructor · Signature over printed name", size=8)
+add_line(reserved, "Signature over printed name", size=8)
 add_line(reserved, "Date signed: {{SIGNED_DATE}}", size=8)
 
 add_line(noted, "Noted by", bold=True, size=10, first=True)

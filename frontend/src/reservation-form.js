@@ -55,7 +55,7 @@ export function fillReservationForm(template, reservation, signatureImage) {
     files[rels]=strToU8(strFromU8(files[rels]).replace('</Relationships>','<Relationship Id="rIdInstructorSignature" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/instructor-signature.png"/></Relationships>'))
     files['word/media/instructor-signature.png']=signatureImage
   }
-  xml=xml.replaceAll('{{INSTRUCTOR}}',()=>escapeXml(signatureImage?(reservation.instructorReviewedBy||reservation.instructor):reservation.instructor))
+  xml=xml.replaceAll('{{INSTRUCTOR}}',()=>escapeXml(String(signatureImage?(reservation.instructorReviewedBy||reservation.instructor):reservation.instructor||'').toLocaleUpperCase('en-PH')))
   xml=xml.replace(/<w:r\b[^>]*>(?:(?!<\/w:r>)[\s\S])*?\{\{SIGNATURE\}\}(?:(?!<\/w:r>)[\s\S])*?<\/w:r>/,()=>signatureRun||'<w:r><w:t> </w:t></w:r>')
   files['word/document.xml']=strToU8(xml)
   return zipSync(files)
@@ -73,7 +73,7 @@ function renderSignature(value){
 let templatePromise
 export async function downloadReservationForm(reservation) {
   try {
-    templatePromise ||= fetch('/documents/reservation-template.docx?v=5').then(async response => {
+    templatePromise ||= fetch('/documents/reservation-template.docx?v=6').then(async response => {
       if (!response.ok) throw new Error('The form template could not be loaded.')
       return new Uint8Array(await response.arrayBuffer())
     }).catch(error=>{templatePromise=undefined;throw error})

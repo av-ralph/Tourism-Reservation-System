@@ -34,7 +34,7 @@ try{
   assert.equal(downloads[0].name,'HM-Utilization-2026-10-15-download-test.docx')
   assert.equal(blobs[0].type,'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
   const unsigned=strFromU8(unzipSync(new Uint8Array(await blobs[0].arrayBuffer()))['word/document.xml'])
-  assert(unsigned.includes('Assigned Instructor'))
+  assert(unsigned.includes('ASSIGNED INSTRUCTOR'))
   assert(!unsigned.includes('rIdInstructorSignature'))
   const strokes=[[[10,40],[25,20],[40,50],[60,15],[80,60],[100,20],[130,50],[160,30]]]
   await downloadReservationForm({...record,instructorSignature:JSON.stringify(strokes),instructorReviewedBy:'Signing Instructor',instructorReviewedAt:'2026-10-15T01:00:00Z'})
@@ -42,7 +42,7 @@ try{
   assert(draws>0)
   const signed=unzipSync(new Uint8Array(await blobs[1].arrayBuffer()))
   assert.deepEqual(signed['word/media/instructor-signature.png'],new Uint8Array(Buffer.from(png,'base64')))
-  assert(strFromU8(signed['word/document.xml']).includes('Signing Instructor'))
+  assert(strFromU8(signed['word/document.xml']).includes('SIGNING INSTRUCTOR'))
   for(const signature of ['broken json','{}','[]','[[[1,null]]]']){
     await assert.rejects(downloadReservationForm({...record,instructorSignature:signature}),/saved instructor signature/)
   }
