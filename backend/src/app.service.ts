@@ -92,11 +92,14 @@ export class AppService {
  }
  async authorizeAdmin(authorization?:string){const role=await this.authorizeStaff(authorization);if(role==='instructor')throw new ForbiddenException('Instructor keys cannot access administrator actions.');return role;}
  async authorizeInstructor(authorization?:string){const role=await this.authorizeStaff(authorization);if(role!=='instructor')throw new ForbiddenException('Enter an instructor access key.');return role;}
- private profileId(role:string,authorization?:string){return role==='superadmin'?'super-admin-profile':'profile-'+this.keyHash((authorization||'').replace(/^Bearer /,''));}
+ // hm_records.id is VARCHAR(36); a full SHA-256 hex digest would exceed it.
+ private staffProfileId(hash:string){return 'profile-'+hash.slice(0,28);}
+ private profileId(role:string,authorization?:string){return role==='superadmin'?'super-admin-profile':this.staffProfileId(this.keyHash((authorization||'').replace(/^Bearer /,'')));}
  async adminIdentity(authorization?:string,data?:Store){
   data??=await this.storage.read();
-  const role=await this.authorizeStaff(authorization,data),profile=data.adminProfiles.find(row=>row.id===this.profileId(role,authorization));
-  const hash=this.keyHash((authorization||'').replace(/^Bearer /,'')),admin=data.adminKeys.find(row=>row.hash===hash);
+  const role=await this.authorizeStaff(authorization,data),hash=this.keyHash((authorization||'').replace(/^Bearer /,''));
+  const profile=data.adminProfiles.find(row=>row.id===this.profileId(role,authorization)||row.id==='profile-'+hash);
+  const admin=data.adminKeys.find(row=>row.hash===hash);
   if(role!=='superadmin'&&!admin)throw new UnauthorizedException('Enter a valid administrator access key.');
   return {role,adminName:profile?.name||(role==='superadmin'?'Super admin':admin!.name),adminPhoto:profile?.photo||'',adminEmail:profile?.email||''};
  }
@@ -108,7 +111,7 @@ export class AppService {
   if(typeof email!=='string'||email.length>254||(email!==''&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)))throw new BadRequestException('Enter a valid email address or leave it blank.');
   if(typeof photo!=='string'||photo.length>220000||(photo!==''&&!/^data:image\/jpeg;base64,\/9j\/[A-Za-z0-9+/]*={0,2}$/.test(photo)))throw new BadRequestException('Choose a valid JPEG profile photo under 165 KB.');
   const id=this.profileId(role,authorization);
-  await this.storage.mutate(data=>{if(role!=='superadmin'&&!data.adminKeys.some(row=>'profile-'+row.hash===id))throw new UnauthorizedException('Admin access has been revoked.');data.adminProfiles=data.adminProfiles.filter(row=>row.id!==id);data.adminProfiles.push({id,name:name.trim(),email:email.trim(),photo,updatedAt:new Date().toISOString()});});
+  await this.storage.mutate(data=>{if(role!=='superadmin'&&!data.adminKeys.some(row=>this.staffProfileId(row.hash)===id))throw new UnauthorizedException('Admin access has been revoked.');const hash=this.keyHash((authorization||'').replace(/^Bearer /,''));data.adminProfiles=data.adminProfiles.filter(row=>row.id!==id&&row.id!=='profile-'+hash);data.adminProfiles.push({id,name:name.trim(),email:email.trim(),photo,updatedAt:new Date().toISOString()});});
   return {role,adminName:name.trim(),adminPhoto:photo,adminEmail:email.trim()};
  }
  async changeStaffKey(authorization:string|undefined,input:unknown){
@@ -127,8 +130,8 @@ export class AppService {
    const row=data.adminKeys.find(entry=>entry.hash===oldHash&&entry.role===role);
    if(!row)throw new UnauthorizedException('Your access key is no longer valid.');
    if(data.adminKeys.some(entry=>entry.hash===newHash))throw new ConflictException('This access key is already in use.');
-   const profile=data.adminProfiles.find(entry=>entry.id==='profile-'+oldHash);
-   if(profile)profile.id='profile-'+newHash;
+   const profile=data.adminProfiles.find(entry=>entry.id===this.staffProfileId(oldHash)||entry.id==='profile-'+oldHash);
+   if(profile)profile.id=this.staffProfileId(newHash);
    row.hash=newHash;
    row.encryptedKey=this.encryptAdminKey(newKey);
    row.updatedAt=new Date().toISOString();
@@ -203,7 +206,7 @@ export class AppService {
    return {id:row.id,name:row.name,role:row.role,createdAt:row.createdAt};
   });
  }
- revokeAdminKey(id:string,callerRole:'admin'|'superadmin'='superadmin'){return this.storage.mutate(data=>{const row=data.adminKeys.find(row=>row.id===id);if(!row)throw new NotFoundException('Staff key not found.');if(callerRole!=='superadmin'&&row.role!=='instructor')throw new ForbiddenException('Administrators can revoke instructor keys only.');data.adminProfiles=data.adminProfiles.filter(profile=>profile.id!=='profile-'+row.hash);data.adminKeys=data.adminKeys.filter(entry=>entry.id!==id);return {success:true};});}
+ revokeAdminKey(id:string,callerRole:'admin'|'superadmin'='superadmin'){return this.storage.mutate(data=>{const row=data.adminKeys.find(row=>row.id===id);if(!row)throw new NotFoundException('Staff key not found.');if(callerRole!=='superadmin'&&row.role!=='instructor')throw new ForbiddenException('Administrators can revoke instructor keys only.');data.adminProfiles=data.adminProfiles.filter(profile=>profile.id!==this.staffProfileId(row.hash)&&profile.id!=='profile-'+row.hash);data.adminKeys=data.adminKeys.filter(entry=>entry.id!==id);return {success:true};});}
  userToken(token?:string){if(!token||!/^[-a-zA-Z0-9]{36}$/.test(token))throw new UnauthorizedException('User session is missing.');return token;}
  async userRecords(token?:string){const owner=this.userToken(token),data=await this.storage.read();return {reservations:data.reservations.filter(r=>r.owner===owner).map(row=>this.publicReservation(row)),reports:data.reports.filter(r=>r.owner===owner),utilization:data.utilization.filter(r=>r.owner===owner)};}
  async schedule(){const data=await this.storage.read();return data.reservations.filter(row=>!['Cancelled','Rejected'].includes(this.reservationStatus(row)!)).map(row=>({id:row.id,facility:row.facility,date:row.date,start:row.start,end:row.end,status:this.reservationStatus(row)}));}

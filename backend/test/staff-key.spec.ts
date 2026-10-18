@@ -14,6 +14,22 @@ function service() {
 }
 
 describe('staff access key changes', () => {
+ it('stores admin and instructor profiles with database-safe IDs', async () => {
+  const { app, data } = service();
+  const adminKey = 'AdminPass1!';
+  const instructorKey = 'Instructor1!';
+  await app.createAdminKey({ name: 'Admin', key: adminKey, role: 'admin' });
+  const instructor = await app.createAdminKey({ name: 'Instructor', key: instructorKey, role: 'instructor' });
+  await app.updateAdminProfile(`Bearer ${adminKey}`, { name: 'Office Admin', email: '', photo: '' });
+  await app.updateAdminProfile(`Bearer ${instructorKey}`, { name: 'Faculty Member', email: '', photo: '' });
+  expect(data.adminProfiles).toHaveLength(2);
+  expect(data.adminProfiles.every(profile => profile.id.length <= 36)).toBe(true);
+  await expect(app.adminIdentity(`Bearer ${adminKey}`)).resolves.toMatchObject({ adminName: 'Office Admin' });
+  await expect(app.adminIdentity(`Bearer ${instructorKey}`)).resolves.toMatchObject({ adminName: 'Faculty Member' });
+  await app.revokeAdminKey(instructor.id!, 'admin');
+  expect(data.adminProfiles).toHaveLength(1);
+ });
+
  it('rotates an instructor key, preserves the profile, and shows the new key to an admin', async () => {
   const { app } = service();
   const adminKey = 'AdminPass1!';
