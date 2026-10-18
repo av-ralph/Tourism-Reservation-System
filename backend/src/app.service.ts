@@ -16,6 +16,16 @@ export class AppService {
  private publicReservation(row:Row):Row{return {...row,status:this.reservationStatus(row)};}
  async records(data?:Store){data??=await this.storage.read();return {reservations:data.reservations.map(row=>this.publicReservation(row)),reports:data.reports,utilization:data.utilization,facilities:this.facilitiesFrom(data)};}
  async adminRecords(authorization?:string){const data=await this.storage.read();const identity=await this.adminIdentity(authorization,data);if(identity.role==='instructor')throw new ForbiddenException('Instructor keys cannot access administrator actions.');return {...await this.records(data),...identity};}
+ async publicContact(){
+  const data=await this.storage.read();
+  const contactName='cristian jay m. pechon';
+  const matches=(name:string)=>name.trim().replace(/\s+/g,' ').toLocaleLowerCase('en-PH')===contactName;
+  const profile=data.adminProfiles.find(row=>row.photo&&(
+   (row.id==='super-admin-profile'&&matches(row.name||''))||
+   data.adminKeys.some(key=>key.role==='admin'&&(row.id===this.staffProfileId(key.hash)||row.id==='profile-'+key.hash)&&(matches(row.name||'')||matches(key.name||'')))
+  ));
+  return {photo:profile?.photo||''};
+ }
  async adminInventory(){return this.inventoryFrom(await this.storage.read());}
  private inventoryFrom(data:Store){return [...inventoryCatalog.map(item=>({...item,...data.inventory.find(row=>row.id===item.id)})),...data.inventory.filter(row=>!inventoryCatalog.some(item=>item.id===row.id))].filter(item=>item.deleted!=='true');}
  async listInventory(){return this.inventoryFrom(await this.storage.read()).filter(item=>item.status==='Available'&&Number(item.quantity)>0).map(({id,name,category,model,quantity,unit})=>({id,name,category,model,quantity,unit:unit==='not recorded'?'item':unit}));}

@@ -8,6 +8,8 @@ export class AppController {
  @Get('api/facilities') facilities(){return this.appService.listFacilities();}
  @Get('api/instructors') instructors(){return this.appService.listInstructors();}
  @Header('Cache-Control','no-store')
+ @Get('api/contact') contact(){return this.appService.publicContact();}
+ @Header('Cache-Control','no-store')
  @Get('api/inventory') inventory(){return this.appService.listInventory();}
  @Header('Cache-Control','no-store')
  @Get('api/organization') organization(){return this.appService.collegeOrganization();}
