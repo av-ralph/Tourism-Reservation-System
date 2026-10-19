@@ -32,6 +32,19 @@ describe('reservations',()=>{
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
  it('persists records across restart',async()=>{await service.create('reservations',booking);expect((await new AppService().records()).reservations).toHaveLength(1);});
+ it('shows a changed instructor display name in staff, student, and reservation views',async()=>{
+  const instructor=await service.createAdminKey({name:'Instructor',key:'InstructorTest1!',role:'instructor'});
+  const owner='11111111-1111-4111-8111-111111111111';
+  const reservation=await service.createForUser('reservations',booking,owner);
+  await service.updateAdminProfile('Bearer InstructorTest1!',{name:'New Instructor Name',email:'',photo:''});
+  const restarted=new AppService();
+  expect(await restarted.listInstructors()).toContainEqual({id:instructor.id,name:'New Instructor Name'});
+  expect((await restarted.listAdminKeys()).find(row=>row.id===instructor.id)?.name).toBe('New Instructor Name');
+  expect((await restarted.records()).reservations.find(row=>row.id===reservation.id)?.instructor).toBe('New Instructor Name');
+  expect((await restarted.userRecords(owner)).reservations.find(row=>row.id===reservation.id)?.instructor).toBe('New Instructor Name');
+  const another=await restarted.createForUser('reservations',{...booking,facility:'Cold Kitchen',instructor:'New Instructor Name'},owner);
+  expect(another.instructorKeyId).toBe(instructor.id);
+ });
  it('recovers a guest booking on another device with a private code',async()=>{
   await service.createAdminKey({name:'Instructor',key:'InstructorTest1!',role:'instructor'});
   const first='11111111-1111-4111-8111-111111111111',second='22222222-2222-4222-8222-222222222222';

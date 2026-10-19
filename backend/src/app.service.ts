@@ -13,9 +13,10 @@ export class AppService {
  constructor(private readonly storage:RecordStore = new RecordStore()){}
  getHello(){return 'HM Laboratory reservation service';}
  private reservationStatus(row:Row){return row.status==='Awaiting signature'?(row.instructorDecision==='Approved'?'Awaiting admin':row.instructorDecision==='Declined'?'Rejected':'Awaiting instructor'):row.status;}
- private publicReservation(row:Row):Row{const result:Row={...row,status:this.reservationStatus(row)!};delete result.owner;delete result.recoveryHash;delete result.owners;return result;}
+ private instructorName(data:Store,key:Row){return data.adminProfiles.find(row=>row.id===this.staffProfileId(key.hash)||row.id==='profile-'+key.hash)?.name||key.name||'';}
+ private publicReservation(row:Row,data?:Store):Row{const result:Row={...row,status:this.reservationStatus(row)!};if(data&&row.instructorKeyId){const key=data.adminKeys.find(entry=>entry.id===row.instructorKeyId);if(key)result.instructor=this.instructorName(data,key);}delete result.owner;delete result.recoveryHash;delete result.owners;return result;}
  private ownsReservation(row:Row,owner:string){if(row.owner===owner)return true;try{return (JSON.parse(row.owners||'[]') as unknown[]).includes(owner)}catch{return false}}
- async records(data?:Store){data??=await this.storage.read();return {reservations:data.reservations.map(row=>this.publicReservation(row)),reports:data.reports,utilization:data.utilization,facilities:this.facilitiesFrom(data)};}
+ async records(data?:Store){data??=await this.storage.read();return {reservations:data.reservations.map(row=>this.publicReservation(row,data)),reports:data.reports,utilization:data.utilization,facilities:this.facilitiesFrom(data)};}
  async adminRecords(authorization?:string){const data=await this.storage.read();const identity=await this.adminIdentity(authorization,data);if(identity.role==='instructor')throw new ForbiddenException('Instructor keys cannot access administrator actions.');return {...await this.records(data),...identity};}
  async publicContact(){
   const data=await this.storage.read();
@@ -45,7 +46,7 @@ export class AppService {
  deleteInventory(id:string){return this.storage.mutate(data=>{const old=this.inventoryFrom(data).find(row=>row.id===id);if(!old)throw new NotFoundException('Inventory item not found.');if(data.reservations.some(r=>r.inventorySelection?.includes('"'+id+'"')))throw new ConflictException('This item is used in a reservation. Mark it unavailable instead.');data.inventory=data.inventory.filter(row=>row.id!==id);if(inventoryCatalog.some(row=>row.id===id))data.inventory.push({...old,deleted:'true'});return {success:true};});}
  private facilitiesFrom(data:Store){return [...facilityCatalog.map(f=>({...f,...data.facilities.find(row=>row.id===f.id)})),...data.facilities.filter(row=>!facilityCatalog.some(f=>f.id===row.id))].filter(f=>(f as Row).deleted!=='true');}
  async listFacilities(){return this.facilitiesFrom(await this.storage.read()).map(f=>{const row=f as Row;const {photo,...details}=row;return {...details,photo:photo?`/api/facilities/${encodeURIComponent(row.id!)}/photo?v=${createHash('sha256').update(photo).digest('hex').slice(0,16)}`:''};});}
- async listInstructors(){return (await this.storage.read()).adminKeys.filter(row=>row.role==='instructor').map(row=>({id:row.id,name:row.name})).sort((a,b)=>a.name!.localeCompare(b.name!));}
+ async listInstructors(){const data=await this.storage.read();return data.adminKeys.filter(row=>row.role==='instructor').map(row=>({id:row.id,name:this.instructorName(data,row)})).sort((a,b)=>a.name.localeCompare(b.name));}
  async facilityPhoto(id:string){const facility=this.facilitiesFrom(await this.storage.read()).find(f=>f.id===id) as Row|undefined;if(!facility?.photo)throw new NotFoundException('Facility photo not found.');return Buffer.from(facility.photo.split(',')[1]!,'base64');}
  async collegeOrganization(){const row=(await this.storage.read()).organization.find(item=>item.id==='college-organization');return {groups:row?JSON.parse(row.content!):null};}
  async saveCollegeOrganization(input:unknown){
@@ -120,7 +121,7 @@ export class AppService {
   if(typeof email!=='string'||email.length>254||(email!==''&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)))throw new BadRequestException('Enter a valid email address or leave it blank.');
   if(typeof photo!=='string'||photo.length>220000||(photo!==''&&!/^data:image\/jpeg;base64,\/9j\/[A-Za-z0-9+/]*={0,2}$/.test(photo)))throw new BadRequestException('Choose a valid JPEG profile photo under 165 KB.');
   const id=this.profileId(role,authorization);
-  await this.storage.mutate(data=>{if(role!=='superadmin'&&!data.adminKeys.some(row=>this.staffProfileId(row.hash)===id))throw new UnauthorizedException('Admin access has been revoked.');const hash=this.keyHash((authorization||'').replace(/^Bearer /,''));data.adminProfiles=data.adminProfiles.filter(row=>row.id!==id&&row.id!=='profile-'+hash);data.adminProfiles.push({id,name:name.trim(),email:email.trim(),photo,updatedAt:new Date().toISOString()});});
+  await this.storage.mutate(data=>{const hash=this.keyHash((authorization||'').replace(/^Bearer /,''));const staff=data.adminKeys.find(row=>row.hash===hash);if(role!=='superadmin'&&!staff)throw new UnauthorizedException('Admin access has been revoked.');const displayName=name.trim();if(role==='instructor'&&data.adminKeys.some(row=>row.id!==staff?.id&&row.role==='instructor'&&this.instructorName(data,row).toLowerCase()===displayName.toLowerCase()))throw new ConflictException('Another instructor already uses this display name.');data.adminProfiles=data.adminProfiles.filter(row=>row.id!==id&&row.id!=='profile-'+hash);data.adminProfiles.push({id,name:displayName,email:email.trim(),photo,updatedAt:new Date().toISOString()});if(staff){staff.name=displayName;staff.updatedAt=new Date().toISOString();}});
   return {role,adminName:name.trim(),adminPhoto:photo,adminEmail:email.trim()};
  }
  async changeStaffKey(authorization:string|undefined,input:unknown){
@@ -157,11 +158,11 @@ export class AppService {
   if(!value)return null;
   try{const [iv,tag,encrypted]=value.split('.').map(part=>Buffer.from(part,'base64')),secret=createHash('sha256').update(this.adminKey()).digest(),decipher=createDecipheriv('aes-256-gcm',secret,iv!);decipher.setAuthTag(tag!);return Buffer.concat([decipher.update(encrypted!),decipher.final()]).toString('utf8');}catch{return null;}
  }
- async listAdminKeys(){return (await this.storage.read()).adminKeys.map(({id,name,role,createdAt,encryptedKey})=>({id,name,role:role||'admin',createdAt,key:this.decryptAdminKey(encryptedKey)}));}
+ async listAdminKeys(){const data=await this.storage.read();return data.adminKeys.map(row=>({id:row.id,name:this.instructorName(data,row),role:row.role||'admin',createdAt:row.createdAt,key:this.decryptAdminKey(row.encryptedKey)}));}
  async listStaffKeys(authorization?:string){const role=await this.authorizeAdmin(authorization);const keys=await this.listAdminKeys();return role==='superadmin'?keys:keys.filter(row=>row.role==='instructor');}
  async createStaffKey(input:unknown,authorization?:string){const role=await this.authorizeAdmin(authorization);if(role!=='superadmin'&&(!input||typeof input!=='object'||Array.isArray(input)||(input as Record<string,unknown>).role!=='instructor'))throw new ForbiddenException('Administrators can create instructor keys only.');return this.createAdminKey(input);}
  async revokeStaffKey(id:string,authorization?:string){const role=await this.authorizeAdmin(authorization);return this.revokeAdminKey(id,role);}
- async instructorRecords(authorization?:string){const data=await this.storage.read(),identity=await this.adminIdentity(authorization,data);if(identity.role!=='instructor')throw new ForbiddenException('Enter an instructor access key.');const hash=this.keyHash((authorization||'').replace(/^Bearer /,'')),instructor=data.adminKeys.find(row=>row.hash===hash);return {...identity,reservations:data.reservations.filter(row=>!row.instructorKeyId||row.instructorKeyId===instructor?.id).map(row=>{const reservation=this.publicReservation(row);delete reservation.owner;return reservation;}),facilities:this.facilitiesFrom(data).map(facility=>{const details={...facility} as Row;delete details.photo;return details;})};}
+ async instructorRecords(authorization?:string){const data=await this.storage.read(),identity=await this.adminIdentity(authorization,data);if(identity.role!=='instructor')throw new ForbiddenException('Enter an instructor access key.');const hash=this.keyHash((authorization||'').replace(/^Bearer /,'')),instructor=data.adminKeys.find(row=>row.hash===hash);return {...identity,reservations:data.reservations.filter(row=>!row.instructorKeyId||row.instructorKeyId===instructor?.id).map(row=>this.publicReservation(row,data)),facilities:this.facilitiesFrom(data).map(facility=>{const details={...facility} as Row;delete details.photo;return details;})};}
  private validateSignature(value:unknown){
   if(!Array.isArray(value)||value.length<1||value.length>80)throw new BadRequestException('Draw your signature before approving the request.');
   let count=0,length=0,minX=600,maxX=0,minY=180,maxY=0;
@@ -210,14 +211,14 @@ export class AppService {
   const hash=this.keyHash(validatedKey);
   if(hash===this.keyHash(this.adminKey()))throw new ConflictException('This access key is already in use.');
   return this.storage.mutate(data=>{
-   if(data.adminKeys.some(row=>row.hash===hash||row.name!.toLowerCase()===name.trim().toLowerCase()))throw new ConflictException('This admin name or key is already in use.');
+   if(data.adminKeys.some(row=>row.hash===hash||this.instructorName(data,row).toLowerCase()===name.trim().toLowerCase()))throw new ConflictException('This admin name or key is already in use.');
    const row={id:randomUUID(),name:name.trim(),hash,role:String(role),encryptedKey:this.encryptAdminKey(validatedKey),createdAt:new Date().toISOString()};data.adminKeys.push(row);
    return {id:row.id,name:row.name,role:row.role,createdAt:row.createdAt};
   });
  }
  revokeAdminKey(id:string,callerRole:'admin'|'superadmin'='superadmin'){return this.storage.mutate(data=>{const row=data.adminKeys.find(row=>row.id===id);if(!row)throw new NotFoundException('Staff key not found.');if(callerRole!=='superadmin'&&row.role!=='instructor')throw new ForbiddenException('Administrators can revoke instructor keys only.');data.adminProfiles=data.adminProfiles.filter(profile=>profile.id!==this.staffProfileId(row.hash)&&profile.id!=='profile-'+row.hash);data.adminKeys=data.adminKeys.filter(entry=>entry.id!==id);return {success:true};});}
  userToken(token?:string){if(!token||!/^[-a-zA-Z0-9]{36}$/.test(token))throw new UnauthorizedException('User session is missing.');return token;}
- async userRecords(token?:string){const owner=this.userToken(token),data=await this.storage.read();return {reservations:data.reservations.filter(r=>this.ownsReservation(r,owner)).map(row=>this.publicReservation(row)),reports:data.reports.filter(r=>r.owner===owner),utilization:data.utilization.filter(r=>r.owner===owner)};}
+ async userRecords(token?:string){const owner=this.userToken(token),data=await this.storage.read();return {reservations:data.reservations.filter(r=>this.ownsReservation(r,owner)).map(row=>this.publicReservation(row,data)),reports:data.reports.filter(r=>r.owner===owner),utilization:data.utilization.filter(r=>r.owner===owner)};}
  async schedule(){const data=await this.storage.read();return data.reservations.filter(row=>!['Cancelled','Rejected'].includes(this.reservationStatus(row)!)).map(row=>({id:row.id,facility:row.facility,date:row.date,start:row.start,end:row.end,status:this.reservationStatus(row)}));}
  createForUser(kind:'reservations'|'reports'|'utilization',input:unknown,token?:string){const owner=this.userToken(token);return this.create(kind,input,owner,kind==='reservations');}
  cancelForUser(id:string,token?:string){const owner=this.userToken(token);return this.storage.mutate(data=>{const r=data.reservations.find(r=>r.id===id);if(!r)throw new NotFoundException('Reservation not found.');if(!this.ownsReservation(r,owner))throw new ForbiddenException('You can only cancel your own reservations.');if(['Rejected','Cancelled'].includes(this.reservationStatus(r)!))throw new BadRequestException('This request is already closed.');r.status='Cancelled';return {success:true};});}
@@ -316,7 +317,7 @@ export class AppService {
    if(kind==='reservations'){if(raw.termsAccepted!==true)throw new BadRequestException('Please agree to the Terms and Conditions before booking.');r.termsAccepted='true';r.termsAcceptedAt=new Date().toISOString();r.termsVersion='hm-laboratory-2026-10-09';}
   }
   if(kind==='reservations'){
-   const selected=data.adminKeys.find(row=>row.role==='instructor'&&row.name!.toLowerCase()===r.instructor!.toLowerCase());
+   const selected=data.adminKeys.find(row=>row.role==='instructor'&&this.instructorName(data,row).toLowerCase()===r.instructor!.toLowerCase());
    if(requireInstructor&&!selected)throw new BadRequestException('Choose a listed instructor before sending this request.');
    r.instructorKeyId=selected?.id||'';
   }
@@ -362,10 +363,10 @@ export class AppService {
  });}
  private recordKind(kind:string):'reservations'|'reports'|'utilization'{if(!['reservations','reports','utilization'].includes(kind))throw new BadRequestException('Invalid record type.');return kind as 'reservations'|'reports'|'utilization';}
  adminCreate(kind:string,input:unknown){const type=this.recordKind(kind);return this.create(type,input,undefined,type==='reservations');}
- adminUpdate(kind:string,id:string,input:unknown){const type=this.recordKind(kind);return this.storage.mutate(data=>{const old=data[type].find(r=>r.id===id);if(!old)throw new NotFoundException('Record not found.');if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid record.');const r=this.validateRecord(type,{...old,...input as object,termsAccepted:old.termsAccepted==='true'},data,id);const updated:Row={...old,...r,updatedAt:new Date().toISOString()};if(type==='reservations'){
+ adminUpdate(kind:string,id:string,input:unknown){const type=this.recordKind(kind);return this.storage.mutate(data=>{const old=data[type].find(r=>r.id===id);if(!old)throw new NotFoundException('Record not found.');if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid record.');const current=type==='reservations'?this.publicReservation(old,data):old;const r=this.validateRecord(type,{...current,...input as object,termsAccepted:old.termsAccepted==='true'},data,id);const updated:Row={...old,...r,updatedAt:new Date().toISOString()};if(type==='reservations'){
    updated.termsAcceptedAt=old.termsAcceptedAt!;updated.termsVersion=old.termsVersion!;
    const signedFields=['facility','name','email','studentId','date','start','end','purpose','subject','instructor','equipment'];
-   if(old.instructorDecision==='Approved'&&signedFields.some(field=>old[field]!==updated[field])){
+   if(old.instructorDecision==='Approved'&&signedFields.some(field=>current[field]!==updated[field])){
     updated.status='Awaiting instructor';
     for(const field of ['instructorDecision','instructorNote','instructorReviewedBy','instructorReviewedAt','instructorSignature','reviewNote','reviewedAt','adminSignature','adminReviewedBy','adminReviewedAt','laboratoryEntries'])delete updated[field];
    }
