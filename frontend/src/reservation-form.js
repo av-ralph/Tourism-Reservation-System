@@ -18,6 +18,15 @@ export function reservationInventory(equipment) {
     return match ? {quantity:match[1],description:match[2]} : {quantity:'',description:line}
   })
 }
+export function reservationItems(reservation) {
+  try {
+    const selected=JSON.parse(reservation.inventorySelection||'[]')
+    if(Array.isArray(selected)&&selected.length&&selected.every(item=>Number.isSafeInteger(item.quantity)&&item.quantity>0&&typeof item.name==='string'&&item.name.trim()))
+      return selected.map(item=>({quantity:String(item.quantity),description:item.name}))
+  } catch { /* Older bookings only have the equipment summary. */ }
+  return reservationInventory(reservation.equipment)
+}
+function uniqueRowIds(source,index){let id=0;return source.replace(/w14:paraId="[0-9A-Fa-f]{8}"/g,()=>`w14:paraId="${(0xF0000000+index*256+id++).toString(16).toUpperCase()}"`)}
 export function reservationArea(facility) {
   const name=String(facility||'').trim().toLowerCase()
   if(name==='bar area')return 'BAR'
@@ -35,8 +44,8 @@ export function fillReservationForm(template, reservation, signatureImage) {
   const rowPattern = /<w:tr\b[^>]*>(?:(?!<\/w:tr>)[\s\S])*?\{\{ITEM_QUANTITY\}\}(?:(?!<\/w:tr>)[\s\S])*?<\/w:tr>/
   const row = xml.match(rowPattern)?.[0]
   if (!row) throw new Error('The reservation form template is unavailable.')
-  const inventory = reservationInventory(reservation.equipment)
-  xml = xml.replace(rowPattern, () => Array.from({length:Math.max(12,inventory.length)}, (_,i) => row.replace('{{ITEM_QUANTITY}}',()=>escapeXml(inventory[i]?.quantity)).replace('{{ITEM_DESCRIPTION}}',()=>escapeXml(inventory[i]?.description))).join(''))
+  const inventory = reservationItems(reservation)
+  xml = xml.replace(rowPattern, () => Array.from({length:Math.max(12,inventory.length)}, (_,i) => uniqueRowIds(row,i).replace('{{ITEM_QUANTITY}}',()=>escapeXml(inventory[i]?.quantity)).replace('{{ITEM_DESCRIPTION}}',()=>escapeXml(inventory[i]?.description))).join(''))
   const checkedArea=reservationArea(reservation.facility)
   for(const area of ['BAR','DINING','FRONT_OFFICE','KITCHEN','LAUNDRY','ROOMS','OTHER'])xml=xml.replaceAll(`{{CHECK_${area}}}`,()=>area===checkedArea?'☒':'☐')
   const values = {

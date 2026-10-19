@@ -66,6 +66,7 @@ describe('reservations',()=>{
   const selection=items.map(item=>({id:item.id,quantity:1}));
   const saved=await service.createForUser('reservations',{...booking,inventoryItems:selection},'11111111-1111-4111-8111-111111111111');
   expect(JSON.parse(saved.inventorySelection||'[]')).toHaveLength(23);
+  expect(JSON.parse(saved.inventorySelection||'[]')[22]).toMatchObject({id:items[22].id,quantity:1,name:items[22].name});
   expect(saved.equipment).toContain(items[22].name);
  });
  it('saves and validates the public college organization',async()=>{

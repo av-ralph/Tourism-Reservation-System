@@ -280,7 +280,7 @@ export class AppService {
   if(kind==='reservations'&&owner){
    const raw=(input as Record<string,unknown>).inventoryItems;
    if(!Array.isArray(raw))throw new BadRequestException('Choose listed inventory items.');
-   const selected=new Set<string>(),lines:string[]=[],selection:{id:string;quantity:number}[]=[];
+   const selected=new Set<string>(),lines:string[]=[],selection:{id:string;quantity:number;name:string}[]=[];
    for(const entry of raw){
     if(!entry||typeof entry!=='object'||Array.isArray(entry))throw new BadRequestException('Invalid equipment selection.');
     const item=entry as Record<string,unknown>,id=item.id,quantity=Number(item.quantity);
@@ -289,7 +289,7 @@ export class AppService {
     if(!available)throw new BadRequestException('An equipment item is no longer available. Please refresh the list.');
     const reserved=data.reservations.filter(row=>!['Cancelled','Rejected'].includes(this.reservationStatus(row)!)&&row.date===r.date&&row.start!<r.end!&&row.end!>r.start!).reduce((total,row)=>{try{return total+(JSON.parse(row.inventorySelection||'[]') as {id:string;quantity:number}[]).filter(pick=>pick.id===id).reduce((sum,pick)=>sum+pick.quantity,0)}catch{return total}},0);
     if(quantity+reserved>Number(available.quantity))throw new ConflictException(`${available.name} has only ${Math.max(0,Number(available.quantity)-reserved)} ${available.unit} available at that time.`);
-    selected.add(id);selection.push({id,quantity});lines.push(`${quantity} | ${available.name}`);
+    selected.add(id);selection.push({id,quantity,name:available.name});lines.push(`${quantity} | ${available.name}`);
    }
    r.equipment=lines.join('\n')||'None';r.inventorySelection=JSON.stringify(selection);
   }
