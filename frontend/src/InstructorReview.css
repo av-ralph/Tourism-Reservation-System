@@ -3,19 +3,22 @@
   padding:clamp(22px,3vw,36px);
 }
 .instructor-review-modal .instructor-review-summary {
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:14px 22px;
+  width:100%;
+  table-layout:fixed;
+  border-collapse:separate;
+  border-spacing:0;
   margin:0 0 24px;
-  padding:18px 20px;
   border:1px solid #d8e1ed;
   border-radius:12px;
-  background:#f7f9fc;
+  overflow:hidden;
 }
-.instructor-review-summary > div {min-width:0}
-.instructor-review-summary span {display:block;margin-bottom:5px;color:#53677e;font-size:12px;font-weight:600}
-.instructor-review-summary strong {display:block;color:#17345d;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
-.instructor-review-equipment {grid-column:1/-1}
+.instructor-shell .instructor-review-summary th,
+.instructor-shell .instructor-review-summary td {padding:13px 16px;border:0;border-bottom:1px solid #d8e1ed;text-align:left;vertical-align:top;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+.instructor-shell .instructor-review-summary tr:last-child :is(th,td) {border-bottom:0}
+.instructor-shell .instructor-review-summary th {width:150px;background:#f0f4f9;color:#415b78;font-weight:700;letter-spacing:0;text-transform:none;white-space:normal}
+.instructor-shell .instructor-review-summary td {background:#fff;color:#17345d;font-weight:500;white-space:pre-line}
+.instructor-shell .instructor-review-summary td strong {color:#17345d;font-size:inherit}
+.instructor-shell .instructor-review-summary tr:hover td {background:#fbfcfe}
 .instructor-review-modal form {display:grid;gap:18px}
 .instructor-review-modal form > label {display:grid;gap:8px;font-weight:600}
 .instructor-review-modal form > label :is(select,textarea) {width:100%;margin:0}
@@ -30,8 +33,14 @@
 .instructor-review-actions .secondary {min-width:100px}
 @media(max-width:600px) {
   .instructor-shell .instructor-review-modal {width:100%;padding:20px 16px 12px}
-  .instructor-review-modal .instructor-review-summary {grid-template-columns:minmax(0,1fr);gap:12px;margin-bottom:20px;padding:16px}
-  .instructor-review-equipment {grid-column:auto}
+  .instructor-review-modal .instructor-review-summary {margin-bottom:20px}
+  .instructor-shell .instructor-review-summary {display:table}
+  .instructor-shell .instructor-review-summary tbody {display:table-row-group}
+  .instructor-shell .instructor-review-summary tr {display:table-row;padding:0;border:0}
+  .instructor-shell .instructor-review-summary :is(th,td) {display:table-cell;min-width:0;grid-template-columns:none;gap:0}
+  .instructor-shell .instructor-review-summary td::before {display:none;content:none}
+  .instructor-shell .instructor-review-summary th {width:105px}
+  .instructor-shell .instructor-review-summary :is(th,td) {padding:11px 10px;font-size:13px}
   .instructor-review-modal form {gap:16px}
   .instructor-review-modal .signature-pad {padding:14px}
   .instructor-review-modal .signature-pad canvas {height:200px}
