@@ -18,8 +18,14 @@
 .signature-pad-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; color: #17345d; }
 .signature-enhanced { display: block; margin-top: 3px; font-size: 12px; font-weight: 500; color: #52647b; }
 .signature-tools { display: flex; gap: 7px; flex-shrink: 0; }
-.signature-pad-heading button { min-height: 36px; padding: 6px 12px; }
-.signature-pad canvas { display: block; width: 100%; height: auto; aspect-ratio: 10 / 3; border: 1px solid #9caec5; border-radius: 9px; background: #fff; cursor: crosshair; touch-action: none; }
+.signature-pad-heading button { min-height: 44px; padding: 8px 12px; }
+.signature-tools { flex-wrap: wrap; }
+.signature-canvas-frame { width: 100%; }
+.signature-pad canvas { display: block; box-sizing: border-box; width: 100%; height: auto; aspect-ratio: 10 / 3; border: 2px dashed #9caec5; border-radius: 9px; background: linear-gradient(to bottom,#fff 73%,#e8eef7 73.5%,#fff 74%); cursor: crosshair; touch-action: none; }
+.signature-status { margin: 10px 0 0; color: #17345d; font-weight: 600; }
+.signature-pad-expanded { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; justify-content: center; overflow: auto; margin: 0; padding: max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left)); background: #fff; box-sizing: border-box; }
+.signature-pad-expanded .signature-canvas-frame { width: min(100%, 850px); margin: 0 auto; }
+.signature-pad-expanded .signature-pad-heading,.signature-pad-expanded .signature-status,.signature-pad-expanded small { width: min(100%, 850px); margin-left: auto; margin-right: auto; }
 .signature-pad small { display: block; margin-top: 8px; color: #47566a; line-height: 1.5; }
 .instructor-signature-preview { display: block; width: min(100%, 360px); height: 108px; margin: 8px 0; border: 1px solid #bac4d1; border-radius: 8px; background: #fff; }
 .admin-saved-signature { margin-top: 16px; }
