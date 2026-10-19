@@ -1,11 +1,11 @@
-const MAX_SOURCE_BYTES = 8 * 1024 * 1024
+const MAX_SOURCE_BYTES = 12 * 1024 * 1024
 const MAX_DATA_URL_LENGTH = 220000
 const SUPPORTED_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
 
 export async function prepareProfilePhoto(file) {
   const supported = SUPPORTED_TYPES.has(file.type) || (!file.type && /\.(jpe?g|png|webp|heic|heif)$/i.test(file.name))
   if (!supported || file.size > MAX_SOURCE_BYTES) {
-    throw new Error('Choose a JPG, PNG, WebP, or HEIC photo up to 8 MB.')
+    throw new Error('Choose a JPG, PNG, WebP, or HEIC photo up to 12 MB.')
   }
 
   const url = URL.createObjectURL(file)

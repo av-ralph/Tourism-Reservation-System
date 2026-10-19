@@ -13,7 +13,7 @@ export default function AdminCollegeOrganization({request}){
  function removeGroup(index){setGroups(current=>current.filter((_,i)=>i!==index));setNotice('')}
  async function upload(event,groupIndex,personIndex){
   const file=event.target.files?.[0];event.target.value='';if(!file)return;
-  setError('');if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>8*1024*1024){setError('Choose a JPG, PNG, or WebP photo up to 8 MB.');return}
+  setError('');if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>12*1024*1024){setError('Choose a JPG, PNG, or WebP photo up to 12 MB.');return}
   setUploading(true);const url=URL.createObjectURL(file);
   try{
    const image=new Image();image.src=url;await image.decode();
