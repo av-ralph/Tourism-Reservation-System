@@ -19,6 +19,7 @@ import './ModalExperience.css'
 import './StaffSidebar.css'
 import './AdminReservationsTable.css'
 import './PhoneLayouts.css'
+import './InstructorReview.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

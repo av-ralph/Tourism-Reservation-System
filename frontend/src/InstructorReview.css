@@ -1,0 +1,44 @@
+.instructor-shell .instructor-review-modal {
+  width:min(900px,100%);
+  padding:clamp(22px,3vw,36px);
+}
+.instructor-review-modal .instructor-review-summary {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px 22px;
+  margin:0 0 24px;
+  padding:18px 20px;
+  border:1px solid #d8e1ed;
+  border-radius:12px;
+  background:#f7f9fc;
+}
+.instructor-review-summary > div {min-width:0}
+.instructor-review-summary span {display:block;margin-bottom:5px;color:#53677e;font-size:12px;font-weight:600}
+.instructor-review-summary strong {display:block;color:#17345d;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+.instructor-review-equipment {grid-column:1/-1}
+.instructor-review-modal form {display:grid;gap:18px}
+.instructor-review-modal form > label {display:grid;gap:8px;font-weight:600}
+.instructor-review-modal form > label :is(select,textarea) {width:100%;margin:0}
+.instructor-review-modal .signature-pad {margin:0;padding:18px;border:1px solid #d8e1ed;border-radius:12px;background:#fbfcfe;min-width:0}
+.instructor-review-modal .signature-pad-heading {margin-bottom:14px}
+.instructor-review-modal .signature-pad canvas {height:clamp(190px,23vw,240px);aspect-ratio:auto;border:2px dashed #a8bad0;border-radius:10px;box-shadow:inset 0 0 0 4px #fff}
+.instructor-review-modal .signature-pad canvas:focus-visible {outline:3px solid #e9612a;outline-offset:3px}
+.instructor-review-modal .signature-pad small {font-size:12px}
+.instructor-review-modal .source-note {margin:0;line-height:1.5}
+.instructor-review-actions {position:sticky;z-index:2;bottom:-1px;display:flex;justify-content:flex-end;gap:10px;padding:14px 0 calc(4px + env(safe-area-inset-bottom));border-top:1px solid #d8e1ed;background:#fff;box-shadow:0 -8px 16px #fff}
+.instructor-shell .instructor-review-modal form .instructor-review-actions .submit {position:static;width:auto;min-width:205px;margin:0;box-shadow:none}
+.instructor-review-actions .secondary {min-width:100px}
+@media(max-width:600px) {
+  .instructor-shell .instructor-review-modal {width:100%;padding:20px 16px 12px}
+  .instructor-review-modal .instructor-review-summary {grid-template-columns:minmax(0,1fr);gap:12px;margin-bottom:20px;padding:16px}
+  .instructor-review-equipment {grid-column:auto}
+  .instructor-review-modal form {gap:16px}
+  .instructor-review-modal .signature-pad {padding:14px}
+  .instructor-review-modal .signature-pad canvas {height:200px}
+  .instructor-review-actions {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr)}
+  .instructor-review-actions :is(.primary,.secondary) {width:100%;min-width:0!important}
+}
+@media(max-width:390px) {
+  .instructor-review-actions {grid-template-columns:1fr}
+  .instructor-review-modal .signature-pad canvas {height:190px}
+}
