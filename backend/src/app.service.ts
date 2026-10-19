@@ -162,12 +162,12 @@ export class AppService {
  async revokeStaffKey(id:string,authorization?:string){const role=await this.authorizeAdmin(authorization);return this.revokeAdminKey(id,role);}
  async instructorRecords(authorization?:string){const data=await this.storage.read(),identity=await this.adminIdentity(authorization,data);if(identity.role!=='instructor')throw new ForbiddenException('Enter an instructor access key.');const hash=this.keyHash((authorization||'').replace(/^Bearer /,'')),instructor=data.adminKeys.find(row=>row.hash===hash);return {...identity,reservations:data.reservations.filter(row=>!row.instructorKeyId||row.instructorKeyId===instructor?.id).map(row=>{const reservation=this.publicReservation(row);delete reservation.owner;return reservation;}),facilities:this.facilitiesFrom(data).map(facility=>{const details={...facility} as Row;delete details.photo;return details;})};}
  private validateSignature(value:unknown){
-  if(!Array.isArray(value)||value.length<1||value.length>20)throw new BadRequestException('Draw your signature before approving the request.');
+  if(!Array.isArray(value)||value.length<1||value.length>80)throw new BadRequestException('Draw your signature before approving the request.');
   let count=0,length=0,minX=600,maxX=0,minY=180,maxY=0;
   for(const stroke of value){
-   if(!Array.isArray(stroke)||stroke.length<2||stroke.length>300)throw new BadRequestException('Draw a complete signature before approving.');
+   if(!Array.isArray(stroke)||stroke.length<2||stroke.length>700)throw new BadRequestException('Draw a complete signature before approving.');
    count+=stroke.length;
-   if(count>2000)throw new BadRequestException('The signature is too detailed. Clear it and try again.');
+   if(count>8000)throw new BadRequestException('The signature is too detailed. Clear it and try again.');
    for(let index=0;index<stroke.length;index++){
     const point=stroke[index];
     if(!Array.isArray(point)||point.length!==2||!point.every((coordinate:unknown)=>typeof coordinate==='number'&&Number.isInteger(coordinate))||point[0]<0||point[0]>600||point[1]<0||point[1]>180)throw new BadRequestException('Signature points are invalid. Clear it and try again.');
