@@ -11,10 +11,15 @@ export function signatureIsMeaningful(strokes){
 
 export function smoothSignaturePoints(stroke){
  if(stroke.length<3)return stroke
- return stroke.map((point,index)=>index===0||index===stroke.length-1?point:[
-  (stroke[index-1][0]+point[0]*2+stroke[index+1][0])/4,
-  (stroke[index-1][1]+point[1]*2+stroke[index+1][1])/4,
- ])
+ return stroke.map((point,index)=>{
+  if(index===0||index===stroke.length-1)return point
+  const neighbors=[stroke[Math.max(0,index-2)],stroke[index-1],point,stroke[index+1],stroke[Math.min(stroke.length-1,index+2)]]
+  const weights=[1,2,4,2,1]
+  const target=[0,1].map(axis=>neighbors.reduce((sum,neighbor,neighborIndex)=>sum+neighbor[axis]*weights[neighborIndex],0)/10)
+  const shift=Math.hypot(target[0]-point[0],target[1]-point[1])
+  const amount=shift>3?3/shift:1
+  return [point[0]+(target[0]-point[0])*amount,point[1]+(target[1]-point[1])*amount]
+ })
 }
 
 export function signaturePath(stroke){
