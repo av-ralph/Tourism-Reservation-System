@@ -12,7 +12,7 @@ assert.equal((masthead.match(/<a:blip\b/g)||[]).length,2,'both logos appear in t
 for(const key of Object.keys(original)) if(key!=='word/document.xml') assert.deepEqual(result[key],original[key],key+' preserved')
 assert(!xml.includes('{{'))
 assert.equal((xml.match(/☒/g)||[]).length,1)
-assert.equal((xml.match(/☐/g)||[]).length,6)
+assert.equal((xml.match(/☐/g)||[]).length,9)
 for(const marker of ['USAGE_DATE','USAGE_TIME','SUBJECT','PURPOSE','ITEM_QUANTITY','ITEM_DESCRIPTION']){
   const index=templateXml.indexOf(`{{${marker}}}`)
   assert(index>=0,marker)
@@ -20,8 +20,8 @@ for(const marker of ['USAGE_DATE','USAGE_TIME','SUBJECT','PURPOSE','ITEM_QUANTIT
   assert(paragraph.includes('<w:jc w:val="center"/>'),`${marker} centered`)
   assert(paragraph.includes('<w:b/>'),`${marker} bold`)
 }
-const areaLabels={BAR:'Bar Area',DINING:'Dining Area',FRONT_OFFICE:'Front Office Area',KITCHEN:'Kitchen Area',LAUNDRY:'Laundry Area',ROOMS:'Rooms',OTHER:'Other'}
-for(const [facility,area] of [['Bar Area','BAR'],['Dining Area','DINING'],['Front Office Area','FRONT_OFFICE'],['Hot Kitchen','KITCHEN'],['Cold Kitchen','KITCHEN'],['Laundry Area','LAUNDRY'],['Harmonia Mini-Hotel','ROOMS'],['Lunara Mini-Hotel','ROOMS'],['Mini Function Room','OTHER'],['Computer Laboratory MH 302','OTHER']]){
+const areaLabels={BAR:'Bar Area',DINING:'Dining Area',FRONT_OFFICE:'Front Office Area',HOT_KITCHEN:'Hot Kitchen',COLD_KITCHEN:'Cold Kitchen',LAUNDRY:'Laundry Area',MINI_FUNCTION:'Mini Function Room',HARMONIA:'Harmonia Mini-Hotel Room',LUNARA:'Lunara Mini-Hotel Room',COMPUTER:'Computer Laboratory MH 302'}
+for(const [facility,area] of [['Bar Area','BAR'],['Dining Area','DINING'],['Front Office Area','FRONT_OFFICE'],['Hot Kitchen','HOT_KITCHEN'],['Cold Kitchen','COLD_KITCHEN'],['Laundry Area','LAUNDRY'],['Harmonia Mini-Hotel','HARMONIA'],['Lunara Mini-Hotel','LUNARA'],['Mini Function Room','MINI_FUNCTION'],['Computer Laboratory MH 302','COMPUTER']]){
   assert.equal(reservationArea(facility),area)
   const filled=strFromU8(unzipSync(fillReservationForm(template,{...record,facility}))['word/document.xml'])
   assert.equal((filled.match(/☒/g)||[]).length,1,facility)

@@ -54,13 +54,16 @@ areas = (
     ("BAR", "Bar Area"),
     ("DINING", "Dining Area"),
     ("FRONT_OFFICE", "Front Office Area"),
-    ("KITCHEN", "Kitchen Area"),
+    ("HOT_KITCHEN", "Hot Kitchen"),
+    ("COLD_KITCHEN", "Cold Kitchen"),
     ("LAUNDRY", "Laundry Area"),
-    ("ROOMS", "Rooms"),
-    ("OTHER", "Other"),
+    ("MINI_FUNCTION", "Mini Function Room"),
+    ("HARMONIA", "Harmonia Mini-Hotel Room"),
+    ("LUNARA", "Lunara Mini-Hotel Room"),
+    ("COMPUTER", "Computer Laboratory MH 302"),
 )
 for index, (key, label) in enumerate(areas):
-    if index == 3:
+    if index in (3, 6, 8):
         area.add_run().add_break()
     elif index:
         area.add_run("    ")
