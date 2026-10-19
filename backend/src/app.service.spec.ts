@@ -59,6 +59,15 @@ describe('reservations',()=>{
    expect((await service.listInventory()).some(entry=>entry.id===item.id)).toBe(false);
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
+ it('accepts more than 22 distinct available items in one request',async()=>{
+  const items=(await service.listInventory()).slice(0,23);
+  expect(items).toHaveLength(23);
+  await service.createAdminKey({name:'Instructor',key:'InstructorTest1!',role:'instructor'});
+  const selection=items.map(item=>({id:item.id,quantity:1}));
+  const saved=await service.createForUser('reservations',{...booking,inventoryItems:selection},'11111111-1111-4111-8111-111111111111');
+  expect(JSON.parse(saved.inventorySelection||'[]')).toHaveLength(23);
+  expect(saved.equipment).toContain(items[22].name);
+ });
  it('saves and validates the public college organization',async()=>{
   expect(await service.collegeOrganization()).toEqual({groups:null});
   const groups=[{title:'Laboratory team',items:[{name:'Example Person – Laboratory In-Charge',photo:''}]}];

@@ -1,0 +1,20 @@
+.student-site .modal .booking-terms .check-label {
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:flex-start;
+  gap:12px!important;
+  width:100%;
+  cursor:pointer;
+}
+.student-site .modal .booking-terms .check-label input[type="checkbox"] {
+  flex:0 0 20px;
+  width:20px;
+  min-width:20px;
+  height:20px;
+  min-height:20px;
+  margin:2px 0 0;
+  padding:0;
+  border-radius:4px;
+  accent-color:#123b71;
+}
+.student-site .modal .booking-terms .check-label span {flex:1;min-width:0;line-height:1.5}

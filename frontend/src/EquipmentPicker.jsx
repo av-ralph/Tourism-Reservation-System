@@ -20,7 +20,7 @@ export default function EquipmentPicker({inventory,inventoryStatus,onRetryInvent
  const compare=(a,b)=>sort==='stock'?Number(b.quantity)-Number(a.quantity)||a.name.localeCompare(b.name):sort==='name-desc'?b.name.localeCompare(a.name):sort==='category'?a.category.localeCompare(b.category)||a.name.localeCompare(b.name):a.name.localeCompare(b.name)
  const sorted=[...matches].sort(compare)
  const updateQuantity=(id,quantity)=>onChange(items.map(item=>item.id===id?{...item,quantity}:item))
- const add=item=>{if(items.length<22&&!selectedIds.has(item.id))onChange([...items,{id:item.id,quantity:'1'}])}
+ const add=item=>{if(!selectedIds.has(item.id))onChange([...items,{id:item.id,quantity:'1'}])}
  const remove=id=>onChange(items.filter(item=>item.id!==id))
  const resetLimit=()=>setVisibleCount(PAGE_SIZE)
 
@@ -32,7 +32,7 @@ export default function EquipmentPicker({inventory,inventoryStatus,onRetryInvent
    :<>
     <p className="field-hint">Need equipment? Search or browse, then tap Add. You can also continue without selecting any.</p>
     {items.length>0&&<section className="equipment-selected" aria-label="Selected equipment">
-     <div className="equipment-section-heading"><strong>Your items</strong><span>{items.length} of 22 selected</span></div>
+     <div className="equipment-section-heading"><strong>Your items</strong><span>{items.length} selected</span></div>
      {items.map(item=>{
       const selected=inventory.find(entry=>entry.id===item.id)
       if(!selected)return null
@@ -66,11 +66,10 @@ export default function EquipmentPicker({inventory,inventoryStatus,onRetryInvent
     {sorted.length?<div className="equipment-results">
      {sorted.slice(0,visibleCount).map(item=><div className="equipment-result" key={item.id}>
       <div><strong>{item.name}</strong><small>{item.category}{item.model&&item.model!=='N/A'?` · ${item.model}`:''}</small><span>{item.quantity} {item.unit} available</span></div>
-      <button type="button" className={selectedIds.has(item.id)?'equipment-added':'secondary'} disabled={selectedIds.has(item.id)||items.length>=22} aria-label={selectedIds.has(item.id)?`${item.name} added`:`Add ${item.name}`} onClick={()=>add(item)}>{selectedIds.has(item.id)?'✓ Added':'+ Add'}</button>
+      <button type="button" className={selectedIds.has(item.id)?'equipment-added':'secondary'} disabled={selectedIds.has(item.id)} aria-label={selectedIds.has(item.id)?`${item.name} added`:`Add ${item.name}`} onClick={()=>add(item)}>{selectedIds.has(item.id)?'✓ Added':'+ Add'}</button>
      </div>)}
     </div>:<p className="equipment-no-match">No items match. Try another search or category.</p>}
     {visibleCount<sorted.length&&<button type="button" className="equipment-more secondary" onClick={()=>setVisibleCount(count=>count+PAGE_SIZE)}>Show more items</button>}
-    {items.length>=22&&<p className="field-hint">You’ve reached the 22-item limit. Remove an item to choose another.</p>}
     </div>
     </details>
    </>}

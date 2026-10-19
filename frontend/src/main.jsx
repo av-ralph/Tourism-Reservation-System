@@ -20,6 +20,7 @@ import './StaffSidebar.css'
 import './AdminReservationsTable.css'
 import './PhoneLayouts.css'
 import './InstructorReview.css'
+import './BookingFixes.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

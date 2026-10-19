@@ -242,7 +242,7 @@ export class AppService {
   const raw=input as Record<string,unknown>,r:Row={};
   const closedEdit=excludeId&&data.reservations.some(x=>x.id===excludeId&&['Cancelled','Rejected'].includes(x.status!));
   const keys=['facility','name','date',...(kind==='reports'?['type','details']:['start','end','purpose']),...(kind==='utilization'?['attendees']:[]),...(kind==='reservations'?['subject','instructor','equipment']:[])];
-  for(const k of keys){const v=raw[k];if(typeof v!=='string'||!v.trim()||v.length>(['details','equipment'].includes(k)?2000:k==='purpose'?1000:100))throw new BadRequestException('Please provide a valid '+k+'.');r[k]=v.trim();}
+  for(const k of keys){const v=raw[k];if(typeof v!=='string'||!v.trim()||v.length>(k==='equipment'?100000:k==='details'?2000:k==='purpose'?1000:100))throw new BadRequestException('Please provide a valid '+k+'.');r[k]=v.trim();}
   {
    if(raw.studentId!==undefined&&(typeof raw.studentId!=='string'||raw.studentId.length>40))throw new BadRequestException('ID number must be 40 characters or fewer.');
    r.studentId=typeof raw.studentId==='string'?raw.studentId.trim():'';
@@ -279,7 +279,7 @@ export class AppService {
   const r=this.validateRecord(kind,input,data,undefined,requireInstructor);
   if(kind==='reservations'&&owner){
    const raw=(input as Record<string,unknown>).inventoryItems;
-   if(!Array.isArray(raw)||raw.length>22)throw new BadRequestException('Choose up to 22 listed inventory items.');
+   if(!Array.isArray(raw))throw new BadRequestException('Choose listed inventory items.');
    const selected=new Set<string>(),lines:string[]=[],selection:{id:string;quantity:number}[]=[];
    for(const entry of raw){
     if(!entry||typeof entry!=='object'||Array.isArray(entry))throw new BadRequestException('Invalid equipment selection.');
@@ -291,7 +291,6 @@ export class AppService {
     if(quantity+reserved>Number(available.quantity))throw new ConflictException(`${available.name} has only ${Math.max(0,Number(available.quantity)-reserved)} ${available.unit} available at that time.`);
     selected.add(id);selection.push({id,quantity});lines.push(`${quantity} | ${available.name}`);
    }
-   if(lines.join('\n').length>2000)throw new BadRequestException('The equipment list is too long. Select fewer items.');
    r.equipment=lines.join('\n')||'None';r.inventorySelection=JSON.stringify(selection);
   }
   r.id=randomUUID();r.createdAt=new Date().toISOString();if(owner)r.owner=owner;if(kind==='reservations')r.status='Awaiting instructor';if(kind==='reports')r.status='Open';data[kind].push(r);return r;
