@@ -92,6 +92,14 @@ for table in document.tables[:2]:
                 for run in paragraph.runs:
                     run.bold = True
 
+for index, key in enumerate(("LAB_RELEASED", "LAB_REMARKS", "LAB_RETURNED", "LAB_GOOD", "LAB_LOST", "LAB_DAMAGED"), start=2):
+    cell = document.tables[1].rows[-1].cells[index]
+    cell.text = "{{" + key + "}}"
+    cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+    for run in cell.paragraphs[0].runs:
+        run.bold = True
+        run.font.size = Pt(9)
+
 approval = document.tables[-1]
 for cell in approval.rows[0].cells:
     cell.text = ""

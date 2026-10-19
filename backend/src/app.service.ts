@@ -223,7 +223,7 @@ export class AppService {
 
  async reviewReservation(id:string,input:unknown,authorization?:string){const identity=await this.adminIdentity(authorization);return this.storage.mutate(data=>{
   if(!input||typeof input!=='object')throw new BadRequestException('Invalid review.');
-  const {action,note,signatureConfirmed,adminSignature}=input as Record<string,unknown>;
+  const {action,note,signatureConfirmed,adminSignature,laboratoryEntries}=input as Record<string,unknown>;
   const r=data.reservations.find(r=>r.id===id);if(!r)throw new NotFoundException('Reservation not found.');
   const stage=this.reservationStatus(r);
   if(!['Awaiting instructor','Awaiting admin','Approved','Reserved'].includes(stage!)||(action!=='Cancelled'&&stage!=='Awaiting admin'))throw new BadRequestException('Only requests endorsed by an instructor can receive a final admin decision.');
@@ -244,9 +244,34 @@ export class AppService {
   }
   const validatedSignature=action==='Approved'?this.validateSignature(adminSignature):'';
   const updated:Row={...r,status:String(action),reviewNote:note.trim(),reviewedAt:new Date().toISOString()};
-  if(action==='Approved'){updated.adminSignature=validatedSignature;updated.adminReviewedBy=identity.adminName;updated.adminReviewedAt=updated.reviewedAt;}
+  if(action==='Approved'){updated.adminSignature=validatedSignature;updated.adminReviewedBy=identity.adminName;updated.adminReviewedAt=updated.reviewedAt;updated.laboratoryEntries=this.validateLaboratoryEntries(laboratoryEntries,r);}
   else {delete updated.adminSignature;delete updated.adminReviewedBy;delete updated.adminReviewedAt;}
   data.reservations=data.reservations.map(x=>x.id===id?updated:x);return updated;
+ });}
+ private validateLaboratoryEntries(value:unknown,reservation:Row){
+  let requestedQuantities:number[]=[];
+  try{const selected=JSON.parse(reservation.inventorySelection||'[]');if(Array.isArray(selected)&&selected.length)requestedQuantities=selected.map(entry=>Number(entry.quantity));}catch{/* Legacy text-only equipment list. */}
+  if(!requestedQuantities.length)requestedQuantities=String(reservation.equipment||'').split(/\r?\n/).filter(line=>line.trim()&&line.trim()!=='None').map(line=>Number(line.match(/^\s*(\d+)\s*\|/)?.[1]||0));
+  if(value===undefined)value=requestedQuantities.map(()=>({released:'',remarks:'',returned:'',condition:''}));
+  if(!Array.isArray(value)||value.length!==requestedQuantities.length||value.length>500)throw new BadRequestException('The laboratory table does not match the requested equipment. Reopen the form and try again.');
+  const entries=value.map((entry:unknown,index:number)=>{
+   if(!entry||typeof entry!=='object'||Array.isArray(entry))throw new BadRequestException('Enter valid laboratory table details.');
+   const row=entry as Record<string,unknown>;
+   const released=String(row.released??'').trim(),remarks=String(row.remarks??'').trim(),returned=String(row.returned??'').trim(),condition=String(row.condition??'').trim();
+   if(released&&!/^[1-9]\d{0,5}$/.test(released))throw new BadRequestException(`Row ${index+1}: quantity released must be a positive whole number.`);
+   if(released&&requestedQuantities[index]>0&&Number(released)>requestedQuantities[index])throw new BadRequestException(`Row ${index+1}: quantity released exceeds the requested quantity.`);
+   if(remarks.length>120)throw new BadRequestException(`Row ${index+1}: remarks must be 120 characters or fewer.`);
+   if(returned&&(!/^\d{4}-\d{2}-\d{2}$/.test(returned)||Number.isNaN(Date.parse(returned))||new Date(returned).toISOString().slice(0,10)!==returned))throw new BadRequestException(`Row ${index+1}: enter a valid return date.`);
+   if(!['','Good order','Lost','Damaged'].includes(condition))throw new BadRequestException(`Row ${index+1}: choose a valid condition.`);
+   return {released,remarks,returned,condition};
+  });
+  return JSON.stringify(entries);
+ }
+ updateReservationLaboratory(id:string,input:unknown){return this.storage.mutate(data=>{
+  const reservation=data.reservations.find(row=>row.id===id);if(!reservation)throw new NotFoundException('Reservation not found.');
+  if(!['Awaiting admin','Approved'].includes(this.reservationStatus(reservation)!))throw new BadRequestException('Laboratory details can only be edited during or after final review.');
+  reservation.laboratoryEntries=this.validateLaboratoryEntries((input as {entries?:unknown})?.entries,reservation);
+  reservation.updatedAt=new Date().toISOString();return reservation;
  });}
  updateReservationItems(id:string,input:unknown){return this.storage.mutate(data=>{
   const reservation=data.reservations.find(row=>row.id===id);if(!reservation)throw new NotFoundException('Reservation not found.');
@@ -270,7 +295,7 @@ export class AppService {
   reservation.inventorySelection=next;
   reservation.equipment=selection.map(item=>`${item.quantity} | ${item.name}`).join('\n')||'None';
   reservation.updatedAt=new Date().toISOString();reservation.status='Awaiting instructor';
-  for(const field of ['instructorDecision','instructorNote','instructorReviewedBy','instructorReviewedAt','instructorSignature','reviewNote','reviewedAt','adminSignature','adminReviewedBy','adminReviewedAt'])delete reservation[field];
+  for(const field of ['instructorDecision','instructorNote','instructorReviewedBy','instructorReviewedAt','instructorSignature','reviewNote','reviewedAt','adminSignature','adminReviewedBy','adminReviewedAt','laboratoryEntries'])delete reservation[field];
   return reservation;
  });}
  resolveReport(id:string,input:unknown){return this.storage.mutate(data=>{const r=data.reports.find(r=>r.id===id);if(!r)throw new NotFoundException('Report not found.');const note=(input as {note?:unknown})?.note;if(typeof note!=='string'||!note.trim()||note.length>1000)throw new BadRequestException('Enter resolution details.');if(r.status==='Resolved')throw new BadRequestException('Report is already resolved.');const updated={...r,status:'Resolved',resolution:note.trim(),resolvedAt:new Date().toISOString()};data.reports=data.reports.map(x=>x.id===id?updated:x);return updated;});}
@@ -340,7 +365,7 @@ export class AppService {
    const signedFields=['facility','name','email','studentId','date','start','end','purpose','subject','instructor','equipment'];
    if(old.instructorDecision==='Approved'&&signedFields.some(field=>old[field]!==updated[field])){
     updated.status='Awaiting instructor';
-    for(const field of ['instructorDecision','instructorNote','instructorReviewedBy','instructorReviewedAt','instructorSignature','reviewNote','reviewedAt','adminSignature','adminReviewedBy','adminReviewedAt'])delete updated[field];
+    for(const field of ['instructorDecision','instructorNote','instructorReviewedBy','instructorReviewedAt','instructorSignature','reviewNote','reviewedAt','adminSignature','adminReviewedBy','adminReviewedAt','laboratoryEntries'])delete updated[field];
    }
    if(old.equipment!==updated.equipment)delete updated.inventorySelection;
   }data[type]=data[type].map(row=>row.id===id?updated:row);return updated;});}

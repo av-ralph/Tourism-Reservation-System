@@ -13,7 +13,7 @@ for(const key of Object.keys(original)) if(key!=='word/document.xml') assert.dee
 assert(!xml.includes('{{'))
 assert.equal((xml.match(/☒/g)||[]).length,1)
 assert.equal((xml.match(/☐/g)||[]).length,9)
-for(const marker of ['USAGE_DATE','USAGE_TIME','SUBJECT','PURPOSE','ITEM_QUANTITY','ITEM_DESCRIPTION']){
+for(const marker of ['USAGE_DATE','USAGE_TIME','SUBJECT','PURPOSE','ITEM_QUANTITY','ITEM_DESCRIPTION','LAB_RELEASED','LAB_REMARKS','LAB_RETURNED','LAB_GOOD','LAB_LOST','LAB_DAMAGED']){
   const index=templateXml.indexOf(`{{${marker}}}`)
   assert(index>=0,marker)
   const paragraph=templateXml.slice(templateXml.lastIndexOf('<w:p',index),templateXml.indexOf('</w:p>',index))
@@ -41,6 +41,11 @@ for(let i=1;i<=allItems.length;i++)assert(allItemsXml.includes(`Inventory item $
 assert.equal((allItemsXml.match(/<w:tr\b/g)||[]).length,(templateXml.match(/<w:tr\b/g)||[]).length+allItems.length-1,'every selected item has a row')
 assert(allItemsXml.includes('SAMPLE INSTRUCTOR'),'signer is retained after a long inventory list')
 const structuredSelection=allItems.map((_,i)=>({id:`item-${i+1}`,quantity:i+1,name:`Inventory item ${i+1}`}))
+const laboratoryRecord={...record,equipment:'None',inventorySelection:JSON.stringify([{id:'bowl',quantity:3,name:'Mixing bowls'},{id:'tray',quantity:2,name:'Service tray'}]),laboratoryEntries:JSON.stringify([{released:'2',remarks:'Checked & issued',returned:'2026-10-18',condition:'Good order'},{released:'1',remarks:'Handle marked',returned:'',condition:'Damaged'}])}
+const laboratoryXml=strFromU8(unzipSync(fillReservationForm(template,laboratoryRecord))['word/document.xml'])
+for(const text of ['Checked &amp; issued','Handle marked','Oct 18, 2026'])assert(laboratoryXml.includes(text),`laboratory value ${text}`)
+assert.equal((laboratoryXml.match(/✓/g)||[]).length,2,'condition marks saved for both laboratory rows')
+assert(!laboratoryXml.includes('{{LAB_'),'laboratory placeholders filled')
 const structuredXml=strFromU8(unzipSync(fillReservationForm(template,{...record,equipment:'None',inventorySelection:JSON.stringify(structuredSelection)}))['word/document.xml'])
 for(let i=1;i<=allItems.length;i++)assert(structuredXml.includes(`Inventory item ${i}</w:t>`),`Structured item ${i} retained`)
 const generatedIds=[...structuredXml.matchAll(/w14:paraId="(F[0-9A-F]{7})"/g)].map(match=>match[1])
@@ -73,6 +78,7 @@ if(process.argv.includes('--samples')){
   const out=new URL('../../.form-work/utilization-review/',import.meta.url)
   mkdirSync(out,{recursive:true})
   writeFileSync(new URL('standard.docx',out),fillReservationForm(template,record))
+  writeFileSync(new URL('laboratory.docx',out),fillReservationForm(template,laboratoryRecord))
   writeFileSync(new URL('overflow.docx',out),long)
   writeFileSync(new URL('all-items.docx',out),fillReservationForm(template,{...record,equipment:'None',inventorySelection:JSON.stringify(structuredSelection)}))
 }

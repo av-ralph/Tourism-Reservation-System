@@ -26,6 +26,9 @@ export function reservationItems(reservation) {
   } catch { /* Older bookings only have the equipment summary. */ }
   return reservationInventory(reservation.equipment)
 }
+export function reservationLaboratoryEntries(reservation){
+ try{const entries=JSON.parse(reservation.laboratoryEntries||'[]');return Array.isArray(entries)?entries:[]}catch{return []}
+}
 function uniqueRowIds(source,index){let id=0;return source.replace(/w14:paraId="[0-9A-Fa-f]{8}"/g,()=>`w14:paraId="${(0xF0000000+index*256+id++).toString(16).toUpperCase()}"`)}
 export function reservationArea(facility) {
   const name=String(facility||'').trim().toLowerCase()
@@ -49,7 +52,12 @@ export function fillReservationForm(template, reservation, signatureImage, admin
   const row = xml.match(rowPattern)?.[0]
   if (!row) throw new Error('The reservation form template is unavailable.')
   const inventory = reservationItems(reservation)
-  xml = xml.replace(rowPattern, () => Array.from({length:Math.max(12,inventory.length)}, (_,i) => uniqueRowIds(row,i).replace('{{ITEM_QUANTITY}}',()=>escapeXml(inventory[i]?.quantity)).replace('{{ITEM_DESCRIPTION}}',()=>escapeXml(inventory[i]?.description))).join(''))
+  const laboratory=reservationLaboratoryEntries(reservation)
+  xml = xml.replace(rowPattern, () => Array.from({length:Math.max(12,inventory.length)}, (_,i) => {
+    const entry=laboratory[i]||{}
+    const values={ITEM_QUANTITY:inventory[i]?.quantity,ITEM_DESCRIPTION:inventory[i]?.description,LAB_RELEASED:entry.released,LAB_REMARKS:entry.remarks,LAB_RETURNED:entry.returned?dateLabel(entry.returned):'',LAB_GOOD:entry.condition==='Good order'?'✓':'',LAB_LOST:entry.condition==='Lost'?'✓':'',LAB_DAMAGED:entry.condition==='Damaged'?'✓':''}
+    return Object.entries(values).reduce((result,[key,value])=>result.replaceAll(`{{${key}}}`,()=>escapeXml(value)),uniqueRowIds(row,i))
+  }).join(''))
   const checkedArea=reservationArea(reservation.facility)
   for(const area of ['BAR','DINING','FRONT_OFFICE','HOT_KITCHEN','COLD_KITCHEN','LAUNDRY','MINI_FUNCTION','HARMONIA','LUNARA','COMPUTER'])xml=xml.replaceAll(`{{CHECK_${area}}}`,()=>area===checkedArea?'☒':'☐')
   const values = {
@@ -100,7 +108,7 @@ function renderSignature(value,label='instructor'){
 let templatePromise
 export async function downloadReservationForm(reservation) {
   try {
-    templatePromise ||= fetch('/documents/reservation-template.docx?v=10').then(async response => {
+    templatePromise ||= fetch('/documents/reservation-template.docx?v=11').then(async response => {
       if (!response.ok) throw new Error('The form template could not be loaded.')
       return new Uint8Array(await response.arrayBuffer())
     }).catch(error=>{templatePromise=undefined;throw error})
