@@ -43,11 +43,15 @@ try{
   const signed=unzipSync(new Uint8Array(await blobs[1].arrayBuffer()))
   assert.deepEqual(signed['word/media/instructor-signature.png'],new Uint8Array(Buffer.from(png,'base64')))
   assert(strFromU8(signed['word/document.xml']).includes('SIGNING INSTRUCTOR'))
+  await downloadReservationForm({...record,instructorSignature:JSON.stringify(strokes),instructorReviewedBy:'Signing Instructor',instructorReviewedAt:'2026-10-15T01:00:00Z',adminSignature:JSON.stringify(strokes),adminReviewedBy:'Cristian Jay M. Pechon',adminReviewedAt:'2026-10-15T02:00:00Z'})
+  const fullySigned=unzipSync(new Uint8Array(await blobs[2].arrayBuffer()))
+  assert(strFromU8(fullySigned['word/document.xml']).includes('CRISTIAN JAY M. PECHON'))
+  assert(fullySigned['word/media/admin-signature.png'])
   for(const signature of ['broken json','{}','[]','[[[1,null]]]']){
     await assert.rejects(downloadReservationForm({...record,instructorSignature:signature}),/saved instructor signature/)
   }
-  assert.equal(downloads.length,2,'Invalid signatures must never create an unsigned download')
-  assert.equal(revocations.length,2,'Download object URLs are cleaned up')
+  assert.equal(downloads.length,3,'Invalid signatures must never create an unsigned download')
+  assert.equal(revocations.length,3,'Download object URLs are cleaned up')
   console.log('Passed: failed fetch, HTML fallback, retry, template cache, DOCX filename/type, unsigned and signed download, signature validation, URL cleanup.')
 }finally{
   globalThis.fetch=saved.fetch

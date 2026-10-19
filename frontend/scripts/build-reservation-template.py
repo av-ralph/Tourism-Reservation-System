@@ -140,9 +140,9 @@ add_line(reserved, "Signature over printed name", size=8)
 add_line(reserved, "Date signed: {{SIGNED_DATE}}", size=8)
 
 add_line(noted, "Noted by", bold=True, size=9, first=True)
-signature_line(noted, " ")
-add_line(noted, "CRISTIAN JAY M. PECHON", bold=True, size=10)
+signature_line(noted, "{{ADMIN_SIGNATURE}}")
+add_line(noted, "{{ADMIN_NAME}}", bold=True, size=10)
 add_line(noted, "Laboratory In-Charge · Signature over printed name", size=8)
-add_line(noted, "Date signed: __________________", size=8)
+add_line(noted, "Date signed: {{ADMIN_SIGNED_DATE}}", size=8)
 
 document.save(template_path)

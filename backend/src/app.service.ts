@@ -221,9 +221,9 @@ export class AppService {
  createForUser(kind:'reservations'|'reports'|'utilization',input:unknown,token?:string){const owner=this.userToken(token);return this.create(kind,input,owner,kind==='reservations');}
  cancelForUser(id:string,token?:string){const owner=this.userToken(token);return this.storage.mutate(data=>{const r=data.reservations.find(r=>r.id===id);if(!r)throw new NotFoundException('Reservation not found.');if(r.owner!==owner)throw new ForbiddenException('You can only cancel your own reservations.');if(['Rejected','Cancelled'].includes(this.reservationStatus(r)!))throw new BadRequestException('This request is already closed.');r.status='Cancelled';return {success:true};});}
 
- reviewReservation(id:string,input:unknown){return this.storage.mutate(data=>{
+ async reviewReservation(id:string,input:unknown,authorization?:string){const identity=await this.adminIdentity(authorization);return this.storage.mutate(data=>{
   if(!input||typeof input!=='object')throw new BadRequestException('Invalid review.');
-  const {action,note,signatureConfirmed}=input as Record<string,unknown>;
+  const {action,note,signatureConfirmed,adminSignature}=input as Record<string,unknown>;
   const r=data.reservations.find(r=>r.id===id);if(!r)throw new NotFoundException('Reservation not found.');
   const stage=this.reservationStatus(r);
   if(!['Awaiting instructor','Awaiting admin','Approved','Reserved'].includes(stage!)||(action!=='Cancelled'&&stage!=='Awaiting admin'))throw new BadRequestException('Only requests endorsed by an instructor can receive a final admin decision.');
@@ -232,8 +232,46 @@ export class AppService {
   if(action==='Approved'&&this.facilitiesFrom(data).find(f=>f.name===r.facility)?.status==='Unavailable')throw new ConflictException('This facility is currently unavailable.');
   if(action==='Approved'&&r.instructorDecision!=='Approved')throw new BadRequestException('An instructor must endorse this request before final approval.');
   if(action==='Approved'&&signatureConfirmed!==true)throw new BadRequestException('Confirm the instructor signature before approval.');
-  const updated={...r,status:String(action),reviewNote:note.trim(),reviewedAt:new Date().toISOString()};
+  if(action==='Approved'&&r.inventorySelection){
+   let selected:{id:string;quantity:number}[];
+   try{selected=JSON.parse(r.inventorySelection)}catch{throw new BadRequestException('The reservation equipment list is invalid. Edit it before approval.');}
+   for(const pick of selected){
+    const item=this.inventoryFrom(data).find(row=>row.id===pick.id&&row.status==='Available');
+    if(!item)throw new ConflictException('A requested equipment item is unavailable. Edit the form before approval.');
+    const reserved=data.reservations.filter(row=>row.id!==id&&!['Cancelled','Rejected'].includes(this.reservationStatus(row)!)&&row.date===r.date&&row.start!<r.end!&&row.end!>r.start!).reduce((total,row)=>{try{return total+(JSON.parse(row.inventorySelection||'[]') as {id:string;quantity:number}[]).filter(entry=>entry.id===pick.id).reduce((sum,entry)=>sum+entry.quantity,0)}catch{return total}},0);
+    if(pick.quantity+reserved>Number(item.quantity))throw new ConflictException(`${item.name} has insufficient stock for this request. Edit the form before approval.`);
+   }
+  }
+  const validatedSignature=action==='Approved'?this.validateSignature(adminSignature):'';
+  const updated:Row={...r,status:String(action),reviewNote:note.trim(),reviewedAt:new Date().toISOString()};
+  if(action==='Approved'){updated.adminSignature=validatedSignature;updated.adminReviewedBy=identity.adminName;updated.adminReviewedAt=updated.reviewedAt;}
+  else {delete updated.adminSignature;delete updated.adminReviewedBy;delete updated.adminReviewedAt;}
   data.reservations=data.reservations.map(x=>x.id===id?updated:x);return updated;
+ });}
+ updateReservationItems(id:string,input:unknown){return this.storage.mutate(data=>{
+  const reservation=data.reservations.find(row=>row.id===id);if(!reservation)throw new NotFoundException('Reservation not found.');
+  if(['Cancelled','Rejected'].includes(this.reservationStatus(reservation)!))throw new BadRequestException('Closed reservations cannot be edited.');
+  const raw=(input as {items?:unknown})?.items;if(!Array.isArray(raw))throw new BadRequestException('Choose a valid equipment list.');
+  if(raw.length>this.inventoryFrom(data).length)throw new BadRequestException('Too many equipment items were selected.');
+  const seen=new Set<string>(),selection:{id:string;quantity:number;name:string}[]=[];
+  for(const entry of raw){
+   if(!entry||typeof entry!=='object'||Array.isArray(entry))throw new BadRequestException('Invalid equipment item.');
+   const {id,quantity}=entry as {id?:unknown;quantity?:unknown};
+   if(typeof id!=='string'||typeof quantity!=='number'||!Number.isSafeInteger(quantity)||quantity<1||seen.has(id))throw new BadRequestException('Choose each equipment item once with a positive whole-number quantity.');
+   const item=this.inventoryFrom(data).find(row=>row.id===id&&row.status==='Available');
+   if(!item)throw new ConflictException('A selected item is unavailable. Remove it or refresh the inventory.');
+   const reserved=data.reservations.filter(row=>row.id!==reservation.id&&!['Cancelled','Rejected'].includes(this.reservationStatus(row)!)&&row.date===reservation.date&&row.start!<reservation.end!&&row.end!>reservation.start!).reduce((total,row)=>{try{return total+(JSON.parse(row.inventorySelection||'[]') as {id:string;quantity:number}[]).filter(pick=>pick.id===id).reduce((sum,pick)=>sum+pick.quantity,0)}catch{return total}},0);
+   if(quantity+reserved>Number(item.quantity))throw new ConflictException(`${item.name} has only ${Math.max(0,Number(item.quantity)-reserved)} ${item.unit} available at that time.`);
+   seen.add(id);selection.push({id,quantity,name:item.name});
+  }
+  const previous=reservation.inventorySelection||'';
+  const next=JSON.stringify(selection);
+  if(previous===next)return reservation;
+  reservation.inventorySelection=next;
+  reservation.equipment=selection.map(item=>`${item.quantity} | ${item.name}`).join('\n')||'None';
+  reservation.updatedAt=new Date().toISOString();reservation.status='Awaiting instructor';
+  for(const field of ['instructorDecision','instructorNote','instructorReviewedBy','instructorReviewedAt','instructorSignature','reviewNote','reviewedAt','adminSignature','adminReviewedBy','adminReviewedAt'])delete reservation[field];
+  return reservation;
  });}
  resolveReport(id:string,input:unknown){return this.storage.mutate(data=>{const r=data.reports.find(r=>r.id===id);if(!r)throw new NotFoundException('Report not found.');const note=(input as {note?:unknown})?.note;if(typeof note!=='string'||!note.trim()||note.length>1000)throw new BadRequestException('Enter resolution details.');if(r.status==='Resolved')throw new BadRequestException('Report is already resolved.');const updated={...r,status:'Resolved',resolution:note.trim(),resolvedAt:new Date().toISOString()};data.reports=data.reports.map(x=>x.id===id?updated:x);return updated;});}
 
@@ -302,7 +340,7 @@ export class AppService {
    const signedFields=['facility','name','email','studentId','date','start','end','purpose','subject','instructor','equipment'];
    if(old.instructorDecision==='Approved'&&signedFields.some(field=>old[field]!==updated[field])){
     updated.status='Awaiting instructor';
-    for(const field of ['instructorDecision','instructorNote','instructorReviewedBy','instructorReviewedAt','instructorSignature','reviewNote','reviewedAt'])delete updated[field];
+    for(const field of ['instructorDecision','instructorNote','instructorReviewedBy','instructorReviewedAt','instructorSignature','reviewNote','reviewedAt','adminSignature','adminReviewedBy','adminReviewedAt'])delete updated[field];
    }
    if(old.equipment!==updated.equipment)delete updated.inventorySelection;
   }data[type]=data[type].map(row=>row.id===id?updated:row);return updated;});}

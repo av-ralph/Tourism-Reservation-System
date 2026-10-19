@@ -152,13 +152,15 @@ describe('reservations',()=>{
    await expect(service.authorizeInstructor('Bearer test-super-key')).rejects.toThrow('instructor access key');
    await expect(service.authorizeAdmin(key)).rejects.toThrow('Instructor keys cannot access');
    await expect(service.reviewAsInstructor(reservation.id!,{decision:'Declined',note:''},key)).rejects.toThrow('Explain why');
-   await expect(service.reviewReservation(reservation.id!,{action:'Approved',note:'',signatureConfirmed:true})).rejects.toThrow('instructor');
+   await expect(service.reviewReservation(reservation.id!,{action:'Approved',note:'',signatureConfirmed:true,adminSignature:signature},'Bearer test-super-key')).rejects.toThrow('instructor');
    await expect(service.reviewAsInstructor(reservation.id!,{decision:'Approved',note:'Suitable activity',signature:[]},key)).rejects.toThrow('signature');
    await expect(service.reviewAsInstructor(reservation.id!,{decision:'Approved',note:'Suitable activity',signature:[[[10,10],[12,11]]]},key)).rejects.toThrow('signature');
    await service.reviewAsInstructor(reservation.id!,{decision:'Approved',note:'Suitable activity',signature},key);
    expect((await service.records()).reservations[0]?.status).toBe('Awaiting admin');
    expect((await service.records()).reservations[0]?.instructorSignature).toBe(JSON.stringify(signature));
-   expect((await service.reviewReservation(reservation.id!,{action:'Approved',note:'',signatureConfirmed:true})).status).toBe('Approved');
+   await expect(service.reviewReservation(reservation.id!,{action:'Approved',note:'',signatureConfirmed:true},'Bearer test-super-key')).rejects.toThrow('signature');
+   const approved=await service.reviewReservation(reservation.id!,{action:'Approved',note:'',signatureConfirmed:true,adminSignature:signature},'Bearer test-super-key');
+   expect(approved).toMatchObject({status:'Approved',adminReviewedBy:'Super admin',adminSignature:JSON.stringify(signature)});
    await expect(service.reviewAsInstructor(reservation.id!,{decision:'Declined',note:'Reason'},key)).rejects.toThrow('awaiting instructor');
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
@@ -174,14 +176,14 @@ describe('reservations',()=>{
    expect((await service.instructorRecords('Bearer InstructorOne1!')).reservations).toHaveLength(1);
    expect((await service.instructorRecords('Bearer InstructorTwo1!')).reservations).toHaveLength(0);
    await expect(service.reviewAsInstructor(row.id!,{decision:'Approved',note:'',signature},'Bearer InstructorTwo1!')).rejects.toThrow('another instructor');
-   await expect(service.reviewReservation(row.id!,{action:'Rejected',note:'Too early'})).rejects.toThrow('instructor');
+   await expect(service.reviewReservation(row.id!,{action:'Rejected',note:'Too early'},'Bearer test-super-key')).rejects.toThrow('instructor');
    await service.reviewAsInstructor(row.id!,{decision:'Approved',note:'',signature},'Bearer InstructorOne1!');
    expect((await service.userRecords(owner)).reservations[0]?.status).toBe('Awaiting admin');
-   expect((await service.reviewReservation(row.id!,{action:'Approved',note:'',signatureConfirmed:true})).status).toBe('Approved');
+   expect((await service.reviewReservation(row.id!,{action:'Approved',note:'',signatureConfirmed:true,adminSignature:signature},'Bearer test-super-key')).status).toBe('Approved');
    const changed=await service.adminUpdate('reservations',row.id!,{purpose:'Changed activity'});
    expect(changed).toMatchObject({status:'Awaiting instructor',purpose:'Changed activity'});
    expect(changed.instructorSignature).toBeUndefined();
-   await expect(service.reviewReservation(row.id!,{action:'Approved',note:'',signatureConfirmed:true})).rejects.toThrow('instructor');
+   await expect(service.reviewReservation(row.id!,{action:'Approved',note:'',signatureConfirmed:true,adminSignature:signature},'Bearer test-super-key')).rejects.toThrow('instructor');
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
  it('ends the flow when an instructor declines a request',async()=>{
@@ -191,11 +193,33 @@ describe('reservations',()=>{
    const row=await service.create('reservations',{...booking,instructor:'Instructor One'});
    await service.reviewAsInstructor(row.id!,{decision:'Declined',note:'The lab is unsuitable.'},'Bearer InstructorOne1!');
    expect((await service.records()).reservations[0]).toMatchObject({status:'Rejected',reviewNote:'The lab is unsuitable.'});
-   await expect(service.reviewReservation(row.id!,{action:'Approved',note:'',signatureConfirmed:true})).rejects.toThrow('instructor');
+   await expect(service.reviewReservation(row.id!,{action:'Approved',note:'',signatureConfirmed:true,adminSignature:signature},'Bearer test-super-key')).rejects.toThrow('instructor');
    await expect(service.create('reservations',{...booking,instructor:'Instructor One'})).resolves.toBeDefined();
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
  it('blocks simultaneous overlapping bookings',async()=>{const results=await Promise.allSettled([service.create('reservations',booking),service.create('reservations',booking)]);expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(1);});
+ it('lets an admin adjust equipment while enforcing stock and renewed approval',async()=>{
+  process.env.HM_ADMIN_KEY='test-super-key';
+  try{
+   await service.createAdminKey({name:'Instructor',key:'InstructorTest1!',role:'instructor'});
+   const item=await service.createInventory({name:'Test plates',category:'Service',quantity:'2',unit:'pcs',status:'Available',notes:''});
+   const row=await service.createForUser('reservations',{...booking,inventoryItems:[{id:item.id,quantity:1}]},'11111111-1111-4111-8111-111111111111');
+   await expect(service.updateReservationItems(row.id!,{items:[{id:item.id,quantity:3}]})).rejects.toThrow('only 2');
+   await service.reviewAsInstructor(row.id!,{decision:'Approved',note:'',signature},'Bearer InstructorTest1!');
+   await service.updateInventory(item.id,{status:'Unavailable'});
+   await expect(service.reviewReservation(row.id!,{action:'Approved',note:'',signatureConfirmed:true,adminSignature:signature},'Bearer test-super-key')).rejects.toThrow('unavailable');
+   const changed=await service.updateReservationItems(row.id!,{items:[]});
+   expect(changed).toMatchObject({status:'Awaiting instructor',equipment:'None',inventorySelection:'[]'});
+   expect(changed.instructorSignature).toBeUndefined();
+   await service.reviewAsInstructor(row.id!,{decision:'Approved',note:'',signature},'Bearer InstructorTest1!');
+   const approved=await service.reviewReservation(row.id!,{action:'Approved',note:'',signatureConfirmed:true,adminSignature:signature},'Bearer test-super-key');
+   expect(approved.adminSignature).toBe(JSON.stringify(signature));
+   const replacement=await service.createInventory({name:'Replacement plates',category:'Service',quantity:'2',unit:'pcs',status:'Available',notes:''});
+   const revised=await service.updateReservationItems(row.id!,{items:[{id:replacement.id,quantity:1}]});
+   expect(revised.status).toBe('Awaiting instructor');
+   expect(revised.adminSignature).toBeUndefined();
+  }finally{delete process.env.HM_ADMIN_KEY;}
+ });
  it('requires email and terms but permits omitted ID',async()=>{await expect(service.create('reservations',{...booking,email:''})).rejects.toThrow('email address');await expect(service.create('reservations',{...booking,termsAccepted:false})).rejects.toThrow('Terms and Conditions');const withoutId={...booking};delete (withoutId as Partial<typeof booking>).studentId;expect((await service.create('reservations',withoutId)).studentId).toBe('');});
  it('releases cancelled times and permits adjacent sessions',async()=>{const row=await service.create('reservations',booking);await service.create('reservations',{...booking,start:'10:00',end:'11:00'});await service.cancel(row.id!);await expect(service.create('reservations',booking)).resolves.toBeDefined();});
  it('admin CRUD preserves ownership and rejects conflicting edits',async()=>{await service.createAdminKey({name:'Instructor',key:'InstructorTest1!',role:'instructor'});const first=await service.create('reservations',booking,'owner');const second=await service.adminCreate('reservations',{...booking,start:'10:00',end:'11:00'});await expect(service.adminUpdate('reservations',second.id!,{start:'09:30'})).rejects.toThrow('already reserved');const edited=await service.adminUpdate('reservations',first.id!,{purpose:'Updated practice',owner:'attacker',status:'Approved'});expect(edited.owner).toBe('owner');expect(edited.status).toBe('Awaiting instructor');expect(edited.purpose).toBe('Updated practice');await service.adminDelete('reservations',first.id!);expect((await service.records()).reservations).toHaveLength(1);await expect(service.adminDelete('reservations','missing')).rejects.toThrow('not found');});
