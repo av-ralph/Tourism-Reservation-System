@@ -54,11 +54,11 @@ The NestJS backend supports local file storage and TiDB Cloud via Prisma. The te
 
 ## Complete backend workflows
 
-Users book as guests; no account or sign-in is required. Each request requires full name, valid email, acceptance of laboratory terms, and an optional ID number. An opaque browser identifier limits access to that browser's records. Email is stored for contact but automated email delivery is not configured.
+Users book as guests; no account or sign-in is required. Each request requires full name, valid email, acceptance of laboratory terms, and an optional ID number. New reservations receive a private recovery code shown in My bookings. A student can enter the booking reference and code on another device to link that reservation to its browser. Existing reservations created before recovery codes were introduced remain available in their original browser. Email is stored for contact, but automated email delivery is not configured.
 
-Facility lists and descriptions now come from the backend. Admins can change availability and descriptions and supply a notice for a closure. Unavailable spaces cannot receive new bookings or approvals. Existing bookings are preserved for review/cancellation. Admin cancellation requires a reason, visible in the user's record. Approvals still require verification of the instructor's physical signature.
+Facility lists and descriptions now come from the backend. Admins can change availability and descriptions and supply a notice for a closure. Unavailable spaces cannot receive new bookings or approvals. Existing bookings are preserved for review/cancellation. Admin cancellation requires a reason, visible in the user's record. Final approval requires verification of the instructor's signed utilization form and an administrator signature.
 
-Requests, reviews, cancellation, utilization, reports and resolutions are saved by the backend. Both portals refresh automatically every 30 seconds while visible and when their window regains focus. Shared schedules do not expose requester details. Facility settings survive a restart and are included in the TiDB import.
+Requests, reviews, cancellation, utilization, reports and resolutions are saved by the backend. The admin and instructor portals refresh every 5 seconds while visible and when their window regains focus; they do not use a push connection. Shared schedules do not expose requester details. Facility settings survive a restart and are included in the TiDB import.
 
 From backend, `npm run verify:workflows` exercises the actual website proxy and API with disposable records, including conflicts, authorization, facility closures, review decisions, incident resolution, and restart persistence. The verified storage mode is now TiDB Cloud. Schema deployment, database connection, record insertion, transaction update, and reads from a separate backend instance have passed.
 

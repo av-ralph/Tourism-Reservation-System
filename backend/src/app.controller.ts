@@ -22,6 +22,7 @@ export class AppController {
  @Patch('api/admin/facilities/:id') async facility(@Param('id') id:string,@Body() body:unknown,@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return this.appService.updateFacility(id,body);}
  @Get('api/schedule') schedule(){return this.appService.schedule();}
  @Post('api/reservations') reserve(@Body() body:unknown,@Headers('x-user-session') token?:string){return this.appService.createForUser('reservations',body,token);}
+ @Post('api/reservations/recover') recoverReservation(@Body() body:unknown,@Headers('x-user-session') token?:string){return this.appService.recoverReservation(body,token);}
  @Post('api/reports') report(@Body() body:unknown,@Headers('x-user-session') token?:string){return this.appService.createForUser('reports',body,token);}
  @Post('api/utilization') utilization(@Body() body:unknown,@Headers('x-user-session') token?:string){return this.appService.createForUser('utilization',body,token);}
  @Delete('api/reservations/:id') cancel(@Param('id') id:string,@Headers('x-user-session') token?:string){return this.appService.cancelForUser(id,token);}

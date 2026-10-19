@@ -32,6 +32,23 @@ describe('reservations',()=>{
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
  it('persists records across restart',async()=>{await service.create('reservations',booking);expect((await new AppService().records()).reservations).toHaveLength(1);});
+ it('recovers a guest booking on another device with a private code',async()=>{
+  await service.createAdminKey({name:'Instructor',key:'InstructorTest1!',role:'instructor'});
+  const first='11111111-1111-4111-8111-111111111111',second='22222222-2222-4222-8222-222222222222';
+  const created=await service.createForUser('reservations',booking,first);
+  expect(created.recoveryCode).toMatch(/^[0-9a-f]{32}$/);
+  expect((await service.userRecords(second)).reservations).toHaveLength(0);
+  await expect(service.recoverReservation({id:created.id,code:'0'.repeat(32)},second)).rejects.toThrow('not found');
+  const recovered=await service.recoverReservation({id:created.id,code:created.recoveryCode},second);
+  expect(recovered.id).toBe(created.id);
+  expect(recovered.recoveryCode).toBeUndefined();
+  expect((await service.userRecords(second)).reservations).toHaveLength(1);
+  expect((await service.userRecords(first)).reservations).toHaveLength(1);
+  expect(JSON.stringify(await service.records())).not.toContain(created.recoveryCode);
+  expect(JSON.stringify(await service.records())).not.toContain('recoveryHash');
+  await service.cancelForUser(created.id!,second);
+  expect((await service.userRecords(first)).reservations[0]?.status).toBe('Cancelled');
+ });
  it('publishes positive report stock and enforces available booking quantities',async()=>{
   const catalog=await service.adminInventory();
   const reported=catalog.find(item=>item.id==='report-0-3');

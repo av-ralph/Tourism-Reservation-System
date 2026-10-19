@@ -10,8 +10,10 @@ const previous={storage:process.env.HM_STORAGE,file:process.env.HM_DATA_FILE,key
 process.env.HM_STORAGE='file';process.env.HM_DATA_FILE=join(dir,'records.json');process.env.HM_ADMIN_KEY='local-test-key';
 try{
  const service=new AppService(),api=new AppController(service),one=randomUUID(),two=randomUUID();
- const booking={facility:'Hot Kitchen',name:'Test Student',date:'2099-10-10',start:'09:00',end:'10:00',purpose:'Practice',subject:'Culinary',instructor:'Instructor',equipment:'None',email:'student@example.com',termsAccepted:true};
- await assert.rejects(api.records(),/session/);assert.throws(()=>api.adminRecords(),/access key/);
+ const booking={facility:'Hot Kitchen',name:'Test Student',date:'2099-10-10',start:'09:00',end:'10:00',purpose:'Practice',subject:'Culinary',instructor:'Instructor',equipment:'None',inventoryItems:[],email:'student@example.com',termsAccepted:true};
+ const signature=[[[10,10],[24,30],[40,18],[57,42],[75,24],[94,49],[112,31],[130,55]]];
+ await service.createStaffKey({name:'Instructor',key:'InstructorTest1!',role:'instructor'},'Bearer local-test-key');
+ await assert.rejects(api.records(),/session/);await assert.rejects(api.adminRecords(),/access key/);
  await assert.rejects(api.reserve({...booking,email:'invalid'},one),/email address/);
  await assert.rejects(api.reserve({...booking,termsAccepted:false},one),/Terms and Conditions/);
  await assert.rejects(api.reserve({...booking,date:'2000-01-01'},one),/two days/);
@@ -21,11 +23,13 @@ try{
  assert.equal((await api.records(one)).reservations.length,1);assert.equal((await api.records(two)).reservations.length,0);
  await assert.rejects(api.cancel(row.id,two),/only cancel your own/);
  const publicRow=(await api.schedule())[0];for(const field of ['email','studentId','owner','name'])assert.equal(publicRow[field],undefined);
+ await assert.rejects(api.review(row.id,{action:'Approved',note:'',signatureConfirmed:false},'Bearer local-test-key'),/instructor/);
+ await api.instructorReview(row.id,{decision:'Approved',note:'',signature},'Bearer InstructorTest1!');
  await assert.rejects(api.review(row.id,{action:'Approved',note:'',signatureConfirmed:false},'Bearer local-test-key'),/signature/);
- await api.review(row.id,{action:'Approved',note:'Signature checked',signatureConfirmed:true},'Bearer local-test-key');
+ await api.review(row.id,{action:'Approved',note:'Signature checked',signatureConfirmed:true,adminSignature:signature},'Bearer local-test-key');
  assert.equal((await new AppService().userRecords(one)).reservations[0].status,'Approved');
  const adjacent=await api.reserve({...booking,start:'10:00',end:'11:00'},two);
- await api.review(adjacent.id,{action:'Rejected',note:'Change requested'},'Bearer local-test-key');await api.reserve({...booking,start:'10:00',end:'11:00'},one);
+ await api.instructorReview(adjacent.id,{decision:'Declined',note:'Change requested'},'Bearer InstructorTest1!');await api.reserve({...booking,start:'10:00',end:'11:00'},one);
  const report=await api.report({facility:'Hot Kitchen',name:'Test',email:'test@example.com',studentId:'TEST',date:'2026-10-09',type:'Damage',details:'Test item'},one);
  await api.resolve(report.id,{note:'Replacement arranged'},'Bearer local-test-key');assert.equal((await api.records(one)).reports[0].status,'Resolved');
  await api.utilization({...booking,date:'2026-10-08',studentId:'TEST',attendees:'20'},one);assert.equal((await api.records(one)).utilization.length,1);
