@@ -52,11 +52,17 @@ try{
   const issueXml=strFromU8(unzipSync(new Uint8Array(await blobs[3].arrayBuffer()))['word/document.xml'])
   for(const value of ['Plates','Issued &amp; checked','Oct 18, 2026','✓'])assert(issueXml.includes(value),`Downloaded form includes ${value}`)
   assert(!issueXml.includes('{{LAB_'),'Downloaded form fills laboratory columns')
+  const uploadedImage=readFileSync(new URL('../public/cec.png',import.meta.url))
+  const uploadedSignature=JSON.stringify({type:'image',data:`data:image/png;base64,${uploadedImage.toString('base64')}`})
+  await downloadReservationForm({...record,instructorSignature:uploadedSignature,instructorReviewedBy:'Image Signer',instructorReviewedAt:'2026-10-15T01:00:00Z',adminSignature:uploadedSignature,adminReviewedBy:'Cristian Jay M. Pechon',adminReviewedAt:'2026-10-15T02:00:00Z'})
+  const uploaded=unzipSync(new Uint8Array(await blobs[4].arrayBuffer()))
+  assert.deepEqual(uploaded['word/media/instructor-signature.png'],new Uint8Array(uploadedImage))
+  assert.deepEqual(uploaded['word/media/admin-signature.png'],new Uint8Array(uploadedImage))
   for(const signature of ['broken json','{}','[]','[[[1,null]]]']){
     await assert.rejects(downloadReservationForm({...record,instructorSignature:signature}),/saved instructor signature/)
   }
-  assert.equal(downloads.length,4,'Invalid signatures must never create an unsigned download')
-  assert.equal(revocations.length,4,'Download object URLs are cleaned up')
+  assert.equal(downloads.length,5,'Invalid signatures must never create an unsigned download')
+  assert.equal(revocations.length,5,'Download object URLs are cleaned up')
   console.log('Passed: failed fetch, HTML fallback, retry, template cache, DOCX filename/type, unsigned and signed download, signature validation, URL cleanup.')
 }finally{
   globalThis.fetch=saved.fetch

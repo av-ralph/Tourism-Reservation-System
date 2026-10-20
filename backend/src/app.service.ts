@@ -166,6 +166,13 @@ export class AppService {
  async revokeStaffKey(id:string,authorization?:string){const role=await this.authorizeAdmin(authorization);return this.revokeAdminKey(id,role);}
  async instructorRecords(authorization?:string){const data=await this.storage.read(),identity=await this.adminIdentity(authorization,data);if(identity.role!=='instructor')throw new ForbiddenException('Enter an instructor access key.');const hash=this.keyHash((authorization||'').replace(/^Bearer /,'')),instructor=data.adminKeys.find(row=>row.hash===hash);return {...identity,reservations:data.reservations.filter(row=>!row.instructorKeyId||row.instructorKeyId===instructor?.id).map(row=>this.publicReservation(row,data)),facilities:this.facilitiesFrom(data).map(facility=>{const details={...facility} as Row;delete details.photo;return details;})};}
  private validateSignature(value:unknown){
+  if(value&&typeof value==='object'&&!Array.isArray(value)&&(value as Record<string,unknown>).type==='image'){
+   const data=(value as Record<string,unknown>).data;
+   if(typeof data!=='string'||data.length>700000||!/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(data))throw new BadRequestException('Upload a valid signature image before approving.');
+   const bytes=Buffer.from(data.slice('data:image/png;base64,'.length),'base64');
+   if(bytes.length<100||bytes.length>525000||!bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))||bytes.toString('ascii',12,16)!=='IHDR'||bytes.readUInt32BE(16)!==600||bytes.readUInt32BE(20)!==180)throw new BadRequestException('Upload a valid signature image before approving.');
+   return JSON.stringify({type:'image',data});
+  }
   if(!Array.isArray(value)||value.length<1||value.length>80)throw new BadRequestException('Draw your signature before approving the request.');
   let count=0,length=0,minX=600,maxX=0,minY=180,maxY=0;
   for(const stroke of value){

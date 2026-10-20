@@ -76,6 +76,6 @@
   .instructor-review-actions {grid-template-columns:1fr}
   .instructor-review-modal .signature-pad canvas {height:auto}
 }
-.admin-shell .admin-equipment-review-modal form .check-label {display:grid!important;grid-template-columns:20px minmax(0,1fr);align-items:start;column-gap:12px!important;cursor:pointer}
-.admin-shell .admin-equipment-review-modal form .check-label input[type="checkbox"] {grid-column:1;grid-row:1;width:20px;height:20px;min-width:20px;margin:2px 0 0;padding:0;align-self:start}
-.admin-shell .admin-equipment-review-modal form .check-label span {grid-column:2;grid-row:1;line-height:1.5;min-width:0}
+.admin-shell .admin-equipment-review-modal form label.check-label {display:flex!important;flex-direction:row!important;align-items:center!important;gap:12px!important;cursor:pointer}
+.admin-shell .admin-equipment-review-modal form label.check-label input[type="checkbox"] {display:block;position:static;width:20px;height:20px;min-width:20px;flex:0 0 20px;margin:0;padding:0;align-self:center}
+.admin-shell .admin-equipment-review-modal form label.check-label span {display:block;flex:1;min-width:0;line-height:1.5}

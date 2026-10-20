@@ -1,7 +1,17 @@
 import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
+import {deflateSync} from 'node:zlib';
 import {AppService} from './app.service.js';
+function testSignatureImage(){
+ const crc=(data:Buffer)=>{let value=0xffffffff;for(const byte of data){value^=byte;for(let bit=0;bit<8;bit++)value=value&1?value>>>1^0xedb88320:value>>>1;}return (value^0xffffffff)>>>0;};
+ const chunk=(name:string,data:Buffer)=>{const type=Buffer.from(name),size=Buffer.alloc(4),checksum=Buffer.alloc(4);size.writeUInt32BE(data.length);checksum.writeUInt32BE(crc(Buffer.concat([type,data])));return Buffer.concat([size,type,data,checksum]);};
+ const header=Buffer.alloc(13);header.writeUInt32BE(600,0);header.writeUInt32BE(180,4);header[8]=8;header[9]=6;
+ const pixels=Buffer.alloc((600*4+1)*180);
+ for(let y=60;y<100;y++)for(let x=70;x<160;x++){const offset=y*(600*4+1)+1+x*4;pixels[offset+3]=255;}
+ const png=Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),chunk('IHDR',header),chunk('IDAT',deflateSync(pixels)),chunk('IEND',Buffer.alloc(0))]);
+ return {type:'image',data:`data:image/png;base64,${png.toString('base64')}`};
+}
 describe('reservations',()=>{
  let dir:string,service:AppService;
  const booking={facility:'Hot Kitchen',name:'Test',studentId:'TEST',date:'2099-10-10',start:'09:00',end:'10:00',purpose:'Practice',subject:'Culinary',instructor:'Instructor',equipment:'None',inventoryItems:[],email:'student@example.com',termsAccepted:true};
@@ -194,6 +204,19 @@ describe('reservations',()=>{
    const approved=await service.reviewReservation(reservation.id!,{action:'Approved',note:'',signatureConfirmed:true,adminSignature:signature},'Bearer test-super-key');
    expect(approved).toMatchObject({status:'Approved',adminReviewedBy:'Super admin',adminSignature:JSON.stringify(signature)});
    await expect(service.reviewAsInstructor(reservation.id!,{decision:'Declined',note:'Reason'},key)).rejects.toThrow('awaiting instructor');
+  }finally{delete process.env.HM_ADMIN_KEY;}
+ });
+ it('accepts uploaded signature images for instructor and admin approval',async()=>{
+  process.env.HM_ADMIN_KEY='test-super-key';
+  try{
+   await service.createAdminKey({name:'Image Signer',key:'ImageSigner1!',role:'instructor'});
+   const reservation=await service.create('reservations',{...booking,instructor:'Image Signer'});
+   const image=testSignatureImage();
+   await expect(service.reviewAsInstructor(reservation.id!,{decision:'Approved',note:'',signature:{type:'image',data:'data:image/png;base64,invalid'}},'Bearer ImageSigner1!')).rejects.toThrow('signature image');
+   await service.reviewAsInstructor(reservation.id!,{decision:'Approved',note:'',signature:image},'Bearer ImageSigner1!');
+   expect((await service.records()).reservations[0]?.instructorSignature).toBe(JSON.stringify(image));
+   const approved=await service.reviewReservation(reservation.id!,{action:'Approved',note:'',signatureConfirmed:true,adminSignature:image},'Bearer test-super-key');
+   expect(approved).toMatchObject({status:'Approved',adminSignature:JSON.stringify(image)});
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
  it('allows a documented admin exception without inventing an instructor signature',async()=>{

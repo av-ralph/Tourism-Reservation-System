@@ -99,6 +99,10 @@ function renderSignature(value,label='instructor'){
   if(!value)return null
   let strokes
   try{strokes=JSON.parse(value)}catch{throw new Error(`The saved ${label} signature cannot be read. Please contact the laboratory office.`)}
+  if(strokes?.type==='image'){
+    if(!signatureIsMeaningful(strokes))throw new Error(`The saved ${label} signature image is invalid. Please contact the laboratory office.`)
+    return Uint8Array.from(atob(strokes.data.slice('data:image/png;base64,'.length)),char=>char.charCodeAt(0))
+  }
   if(!Array.isArray(strokes)||!strokes.every(stroke=>Array.isArray(stroke)&&stroke.every(point=>Array.isArray(point)&&point.length===2&&point.every(Number.isFinite)))||!signatureIsMeaningful(strokes))throw new Error(`The saved ${label} signature is invalid. Please contact the laboratory office.`)
   const canvas=document.createElement('canvas');canvas.width=SIGNATURE_WIDTH;canvas.height=SIGNATURE_HEIGHT
   drawSignature(canvas.getContext('2d'),strokes)

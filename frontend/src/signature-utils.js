@@ -2,6 +2,8 @@ export const SIGNATURE_WIDTH=600
 export const SIGNATURE_HEIGHT=180
 
 export function signatureIsMeaningful(strokes){
+ if(strokes?.type==='image')return typeof strokes.data==='string'&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(strokes.data)&&strokes.data.length>150&&strokes.data.length<=700000
+ if(!Array.isArray(strokes))return false
  const points=strokes.flat()
  if(points.length<8)return false
  const xs=points.map(point=>point[0]),ys=points.map(point=>point[1])

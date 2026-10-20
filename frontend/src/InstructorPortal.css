@@ -27,6 +27,11 @@
 .signature-pad-expanded .signature-canvas-frame { width: min(100%, 850px); margin: 0 auto; }
 .signature-pad-expanded .signature-pad-heading,.signature-pad-expanded .signature-status,.signature-pad-expanded small { width: min(100%, 850px); margin-left: auto; margin-right: auto; }
 .signature-pad small { display: block; margin-top: 8px; color: #47566a; line-height: 1.5; }
+.signature-pad canvas[hidden]{display:none!important}
+.signature-upload{display:block;margin:0 0 12px;color:#17345d;font-size:13px;font-weight:600}
+.signature-upload input{display:block;max-width:100%;margin-top:7px;font-size:13px}
+.signature-upload-preview{display:block;box-sizing:border-box;width:100%;aspect-ratio:10 / 3;object-fit:contain;border:2px dashed #9caec5;border-radius:9px;background:#fff}
+.instructor-signature-preview{max-width:100%;max-height:120px;object-fit:contain}
 .instructor-signature-preview { display: block; width: min(100%, 360px); height: 108px; margin: 8px 0; border: 1px solid #bac4d1; border-radius: 8px; background: #fff; }
 .admin-saved-signature { margin-top: 16px; }
 .admin-saved-signature small { display: block; color: #47566a; }
