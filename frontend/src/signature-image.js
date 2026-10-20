@@ -1,4 +1,27 @@
-import {SIGNATURE_WIDTH,SIGNATURE_HEIGHT} from './signature-utils'
+import {SIGNATURE_WIDTH,SIGNATURE_HEIGHT} from './signature-utils.js'
+
+function median(values){const sorted=values.sort((a,b)=>a-b);return sorted[Math.floor(sorted.length/2)]}
+export function removeSignatureBackground(pixels,width,height){
+ const border=[]
+ for(let x=0;x<width;x+=Math.max(1,Math.floor(width/80)))for(const y of [0,height-1])border.push((y*width+x)*4)
+ for(let y=0;y<height;y+=Math.max(1,Math.floor(height/80)))for(const x of [0,width-1])border.push((y*width+x)*4)
+ const transparent=border.filter(index=>pixels[index+3]<180).length>border.length*.2
+ const channels=[0,1,2].map(channel=>median(border.map(index=>pixels[index+channel])))
+ const background=channels.reduce((sum,value)=>sum+value,0)/3
+ const variation=median(border.map(index=>Math.max(...channels.map((value,channel)=>Math.abs(pixels[index+channel]-value)))))
+ if(!transparent&&(background<160||variation>40))throw new Error('Use a signature image on a plain light background so it can be removed cleanly.')
+ let left=width,top=height,right=-1,bottom=-1,ink=0
+ for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+  const index=(y*width+x)*4,alpha=pixels[index+3]/255
+  const brightness=(pixels[index]+pixels[index+1]+pixels[index+2])/3
+  const contrast=transparent?235-brightness:background-brightness
+  const opacity=alpha*Math.max(0,Math.min(1,(contrast-12)/60))
+  pixels[index]=20;pixels[index+1]=46;pixels[index+2]=87;pixels[index+3]=Math.round(opacity*255)
+  if(opacity>.3){ink++;left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y)}
+ }
+ if(ink<40||right-left<12||bottom-top<3)throw new Error('No clear signature was found. Upload a close, well-lit image of your signature.')
+ return {left,top,right,bottom}
+}
 
 export async function extractSignatureImage(file){
  if(!['image/png','image/jpeg','image/webp'].includes(file.type))throw new Error('Choose a PNG, JPG, or WebP signature image.')
@@ -17,15 +40,7 @@ export async function extractSignatureImage(file){
   const work=document.createElement('canvas');work.width=width;work.height=height
   const context=work.getContext('2d',{willReadFrequently:true});context.drawImage(source,0,0,width,height)
   const image=context.getImageData(0,0,width,height),pixels=image.data
-  let left=width,top=height,right=-1,bottom=-1,ink=0
-  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
-   const index=(y*width+x)*4,alpha=pixels[index+3]/255
-   const brightness=(pixels[index]+pixels[index+1]+pixels[index+2])/3
-   const opacity=alpha*Math.max(0,Math.min(1,(225-brightness)/90))
-   pixels[index]=20;pixels[index+1]=46;pixels[index+2]=87;pixels[index+3]=Math.round(opacity*255)
-   if(opacity>.3){ink++;left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y)}
-  }
-  if(ink<40||right-left<12||bottom-top<3)throw new Error('No clear signature was found. Upload a close, well-lit image of your signature.')
+  const {left,top,right,bottom}=removeSignatureBackground(pixels,width,height)
   context.putImageData(image,0,0)
   const result=document.createElement('canvas');result.width=SIGNATURE_WIDTH;result.height=SIGNATURE_HEIGHT
   const inset=12,sourceWidth=right-left+1,sourceHeight=bottom-top+1

@@ -6,9 +6,9 @@ import {downloadReservationForm} from '../src/reservation-form.js'
 const template=readFileSync(new URL('../public/documents/reservation-template.docx',import.meta.url))
 const png='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII='
 const record={id:'download-test',date:'2026-10-15',name:'Test Requester',email:'test@example.com',facility:'Dining Area',instructor:'Assigned Instructor',equipment:'2 | Plates'}
-let responseMode='failure',fetches=0,draws=0
+let responseMode='failure',fetches=0,draws=0,extractions=0
 const downloads=[],blobs=[],revocations=[]
-const saved={fetch:globalThis.fetch,document:globalThis.document,setTimeout:globalThis.setTimeout,create:URL.createObjectURL,revoke:URL.revokeObjectURL}
+const saved={fetch:globalThis.fetch,document:globalThis.document,setTimeout:globalThis.setTimeout,createImageBitmap:globalThis.createImageBitmap,create:URL.createObjectURL,revoke:URL.revokeObjectURL}
 try{
   globalThis.fetch=async()=>{
     fetches++
@@ -18,10 +18,11 @@ try{
   globalThis.setTimeout=(callback)=>{callback();return 0}
   URL.createObjectURL=blob=>{blobs.push(blob);return 'blob:download-test'}
   URL.revokeObjectURL=url=>revocations.push(url)
+  globalThis.createImageBitmap=async()=>({width:80,height:30,close(){}})
   globalThis.document={body:{appendChild(){}},createElement(tag){
     if(tag==='a')return {click(){downloads.push({name:this.download,url:this.href})},remove(){}}
     assert.equal(tag,'canvas')
-    return {getContext:()=>({clearRect(){},beginPath(){},moveTo(){},lineTo(){},quadraticCurveTo(){},stroke(){draws++}}),toDataURL:()=>`data:image/png;base64,${png}`}
+    return {getContext:()=>({clearRect(){},beginPath(){},moveTo(){},lineTo(){},quadraticCurveTo(){},stroke(){draws++},drawImage(){},putImageData(){},getImageData(){extractions++;const data=new Uint8ClampedArray(80*30*4);for(let y=0;y<30;y++)for(let x=0;x<80;x++){const index=(y*80+x)*4,ink=x>=12&&x<=60&&y>=8&&y<=19;data.set(ink?[20,30,55,255]:[255,255,255,255],index)}return {data}}}),toDataURL:()=>`data:image/png;base64,${png}`}
   }}
   await assert.rejects(downloadReservationForm(record),/could not be downloaded/)
   assert.equal(downloads.length,0)
@@ -56,8 +57,9 @@ try{
   const uploadedSignature=JSON.stringify({type:'image',data:`data:image/png;base64,${uploadedImage.toString('base64')}`})
   await downloadReservationForm({...record,instructorSignature:uploadedSignature,instructorReviewedBy:'Image Signer',instructorReviewedAt:'2026-10-15T01:00:00Z',adminSignature:uploadedSignature,adminReviewedBy:'Cristian Jay M. Pechon',adminReviewedAt:'2026-10-15T02:00:00Z'})
   const uploaded=unzipSync(new Uint8Array(await blobs[4].arrayBuffer()))
-  assert.deepEqual(uploaded['word/media/instructor-signature.png'],new Uint8Array(uploadedImage))
-  assert.deepEqual(uploaded['word/media/admin-signature.png'],new Uint8Array(uploadedImage))
+  assert(extractions>=2,'Both uploaded signatures are cleaned again before download')
+  assert.deepEqual(uploaded['word/media/instructor-signature.png'],new Uint8Array(Buffer.from(png,'base64')))
+  assert.deepEqual(uploaded['word/media/admin-signature.png'],new Uint8Array(Buffer.from(png,'base64')))
   for(const signature of ['broken json','{}','[]','[[[1,null]]]']){
     await assert.rejects(downloadReservationForm({...record,instructorSignature:signature}),/saved instructor signature/)
   }
@@ -68,6 +70,7 @@ try{
   globalThis.fetch=saved.fetch
   globalThis.document=saved.document
   globalThis.setTimeout=saved.setTimeout
+  globalThis.createImageBitmap=saved.createImageBitmap
   URL.createObjectURL=saved.create
   URL.revokeObjectURL=saved.revoke
 }

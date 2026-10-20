@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "test:forms": "node scripts/verify-reservation-form.mjs && node scripts/verify-form-download.mjs",
+    "test:forms": "node scripts/verify-reservation-form.mjs && node scripts/verify-form-download.mjs && node scripts/verify-signature-background.mjs",
     "dev": "node ../backend/scripts/dev.mjs",
     "build": "vite build",
     "lint": "eslint .",

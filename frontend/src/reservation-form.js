@@ -1,5 +1,6 @@
 import { unzipSync, zipSync, strFromU8, strToU8 } from 'fflate'
 import {drawSignature,signatureIsMeaningful,SIGNATURE_WIDTH,SIGNATURE_HEIGHT} from './signature-utils.js'
+import {extractSignatureImage} from './signature-image.js'
 // Strip characters that XML 1.0 cannot represent, including pasted control characters.
 const escapeXml = value => Array.from(String(value ?? '')).filter(char => {
   const code=char.codePointAt(0)
@@ -95,13 +96,17 @@ export function fillReservationForm(template, reservation, signatureImage, admin
   files['word/document.xml']=strToU8(xml)
   return zipSync(files)
 }
-function renderSignature(value,label='instructor'){
+async function renderSignature(value,label='instructor'){
   if(!value)return null
   let strokes
   try{strokes=JSON.parse(value)}catch{throw new Error(`The saved ${label} signature cannot be read. Please contact the laboratory office.`)}
   if(strokes?.type==='image'){
     if(!signatureIsMeaningful(strokes))throw new Error(`The saved ${label} signature image is invalid. Please contact the laboratory office.`)
-    return Uint8Array.from(atob(strokes.data.slice('data:image/png;base64,'.length)),char=>char.charCodeAt(0))
+    try{
+      const original=Uint8Array.from(atob(strokes.data.slice('data:image/png;base64,'.length)),char=>char.charCodeAt(0))
+      const cleaned=await extractSignatureImage(new Blob([original],{type:'image/png'}))
+      return Uint8Array.from(atob(cleaned.data.slice('data:image/png;base64,'.length)),char=>char.charCodeAt(0))
+    }catch{throw new Error(`The saved ${label} signature background could not be removed. Please ask the signer to upload a clear image.`)}
   }
   if(!Array.isArray(strokes)||!strokes.every(stroke=>Array.isArray(stroke)&&stroke.every(point=>Array.isArray(point)&&point.length===2&&point.every(Number.isFinite)))||!signatureIsMeaningful(strokes))throw new Error(`The saved ${label} signature is invalid. Please contact the laboratory office.`)
   const canvas=document.createElement('canvas');canvas.width=SIGNATURE_WIDTH;canvas.height=SIGNATURE_HEIGHT
@@ -116,7 +121,9 @@ export async function downloadReservationForm(reservation) {
       if (!response.ok) throw new Error('The form template could not be loaded.')
       return new Uint8Array(await response.arrayBuffer())
     }).catch(error=>{templatePromise=undefined;throw error})
-    const bytes=fillReservationForm(await templatePromise,reservation,renderSignature(reservation.instructorSignature),renderSignature(reservation.adminSignature,'administrator'))
+    const template=await templatePromise
+    const [instructorSignature,adminSignature]=await Promise.all([renderSignature(reservation.instructorSignature),renderSignature(reservation.adminSignature,'administrator')])
+    const bytes=fillReservationForm(template,reservation,instructorSignature,adminSignature)
     const url=URL.createObjectURL(new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}))
     const link=document.createElement('a');link.href=url;link.download=`HM-Utilization-${reservation.date||'undated'}-${reservation.id||'form'}.docx`.replace(/[<>:"/\\|?*]/g,'-');document.body.appendChild(link);link.click();link.remove()
     setTimeout(()=>URL.revokeObjectURL(url),30000)
