@@ -25,8 +25,8 @@
 .admin-shell .reservation-table-details dd{margin:2px 0 0;color:#24415f;font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere}
 .admin-shell .reservation-booking-reference{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11px;overflow-wrap:anywhere;user-select:all}
 .admin-shell .reservation-table .reservation-actions-cell{min-width:0;width:auto}
-.admin-shell .reservation-table-actions{display:grid;gap:7px;max-width:180px}
-.admin-shell .reservation-table-actions>button{min-height:36px;padding:7px 10px;border-radius:7px;font-size:12px;font-weight:700;text-align:center}
+.admin-shell .reservation-table-actions{display:grid;gap:7px;width:100%;min-width:0;max-width:180px}
+.admin-shell .reservation-table-actions>button{width:100%;min-width:0;min-height:36px;padding:7px 10px;border-radius:7px;font-size:12px;font-weight:700;text-align:center;white-space:normal;overflow-wrap:anywhere;line-height:1.35}
 .admin-shell .reservation-table-actions .review-request-button{width:100%;border:1px solid #e76626;background:#e76626;color:#fff}
 .admin-shell .reservation-table-actions .review-request-button:hover{background:#ce551d}
 .admin-shell .reservation-table-actions .reservation-table-view{border:1px solid #aabdd3;background:#fff;color:#0b3674}
