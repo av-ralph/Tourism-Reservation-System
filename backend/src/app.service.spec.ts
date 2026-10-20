@@ -196,6 +196,28 @@ describe('reservations',()=>{
    await expect(service.reviewAsInstructor(reservation.id!,{decision:'Declined',note:'Reason'},key)).rejects.toThrow('awaiting instructor');
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
+ it('allows a documented admin exception without inventing an instructor signature',async()=>{
+  process.env.HM_ADMIN_KEY='test-super-key';
+  try{
+   await service.createAdminKey({name:'Busy Instructor',key:'BusyTeacher1!',role:'instructor'});
+   const owner='11111111-1111-4111-8111-111111111111';
+   const request=await service.createForUser('reservations',{...booking,instructor:'Busy Instructor'},owner);
+   const exception={action:'Approved',skipInstructorReview:true,note:'Instructor unavailable for the scheduled activity.',signatureConfirmed:true,adminSignature:signature};
+   await expect(service.reviewReservation(request.id!,{...exception,note:''},'Bearer test-super-key')).rejects.toThrow('waived');
+   await expect(service.reviewReservation(request.id!,{...exception,signatureConfirmed:false},'Bearer test-super-key')).rejects.toThrow('exception');
+   await expect(service.reviewReservation(request.id!,exception,'Bearer BusyTeacher1!')).rejects.toThrow('administrator');
+   const approved=await service.reviewReservation(request.id!,exception,'Bearer test-super-key');
+   expect(approved).toMatchObject({status:'Approved',adminOverride:'true',adminOverrideReason:exception.note,adminReviewedBy:'Super admin'});
+   expect(approved.instructorSignature).toBeUndefined();
+   expect(approved.instructorReviewedBy).toBeUndefined();
+   expect((await service.userRecords(owner)).reservations[0]?.adminOverride).toBe('true');
+   await expect(service.reviewAsInstructor(request.id!,{decision:'Approved',note:'',signature},'Bearer BusyTeacher1!')).rejects.toThrow('awaiting instructor');
+   const revised=await service.adminUpdate('reservations',request.id!,{purpose:'Changed activity'});
+   expect(revised).toMatchObject({status:'Awaiting instructor'});
+   expect(revised.adminOverride).toBeUndefined();
+   expect(revised.adminSignature).toBeUndefined();
+  }finally{delete process.env.HM_ADMIN_KEY;}
+ });
  it('routes public requests to their selected instructor before admin review',async()=>{
   process.env.HM_ADMIN_KEY='test-super-key';
   try{

@@ -64,7 +64,7 @@ export function fillReservationForm(template, reservation, signatureImage, admin
     FILED_DATE:dateLabel(reservation.createdAt), USAGE_DATE:dateLabel(reservation.date),
     SUBJECT:reservation.subject, USAGE_TIME:[reservation.start,reservation.end].filter(Boolean).join(' – '),
     PURPOSE:reservation.purpose, FACILITY:reservation.facility,
-    CONTACT_DETAILS:`Requested by: ${reservation.name||''}\nEmail: ${reservation.email||''}${reservation.studentId ? ' | ID: '+reservation.studentId : ''}`,
+    CONTACT_DETAILS:`Requested by: ${reservation.name||''}\nEmail: ${reservation.email||''}${reservation.studentId ? ' | ID: '+reservation.studentId : ''}${reservation.adminOverride==='true'?'\nInstructor review waived by administrator; reason recorded with the booking.':''}`,
     SIGNED_DATE:signatureImage?dateLabel(reservation.instructorReviewedAt):'__________________',
     ADMIN_SIGNED_DATE:adminSignatureImage?dateLabel(reservation.adminReviewedAt):'__________________',
   }
@@ -77,7 +77,7 @@ export function fillReservationForm(template, reservation, signatureImage, admin
     files[rels]=strToU8(strFromU8(files[rels]).replace('</Relationships>','<Relationship Id="rIdInstructorSignature" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/instructor-signature.png"/></Relationships>'))
     files['word/media/instructor-signature.png']=signatureImage
   }
-  xml=xml.replaceAll('{{INSTRUCTOR}}',()=>escapeXml(String(signatureImage?(reservation.instructorReviewedBy||reservation.instructor):reservation.instructor||'').toLocaleUpperCase('en-PH')))
+  xml=xml.replaceAll('{{INSTRUCTOR}}',()=>escapeXml(String(reservation.adminOverride==='true'?'INSTRUCTOR REVIEW WAIVED':signatureImage?(reservation.instructorReviewedBy||reservation.instructor):reservation.instructor||'').toLocaleUpperCase('en-PH')))
   xml=xml.replaceAll('{{ADMIN_NAME}}',()=>escapeXml(String(adminSignatureImage?reservation.adminReviewedBy||'Cristian Jay M. Pechon':'Cristian Jay M. Pechon').toLocaleUpperCase('en-PH')))
   xml=xml.replace(/<w:r\b[^>]*>(?:(?!<\/w:r>)[\s\S])*?\{\{SIGNATURE\}\}(?:(?!<\/w:r>)[\s\S])*?<\/w:r>/,()=>signatureRun||'<w:r><w:t> </w:t></w:r>')
   let adminRun=''

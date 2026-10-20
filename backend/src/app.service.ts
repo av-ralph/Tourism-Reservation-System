@@ -226,17 +226,20 @@ export class AppService {
  cancelForUser(id:string,token?:string){const owner=this.userToken(token);return this.storage.mutate(data=>{const r=data.reservations.find(r=>r.id===id);if(!r)throw new NotFoundException('Reservation not found.');if(!this.ownsReservation(r,owner))throw new ForbiddenException('You can only cancel your own reservations.');if(['Rejected','Cancelled'].includes(this.reservationStatus(r)!))throw new BadRequestException('This request is already closed.');r.status='Cancelled';return {success:true};});}
  recoverReservation(input:unknown,token?:string){const owner=this.userToken(token);if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Enter a booking reference and private recovery code.');const {id,code}=input as Record<string,unknown>;if(typeof id!=='string'||typeof code!=='string'||!/^[0-9a-f-]{36}$/i.test(id)||!/^[0-9a-f]{32}$/i.test(code))throw new BadRequestException('Enter a valid booking reference and recovery code.');return this.storage.mutate(data=>{const row=data.reservations.find(reservation=>reservation.id===id);const hash=createHash('sha256').update(code.toLowerCase()).digest('hex');if(!row?.recoveryHash||!timingSafeEqual(Buffer.from(row.recoveryHash,'hex'),Buffer.from(hash,'hex')))throw new NotFoundException('Booking reference or recovery code not found.');let owners:string[];try{owners=JSON.parse(row.owners||'[]')}catch{owners=[]}if(!this.ownsReservation(row,owner)){owners.push(owner);row.owners=JSON.stringify(owners)}return this.publicReservation(row)});}
 
- async reviewReservation(id:string,input:unknown,authorization?:string){const identity=await this.adminIdentity(authorization);return this.storage.mutate(data=>{
+ async reviewReservation(id:string,input:unknown,authorization?:string){const identity=await this.adminIdentity(authorization);if(identity.role==='instructor')throw new ForbiddenException('Instructors cannot make final administrator decisions.');return this.storage.mutate(data=>{
   if(!input||typeof input!=='object')throw new BadRequestException('Invalid review.');
-  const {action,note,signatureConfirmed,adminSignature,laboratoryEntries}=input as Record<string,unknown>;
+  const {action,note,signatureConfirmed,adminSignature,laboratoryEntries,skipInstructorReview}=input as Record<string,unknown>;
   const r=data.reservations.find(r=>r.id===id);if(!r)throw new NotFoundException('Reservation not found.');
   const stage=this.reservationStatus(r);
-  if(!['Awaiting instructor','Awaiting admin','Approved','Reserved'].includes(stage!)||(action!=='Cancelled'&&stage!=='Awaiting admin'))throw new BadRequestException('Only requests endorsed by an instructor can receive a final admin decision.');
+  const override=action==='Approved'&&stage==='Awaiting instructor'&&skipInstructorReview===true;
+  if(skipInstructorReview===true&&!override)throw new ConflictException('The request review status changed. Refresh before approving.');
+  if(!['Awaiting instructor','Awaiting admin','Approved','Reserved'].includes(stage!)||(action!=='Cancelled'&&stage!=='Awaiting admin'&&!override))throw new BadRequestException('Only instructor-endorsed requests or explicit administrator exceptions can receive a final decision.');
   if(!['Approved','Rejected','Cancelled'].includes(String(action)))throw new BadRequestException('Invalid decision.');
   if(typeof note!=='string'||note.length>1000||(['Rejected','Cancelled'].includes(String(action))&&!note.trim()))throw new BadRequestException('Provide a rejection reason or a valid review note.');
+  if(override&&!note.trim())throw new BadRequestException('Explain why the instructor review is being waived.');
   if(action==='Approved'&&this.facilitiesFrom(data).find(f=>f.name===r.facility)?.status==='Unavailable')throw new ConflictException('This facility is currently unavailable.');
-  if(action==='Approved'&&r.instructorDecision!=='Approved')throw new BadRequestException('An instructor must endorse this request before final approval.');
-  if(action==='Approved'&&signatureConfirmed!==true)throw new BadRequestException('Confirm the instructor signature before approval.');
+  if(action==='Approved'&&!override&&r.instructorDecision!=='Approved')throw new BadRequestException('An instructor must endorse this request before final approval.');
+  if(action==='Approved'&&signatureConfirmed!==true)throw new BadRequestException(override?'Confirm the administrator exception before approval.':'Confirm the instructor signature before approval.');
   if(action==='Approved'&&r.inventorySelection){
    let selected:{id:string;quantity:number}[];
    try{selected=JSON.parse(r.inventorySelection)}catch{throw new BadRequestException('The reservation equipment list is invalid. Edit it before approval.');}
@@ -249,7 +252,7 @@ export class AppService {
   }
   const validatedSignature=action==='Approved'?this.validateSignature(adminSignature):'';
   const updated:Row={...r,status:String(action),reviewNote:note.trim(),reviewedAt:new Date().toISOString()};
-  if(action==='Approved'){updated.adminSignature=validatedSignature;updated.adminReviewedBy=identity.adminName;updated.adminReviewedAt=updated.reviewedAt;updated.laboratoryEntries=this.validateLaboratoryEntries(laboratoryEntries,r);}
+  if(action==='Approved'){updated.adminSignature=validatedSignature;updated.adminReviewedBy=identity.adminName;updated.adminReviewedAt=updated.reviewedAt;updated.laboratoryEntries=this.validateLaboratoryEntries(laboratoryEntries,r);if(override){updated.adminOverride='true';updated.adminOverrideReason=note.trim();}}
   else {delete updated.adminSignature;delete updated.adminReviewedBy;delete updated.adminReviewedAt;}
   data.reservations=data.reservations.map(x=>x.id===id?updated:x);return updated;
  });}
@@ -300,7 +303,7 @@ export class AppService {
   reservation.inventorySelection=next;
   reservation.equipment=selection.map(item=>`${item.quantity} | ${item.name}`).join('\n')||'None';
   reservation.updatedAt=new Date().toISOString();reservation.status='Awaiting instructor';
-  for(const field of ['instructorDecision','instructorNote','instructorReviewedBy','instructorReviewedAt','instructorSignature','reviewNote','reviewedAt','adminSignature','adminReviewedBy','adminReviewedAt','laboratoryEntries'])delete reservation[field];
+  for(const field of ['instructorDecision','instructorNote','instructorReviewedBy','instructorReviewedAt','instructorSignature','reviewNote','reviewedAt','adminSignature','adminReviewedBy','adminReviewedAt','adminOverride','adminOverrideReason','laboratoryEntries'])delete reservation[field];
   return reservation;
  });}
  resolveReport(id:string,input:unknown){return this.storage.mutate(data=>{const r=data.reports.find(r=>r.id===id);if(!r)throw new NotFoundException('Report not found.');const note=(input as {note?:unknown})?.note;if(typeof note!=='string'||!note.trim()||note.length>1000)throw new BadRequestException('Enter resolution details.');if(r.status==='Resolved')throw new BadRequestException('Report is already resolved.');const updated={...r,status:'Resolved',resolution:note.trim(),resolvedAt:new Date().toISOString()};data.reports=data.reports.map(x=>x.id===id?updated:x);return updated;});}
@@ -368,9 +371,9 @@ export class AppService {
  adminUpdate(kind:string,id:string,input:unknown){const type=this.recordKind(kind);return this.storage.mutate(data=>{const old=data[type].find(r=>r.id===id);if(!old)throw new NotFoundException('Record not found.');if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid record.');const current=type==='reservations'?this.publicReservation(old,data):old;const r=this.validateRecord(type,{...current,...input as object,termsAccepted:old.termsAccepted==='true'},data,id);const updated:Row={...old,...r,updatedAt:new Date().toISOString()};if(type==='reservations'){
    updated.termsAcceptedAt=old.termsAcceptedAt!;updated.termsVersion=old.termsVersion!;
    const signedFields=['facility','name','email','studentId','date','start','end','purpose','subject','instructor','equipment'];
-   if(old.instructorDecision==='Approved'&&signedFields.some(field=>current[field]!==updated[field])){
+   if((old.instructorDecision==='Approved'||old.adminOverride==='true'||old.status==='Approved')&&signedFields.some(field=>current[field]!==updated[field])){
     updated.status='Awaiting instructor';
-    for(const field of ['instructorDecision','instructorNote','instructorReviewedBy','instructorReviewedAt','instructorSignature','reviewNote','reviewedAt','adminSignature','adminReviewedBy','adminReviewedAt','laboratoryEntries'])delete updated[field];
+    for(const field of ['instructorDecision','instructorNote','instructorReviewedBy','instructorReviewedAt','instructorSignature','reviewNote','reviewedAt','adminSignature','adminReviewedBy','adminReviewedAt','adminOverride','adminOverrideReason','laboratoryEntries'])delete updated[field];
    }
    if(old.equipment!==updated.equipment)delete updated.inventorySelection;
   }data[type]=data[type].map(row=>row.id===id?updated:row);return updated;});}
