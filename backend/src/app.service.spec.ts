@@ -156,8 +156,10 @@ describe('reservations',()=>{
    expect(await service.publicContact()).toEqual({photo:''});
    await service.updateAdminProfile('Bearer OfficeAdmin1!',{name:'Cristian Jay M. Pechon',email:'',photo});
    expect(await service.publicContact()).toEqual({photo});
+   expect(await service.publicContactPhoto()).toEqual(Buffer.from('/9j/AA==','base64'));
    await service.updateAdminProfile('Bearer OfficeAdmin1!',{name:'Cristian Jay M. Pechon',email:'',photo:''});
    expect(await service.publicContact()).toEqual({photo:''});
+   await expect(service.publicContactPhoto()).rejects.toThrow('not been uploaded');
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
  it('uses the sole regular admin photo when the account name differs from the contact name',async()=>{

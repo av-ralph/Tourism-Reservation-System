@@ -9,6 +9,8 @@ export class AppController {
  @Get('api/instructors') instructors(){return this.appService.listInstructors();}
  @Header('Cache-Control','no-store')
  @Get('api/contact') contact(){return this.appService.publicContact();}
+ @Header('Cache-Control','public, max-age=60, s-maxage=60')
+ @Get('api/contact/photo') contactPhoto(){return this.appService.publicContactPhoto().then(bytes=>new StreamableFile(bytes,{type:'image/jpeg',length:bytes.length}));}
  @Header('Cache-Control','no-store')
  @Get('api/inventory') inventory(){return this.appService.listInventory();}
  @Header('Cache-Control','no-store')

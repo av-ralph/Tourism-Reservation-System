@@ -9,7 +9,7 @@ afterEach(() => { if (originalSuperKey === undefined) delete process.env.HM_ADMI
 
 function service() {
  const data: Store = { reservations: [], reports: [], utilization: [], facilities: [], inventory: [], adminKeys: [], adminProfiles: [], organization: [] };
- const storage = { read: async () => data, mutate: async <T>(change: (records: Store) => T) => change(data) } as RecordStore;
+ const storage = { read: async () => data, readStaff: async () => ({adminKeys:data.adminKeys,adminProfiles:data.adminProfiles}), mutate: async <T>(change: (records: Store) => T) => change(data) } as RecordStore;
  return { app: new AppService(storage), data };
 }
 

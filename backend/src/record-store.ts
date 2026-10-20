@@ -41,6 +41,10 @@ export class RecordStore implements OnModuleInit,OnModuleDestroy {
   if(this.mode==='tidb'){await this.initialize();return this.fromRows(await this.client!.hmRecord.findMany({orderBy:[{createdAt:'asc'},{id:'asc'}]}));}
   await this.queue;return this.readFileStore();
  }
+ async readStaff():Promise<Pick<Store,'adminKeys'|'adminProfiles'>>{
+  if(this.mode==='tidb'){await this.initialize();const rows=await this.client!.hmRecord.findMany({where:{kind:{in:['adminKeys','adminProfiles']}},orderBy:[{createdAt:'asc'},{id:'asc'}]});const data=this.fromRows(rows);return {adminKeys:data.adminKeys,adminProfiles:data.adminProfiles};}
+  const data=await this.read();return {adminKeys:data.adminKeys,adminProfiles:data.adminProfiles};
+ }
  private async localIO<T>(operation:()=>Promise<T>):Promise<T>{for(let attempt=0;;attempt++){try{return await operation();}catch(error){const code=(error as NodeJS.ErrnoException).code;if(!['EBUSY','EPERM'].includes(code||'')||attempt>=5)throw error;await delay(100*(attempt+1));}}}
  private async readFileStore():Promise<Store>{if(!existsSync(this.file))return empty();return {...empty(),...JSON.parse(await this.localIO(()=>readFile(this.file,'utf8')))} as Store;}
  async mutate<T>(change:(data:Store)=>T):Promise<T>{

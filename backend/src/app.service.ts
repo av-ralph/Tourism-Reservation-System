@@ -19,13 +19,15 @@ export class AppService {
  async records(data?:Store){data??=await this.storage.read();return {reservations:data.reservations.map(row=>this.publicReservation(row,data)),reports:data.reports,utilization:data.utilization,facilities:this.facilitiesFrom(data)};}
  async adminRecords(authorization?:string){const data=await this.storage.read();const identity=await this.adminIdentity(authorization,data);if(identity.role==='instructor')throw new ForbiddenException('Instructor keys cannot access administrator actions.');return {...await this.records(data),...identity};}
  async publicContact(){
-  const data=await this.storage.read();
+  const data=await this.storage.readStaff();
   const contactName='cristian jay m. pechon';
+  const contactEmail='cjpechon@cec.edu.ph';
   const matches=(name:string)=>name.trim().replace(/\s+/g,' ').toLocaleLowerCase('en-PH')===contactName;
   const admins=data.adminKeys.filter(key=>key.role!=='instructor').map(key=>({key,profile:data.adminProfiles.find(row=>row.id===this.staffProfileId(key.hash)||row.id==='profile-'+key.hash)})).filter(entry=>entry.profile?.photo);
-  const contact=admins.find(entry=>matches(entry.key.name||'')||matches(entry.profile?.name||''));
+  const contact=admins.find(entry=>matches(entry.key.name||'')||matches(entry.profile?.name||'')||entry.profile?.email?.toLowerCase()===contactEmail);
   return {photo:contact?.profile?.photo||(admins.length===1?admins[0].profile?.photo:'')||''};
  }
+ async publicContactPhoto(){const {photo}=await this.publicContact();if(!photo)throw new NotFoundException('Contact photo has not been uploaded.');return Buffer.from(photo.split(',')[1]!,'base64');}
  async adminInventory(){return this.inventoryFrom(await this.storage.read());}
  private inventoryFrom(data:Store){return [...inventoryCatalog.map(item=>({...item,...data.inventory.find(row=>row.id===item.id)})),...data.inventory.filter(row=>!inventoryCatalog.some(item=>item.id===row.id))].filter(item=>item.deleted!=='true');}
  async listInventory(){return this.inventoryFrom(await this.storage.read()).filter(item=>item.status==='Available'&&Number(item.quantity)>0).map(({id,name,category,model,quantity,unit})=>({id,name,category,model,quantity,unit:unit==='not recorded'?'item':unit}));}
