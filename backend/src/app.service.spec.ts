@@ -198,11 +198,18 @@ describe('reservations',()=>{
    await expect(service.reviewAsInstructor(reservation.id!,{decision:'Approved',note:'Suitable activity',signature:[]},key)).rejects.toThrow('signature');
    await expect(service.reviewAsInstructor(reservation.id!,{decision:'Approved',note:'Suitable activity',signature:[[[10,10],[12,11]]]},key)).rejects.toThrow('signature');
    await service.reviewAsInstructor(reservation.id!,{decision:'Approved',note:'Suitable activity',signature},key);
+   expect((await service.adminIdentity(key)).savedSignature).toBe(JSON.stringify(signature));
+   expect((await service.adminIdentity('Bearer test-super-key')).savedSignature).toBe('');
    expect((await service.records()).reservations[0]?.status).toBe('Awaiting admin');
    expect((await service.records()).reservations[0]?.instructorSignature).toBe(JSON.stringify(signature));
    await expect(service.reviewReservation(reservation.id!,{action:'Approved',note:'',signatureConfirmed:true},'Bearer test-super-key')).rejects.toThrow('signature');
    const approved=await service.reviewReservation(reservation.id!,{action:'Approved',note:'',signatureConfirmed:true,adminSignature:signature},'Bearer test-super-key');
    expect(approved).toMatchObject({status:'Approved',adminReviewedBy:'Super admin',adminSignature:JSON.stringify(signature)});
+   expect((await service.adminIdentity('Bearer test-super-key')).savedSignature).toBe(JSON.stringify(signature));
+   await service.updateAdminProfile(key,{name:'Faculty A',email:'',photo:''});
+   expect((await service.adminIdentity(key)).savedSignature).toBe(JSON.stringify(signature));
+   await service.updateAdminProfile(key,{name:'Faculty A',email:'',photo:'',clearSavedSignature:true});
+   expect((await service.adminIdentity(key)).savedSignature).toBe('');
    await expect(service.reviewAsInstructor(reservation.id!,{decision:'Declined',note:'Reason'},key)).rejects.toThrow('awaiting instructor');
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
@@ -214,6 +221,7 @@ describe('reservations',()=>{
    const image=testSignatureImage();
    await expect(service.reviewAsInstructor(reservation.id!,{decision:'Approved',note:'',signature:{type:'image',data:'data:image/png;base64,invalid'}},'Bearer ImageSigner1!')).rejects.toThrow('signature image');
    await service.reviewAsInstructor(reservation.id!,{decision:'Approved',note:'',signature:image},'Bearer ImageSigner1!');
+   expect((await service.adminIdentity('Bearer ImageSigner1!')).savedSignature).toBe(JSON.stringify(image));
    expect((await service.records()).reservations[0]?.instructorSignature).toBe(JSON.stringify(image));
    const approved=await service.reviewReservation(reservation.id!,{action:'Approved',note:'',signatureConfirmed:true,adminSignature:image},'Bearer test-super-key');
    expect(approved).toMatchObject({status:'Approved',adminSignature:JSON.stringify(image)});

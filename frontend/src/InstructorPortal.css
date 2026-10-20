@@ -35,4 +35,8 @@
 .instructor-signature-preview { display: block; width: min(100%, 360px); height: 108px; margin: 8px 0; border: 1px solid #bac4d1; border-radius: 8px; background: #fff; }
 .admin-saved-signature { margin-top: 16px; }
 .admin-saved-signature small { display: block; color: #47566a; }
+.signature-reuse { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 12px 0; padding: 12px; border: 1px solid #bac4d1; border-radius: 10px; background: #f5f8fc; }
+.signature-reuse .instructor-signature-preview { width: 160px; height: 60px; margin: 0; }
+.profile-saved-signature { margin-top: 24px; padding-top: 20px; border-top: 1px solid #d6dee8; }
+.profile-saved-signature h3 { margin: 0 0 8px; }
 @media(max-width:420px) { .signature-pad-heading { align-items: flex-start; flex-direction: column; } }

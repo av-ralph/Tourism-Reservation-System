@@ -113,18 +113,23 @@ export class AppService {
   const profile=data.adminProfiles.find(row=>row.id===this.profileId(role,authorization)||row.id==='profile-'+hash);
   const admin=data.adminKeys.find(row=>row.hash===hash);
   if(role!=='superadmin'&&!admin)throw new UnauthorizedException('Enter a valid administrator access key.');
-  return {role,adminName:profile?.name||(role==='superadmin'?'Super admin':admin!.name),adminPhoto:profile?.photo||'',adminEmail:profile?.email||''};
+  return {role,adminName:profile?.name||(role==='superadmin'?'Super admin':admin!.name),adminPhoto:profile?.photo||'',adminEmail:profile?.email||'',savedSignature:profile?.signature||''};
  }
  async updateAdminProfile(authorization:string|undefined,input:unknown){
   const role=await this.authorizeStaff(authorization);
   if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid profile.');
-  const {name,email,photo}=input as Record<string,unknown>;
+  const {name,email,photo,clearSavedSignature}=input as Record<string,unknown>;
   if(typeof name!=='string'||!name.trim()||name.length>80)throw new BadRequestException('Enter a name of up to 80 characters.');
   if(typeof email!=='string'||email.length>254||(email!==''&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)))throw new BadRequestException('Enter a valid email address or leave it blank.');
   if(typeof photo!=='string'||photo.length>220000||(photo!==''&&!/^data:image\/jpeg;base64,\/9j\/[A-Za-z0-9+/]*={0,2}$/.test(photo)))throw new BadRequestException('Choose a valid JPEG profile photo under 165 KB.');
   const id=this.profileId(role,authorization);
-  await this.storage.mutate(data=>{const hash=this.keyHash((authorization||'').replace(/^Bearer /,''));const staff=data.adminKeys.find(row=>row.hash===hash);if(role!=='superadmin'&&!staff)throw new UnauthorizedException('Admin access has been revoked.');const displayName=name.trim();if(role==='instructor'&&data.adminKeys.some(row=>row.id!==staff?.id&&row.role==='instructor'&&this.instructorName(data,row).toLowerCase()===displayName.toLowerCase()))throw new ConflictException('Another instructor already uses this display name.');data.adminProfiles=data.adminProfiles.filter(row=>row.id!==id&&row.id!=='profile-'+hash);data.adminProfiles.push({id,name:displayName,email:email.trim(),photo,updatedAt:new Date().toISOString()});if(staff){staff.name=displayName;staff.updatedAt=new Date().toISOString();}});
-  return {role,adminName:name.trim(),adminPhoto:photo,adminEmail:email.trim()};
+  const savedSignature=await this.storage.mutate(data=>{const hash=this.keyHash((authorization||'').replace(/^Bearer /,''));const staff=data.adminKeys.find(row=>row.hash===hash);if(role!=='superadmin'&&!staff)throw new UnauthorizedException('Admin access has been revoked.');const displayName=name.trim();if(role==='instructor'&&data.adminKeys.some(row=>row.id!==staff?.id&&row.role==='instructor'&&this.instructorName(data,row).toLowerCase()===displayName.toLowerCase()))throw new ConflictException('Another instructor already uses this display name.');const previous=data.adminProfiles.find(row=>row.id===id||row.id==='profile-'+hash);const signature=clearSavedSignature===true?'':previous?.signature||'';data.adminProfiles=data.adminProfiles.filter(row=>row.id!==id&&row.id!=='profile-'+hash);data.adminProfiles.push({id,name:displayName,email:email.trim(),photo,signature,updatedAt:new Date().toISOString()});if(staff){staff.name=displayName;staff.updatedAt=new Date().toISOString();}return signature;});
+  return {role,adminName:name.trim(),adminPhoto:photo,adminEmail:email.trim(),savedSignature};
+ }
+ private rememberSignature(data:Store,authorization:string|undefined,identity:{role:string;adminName:string},signature:string){
+  const id=this.profileId(identity.role,authorization),profile=data.adminProfiles.find(row=>row.id===id);
+  if(profile){profile.signature=signature;profile.updatedAt=new Date().toISOString();}
+  else data.adminProfiles.push({id,name:identity.adminName,email:'',photo:'',signature,updatedAt:new Date().toISOString()});
  }
  async changeStaffKey(authorization:string|undefined,input:unknown){
   const role=await this.authorizeStaff(authorization);
@@ -205,6 +210,7 @@ export class AppService {
    if(this.reservationStatus(reservation)!=='Awaiting instructor')throw new ConflictException('Only requests awaiting instructor review can be reviewed.');
    reservation.instructorDecision=String(decision);reservation.instructorNote=note.trim();reservation.instructorReviewedBy=identity.adminName;reservation.instructorReviewedAt=new Date().toISOString();
    reservation.instructorSignature=validatedSignature;
+   if(decision==='Approved')this.rememberSignature(data,authorization,identity,validatedSignature);
    reservation.status=decision==='Approved'?'Awaiting admin':'Rejected';
    if(decision==='Declined')reservation.reviewNote=note.trim();
    return {id:reservation.id,status:reservation.status,instructorDecision:reservation.instructorDecision,instructorNote:reservation.instructorNote,instructorReviewedBy:reservation.instructorReviewedBy,instructorReviewedAt:reservation.instructorReviewedAt};
@@ -259,7 +265,7 @@ export class AppService {
   }
   const validatedSignature=action==='Approved'?this.validateSignature(adminSignature):'';
   const updated:Row={...r,status:String(action),reviewNote:note.trim(),reviewedAt:new Date().toISOString()};
-  if(action==='Approved'){updated.adminSignature=validatedSignature;updated.adminReviewedBy=identity.adminName;updated.adminReviewedAt=updated.reviewedAt;updated.laboratoryEntries=this.validateLaboratoryEntries(laboratoryEntries,r);if(override){updated.adminOverride='true';updated.adminOverrideReason=note.trim();}}
+  if(action==='Approved'){updated.adminSignature=validatedSignature;updated.adminReviewedBy=identity.adminName;updated.adminReviewedAt=updated.reviewedAt;updated.laboratoryEntries=this.validateLaboratoryEntries(laboratoryEntries,r);this.rememberSignature(data,authorization,identity,validatedSignature);if(override){updated.adminOverride='true';updated.adminOverrideReason=note.trim();}}
   else {delete updated.adminSignature;delete updated.adminReviewedBy;delete updated.adminReviewedAt;}
   data.reservations=data.reservations.map(x=>x.id===id?updated:x);return updated;
  });}
