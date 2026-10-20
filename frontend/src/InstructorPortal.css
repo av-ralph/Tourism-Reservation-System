@@ -23,9 +23,14 @@
 .signature-canvas-frame { width: 100%; }
 .signature-pad canvas { display: block; box-sizing: border-box; width: 100%; height: auto; aspect-ratio: 10 / 3; border: 2px dashed #9caec5; border-radius: 9px; background: linear-gradient(to bottom,#fff 73%,#e8eef7 73.5%,#fff 74%); cursor: crosshair; touch-action: none; }
 .signature-status { margin: 10px 0 0; color: #17345d; font-weight: 600; }
-.signature-pad-expanded { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; justify-content: center; overflow: auto; margin: 0; padding: max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left)); background: #fff; box-sizing: border-box; }
+.signature-pad-overlay { position: fixed; inset: 0; z-index: 1000; overflow-y: auto; overscroll-behavior: contain; background: #fff; padding: max(20px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(20px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left)); box-sizing: border-box; }
+.signature-pad-expanded { width: min(100%, 900px); min-height: 100%; margin: 0 auto; padding: clamp(8px,2vw,24px); background: #fff; box-sizing: border-box; }
 .signature-pad-expanded .signature-canvas-frame { width: min(100%, 850px); margin: 0 auto; }
 .signature-pad-expanded .signature-pad-heading,.signature-pad-expanded .signature-status,.signature-pad-expanded small { width: min(100%, 850px); margin-left: auto; margin-right: auto; }
+.signature-pad-overlay .signature-upload,.signature-pad-overlay .signature-reuse { width: min(100%, 850px); margin-left: auto; margin-right: auto; }
+.signature-pad-overlay .secondary { min-height: 44px; padding: 9px 14px; border: 1px solid #aab9cd; border-radius: 8px; background: #fff; color: #06266b; font: inherit; font-weight: 600; cursor: pointer; }
+.signature-pad-overlay .secondary:disabled { opacity: .55; cursor: not-allowed; }
+.signature-pad-overlay .signature-upload input { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #bac4d1; border-radius: 8px; background: #fff; }
 .signature-pad small { display: block; margin-top: 8px; color: #47566a; line-height: 1.5; }
 .signature-pad canvas[hidden]{display:none!important}
 .signature-upload{display:block;margin:0 0 12px;color:#17345d;font-size:13px;font-weight:600}
