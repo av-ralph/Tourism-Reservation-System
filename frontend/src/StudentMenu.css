@@ -24,7 +24,7 @@
 
 @media(min-width:1101px) and (max-width:1500px){
  .student-site .college-header .student-header{flex-wrap:wrap;justify-content:center;row-gap:8px}
- .student-site .college-header .student-header .nav-portal-label{flex:0 0 100%;justify-content:center;white-space:nowrap}
+ .student-site .college-header .student-header .nav-portal-label{flex:0 0 100%;justify-content:flex-start;white-space:nowrap}
  .student-site .college-header .student-header nav{display:flex;flex:0 0 100%;min-width:0;flex-wrap:wrap;justify-content:center;gap:4px}
  .student-site .college-header .student-header nav button{padding:9px 11px;font-size:13px}
  .student-site .college-header .student-header .mobile-menu{display:none}
