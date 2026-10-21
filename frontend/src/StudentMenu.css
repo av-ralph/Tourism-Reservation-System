@@ -2,7 +2,7 @@
 .student-site .student-header .mobile-menu span{width:auto;margin:0;color:inherit}
 .student-site .menu-glyph{display:none}
 
-@media(max-width:1500px){
+@media(max-width:1100px){
  .student-site .college-header .student-header{position:relative;flex-wrap:nowrap}
  .student-site .college-header .student-header .nav-portal-label{flex-shrink:0}
  .student-site .college-header .student-header nav{display:none}
@@ -20,6 +20,14 @@
  .student-site .college-header .student-header nav.is-open button{display:block;width:100%;min-height:44px;margin:0;padding:11px 13px;border:0;border-radius:6px;background:transparent;color:#183b6e;text-align:left;white-space:normal;font-size:14px;font-weight:600;line-height:1.4;box-shadow:none}
  .student-site .college-header .student-header nav.is-open button:hover{background:#f1f5fb;color:#06266b}
  .student-site .college-header .student-header nav.is-open button.active{background:#edf3fb;color:#06266b;font-weight:800;box-shadow:inset 3px 0 #f26026}
+}
+
+@media(min-width:1101px) and (max-width:1500px){
+ .student-site .college-header .student-header{flex-wrap:wrap;justify-content:center;row-gap:8px}
+ .student-site .college-header .student-header .nav-portal-label{flex:0 0 100%;justify-content:center;white-space:nowrap}
+ .student-site .college-header .student-header nav{display:flex;flex:0 0 100%;min-width:0;flex-wrap:wrap;justify-content:center;gap:4px}
+ .student-site .college-header .student-header nav button{padding:9px 11px;font-size:13px}
+ .student-site .college-header .student-header .mobile-menu{display:none}
 }
 
 @media(max-width:700px){
