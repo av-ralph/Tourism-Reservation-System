@@ -16,11 +16,13 @@ export default function AdminInventory({items=[],request,onChange}){
  const [page,setPage]=useState(1)
  const [editing,setEditing]=useState(null)
  const [view,setView]=useState('sheet')
+ const [fullScreen,setFullScreen]=useState(false)
  const [phone,setPhone]=useState(()=>typeof window!=='undefined'&&window.matchMedia('(max-width:600px)').matches)
  const [busy,setBusy]=useState(false)
  const [error,setError]=useState('')
  const editItem=useCallback(item=>{setEditing(item);setError('')},[setEditing,setError])
  useEffect(()=>{const media=window.matchMedia('(max-width:600px)');const update=()=>setPhone(media.matches);media.addEventListener('change',update);return()=>media.removeEventListener('change',update)},[])
+ useEffect(()=>{if(!fullScreen)return;const previous=document.body.style.overflow;document.body.style.overflow='hidden';const onKeyDown=event=>{if(event.key==='Escape'&&!editing)setFullScreen(false)};window.addEventListener('keydown',onKeyDown);return()=>{document.body.style.overflow=previous;window.removeEventListener('keydown',onKeyDown)}},[fullScreen,editing])
 
  const categories=[...new Set(items.map(item=>item.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b))
  const counts=Object.fromEntries(['Draft','Available','Unavailable'].map(value=>[value,items.filter(item=>item.status===value).length]))
@@ -52,8 +54,8 @@ export default function AdminInventory({items=[],request,onChange}){
   }catch(e){setError(e.message)}finally{setBusy(false)}
  }
 
- return <section className="records inventory-page">
-  <div className="section-heading"><div><h2>Laboratory inventory</h2><p>Positive quantities from the 2nd Sem A.Y. 2025–2026 report are available for student requests by default. Zero-stock items remain drafts. Review and update booking stock as needed.</p></div><button className="primary" onClick={()=>{setEditing(blank);setError('')}}>+ Add item</button></div>
+ return <section className={'records inventory-page'+(fullScreen?' inventory-fullscreen':'')}>
+  <div className="section-heading"><div><h2>Laboratory inventory</h2><p>Positive quantities from the 2nd Sem A.Y. 2025–2026 report are available for student requests by default. Zero-stock items remain drafts. Review and update booking stock as needed.</p></div><div className="inventory-heading-actions"><button type="button" className="secondary" aria-pressed={fullScreen} onClick={()=>setFullScreen(value=>!value)}>{fullScreen?'⤢ Exit full screen':'⛶ Full screen'}</button><button className="primary" onClick={()=>{setEditing(blank);setError('')}}>+ Add item</button></div></div>
   {!phone&&<div className="inventory-view-switch" role="group" aria-label="Inventory view"><button type="button" className={view==='sheet'?'selected':''} aria-pressed={view==='sheet'} onClick={()=>setView('sheet')}>Sheet view</button><button type="button" className={view==='report'?'selected':''} aria-pressed={view==='report'} onClick={()=>setView('report')}>Report table</button></div>}
   <div className="inventory-overview"><strong>{items.length} total items</strong><span>{counts.Draft||0} drafts</span><span>{counts.Available||0} available</span><span>{counts.Unavailable||0} unavailable</span></div>
   <div className="inventory-controls"><label>Search<input className="search" placeholder="Item, model, serial, or remark" value={query} onChange={event=>{setQuery(event.target.value);resetPage()}}/></label><label>Category<select value={category} onChange={event=>{setCategory(event.target.value);resetPage()}}><option>All categories</option>{categories.map(value=><option key={value}>{value}</option>)}</select></label><label>Status<select value={status} onChange={event=>{setStatus(event.target.value);resetPage()}}>{['All','Draft','Available','Unavailable'].map(value=><option key={value}>{value}</option>)}</select></label><label>Sort by<select value={sort} onChange={event=>{setSort(event.target.value);resetPage()}}>{['Category and item','Item name','Quantity: high to low'].map(value=><option key={value}>{value}</option>)}</select></label></div>
