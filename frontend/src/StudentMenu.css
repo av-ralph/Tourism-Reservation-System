@@ -2,8 +2,10 @@
 .student-site .student-header .mobile-menu span{width:auto;margin:0;color:inherit}
 .student-site .menu-glyph{display:none}
 
-@media(max-width:1100px){
+@media(max-width:1500px){
  .student-site .college-header .student-header{position:relative;flex-wrap:nowrap}
+ .student-site .college-header .student-header .nav-portal-label{flex-shrink:0}
+ .student-site .college-header .student-header nav{display:none}
  .student-site .college-header .student-header .mobile-menu{display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-left:auto;min-width:86px;min-height:44px;padding:9px 12px;border:1px solid #ffffff66;border-radius:8px;background:#ffffff12;color:#fff;font-size:14px;font-weight:700;line-height:1}
  .student-site .college-header .student-header .mobile-menu:hover,.student-site .college-header .student-header .mobile-menu[aria-expanded="true"]{background:#ffffff24}
  .student-site .student-header .mobile-menu .menu-glyph{display:block;position:relative;width:18px;min-width:18px;height:18px;flex:none}
