@@ -1,20 +1,25 @@
 import college from './college-content.json'
 
+export function splitPersonNameTitle(value){
+ const text=String(value||'').trim()
+ const namedRole=text.match(/^(.+?)\s+[–—]\s+(.+)$/)
+ if(namedRole)return {name:namedRole[1],title:namedRole[2]}
+ const leadingRole=text.match(/^([A-Za-z][A-Za-z &/]+)-\s+(.+)$/)
+ return leadingRole?{name:leadingRole[2],title:leadingRole[1]}:{name:text,title:''}
+}
+
 export function defaultOrganization(){
- return college.organization.map(group=>({title:group.title,items:group.items.map(name=>({name,photo:''}))}))
+ return college.organization.map(group=>({title:group.title,items:group.items.map(value=>({...splitPersonNameTitle(value),photo:''}))}))
 }
 
 export const emptyOrganizationSections=['The Founders','Faculty and Staff']
 
 export function includeOrganizationSections(groups){
- const result=groups.filter(group=>group&&typeof group.title==='string').map(group=>({...group,items:Array.isArray(group.items)?group.items:[]}))
- function place(title,anchor,after){
-  const index=result.findIndex(group=>group.title.trim().toLowerCase()===title.toLowerCase())
-  const group=index<0?{title,items:[]}:result.splice(index,1)[0]
-  const anchorIndex=result.findIndex(item=>item.title.trim().toLowerCase()===anchor.toLowerCase())
-  result.splice(anchorIndex<0?(after?result.length:0):anchorIndex+(after?1:0),0,group)
- }
- place('The Founders','Board of Trustees',false)
- place('Faculty and Staff','Technical, Staff & Assistant Positions',true)
- return result
+ return groups.filter(group=>group&&typeof group.title==='string').map(group=>({
+  ...group,
+  items:Array.isArray(group.items)?group.items.map(person=>({
+   ...person,
+   ...(typeof person.title==='string'?{}:splitPersonNameTitle(person.name)),
+  })):[],
+ }))
 }

@@ -97,10 +97,11 @@ export class AppService {
    people+=raw.items.length;
    const items=raw.items.map(item=>{
     if(!item||typeof item!=='object'||Array.isArray(item))throw new BadRequestException('Invalid organization person.');
-    const person=item as Record<string,unknown>,name=person.name,photo=person.photo;
-    if(typeof name!=='string'||!name.trim()||name.trim().length>160)throw new BadRequestException('Enter each person’s name and role, up to 160 characters.');
+    const person=item as Record<string,unknown>,name=person.name,personTitle=person.title,photo=person.photo;
+    if(typeof name!=='string'||!name.trim()||name.trim().length>160)throw new BadRequestException('Enter each person’s name, up to 160 characters.');
+    if(personTitle!==undefined&&(typeof personTitle!=='string'||personTitle.trim().length>160))throw new BadRequestException('Enter a title of up to 160 characters.');
     if(typeof photo!=='string'||photo.length>30000||(photo!==''&&!/^data:image\/jpeg;base64,\/9j\/[A-Za-z0-9+/]*={0,2}$/.test(photo)))throw new BadRequestException('Choose a valid JPEG portrait under 22 KB.');
-    return {name:name.trim(),photo};
+    return {name:name.trim(),...(personTitle!==undefined?{title:(personTitle as string).trim()}:{}),photo};
    });
    return {title:title.trim(),items};
   });

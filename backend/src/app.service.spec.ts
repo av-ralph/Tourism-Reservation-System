@@ -134,6 +134,10 @@ describe('reservations',()=>{
   await expect(service.saveCollegeOrganization({groups:[{title:'',items:groups[0].items}]})).rejects.toThrow('group name');
   await expect(service.saveCollegeOrganization({groups:[{title:'Laboratory team',items:[{name:'Example Person',photo:'https://example.com/photo.jpg'}]}]})).rejects.toThrow('JPEG portrait');
   expect(await new AppService().collegeOrganization()).toEqual({groups:withHeadings});
+  const reordered=[{title:'Faculty and Staff',items:[]},{title:'Laboratory team',items:[{name:'Example Person',title:'Laboratory In-Charge',photo:''}]},{title:'The Founders',items:[]}];
+  expect(await service.saveCollegeOrganization({groups:reordered})).toEqual({groups:reordered});
+  expect(await new AppService().collegeOrganization()).toEqual({groups:reordered});
+  await expect(service.saveCollegeOrganization({groups:[{title:'Team',items:[{name:'Example Person',title:'x'.repeat(161),photo:''}]}]})).rejects.toThrow('title');
  });
  it('saves college document text for About CeC without erasing organization',async()=>{
   expect(await service.collegeContent()).toEqual({sections:null});

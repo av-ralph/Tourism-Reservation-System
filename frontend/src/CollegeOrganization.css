@@ -17,7 +17,15 @@
 .organization-avatar{display:grid;place-items:center;flex:none;width:48px;height:48px;border-radius:50%;border:1px solid #c7d4e4;object-fit:cover;background:#eaf0f7;color:#547095}
 .organization-avatar svg{width:25px;height:25px}
 .organization-editor fieldset{border:0;margin:0;padding:0;min-width:0}
+.organization-sort-row{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:stretch;gap:10px;margin:12px 0}
+.organization-sort-row.is-dragging{opacity:.55}
+.organization-sort-controls{display:flex;align-items:center;gap:5px}
+.organization-sort-controls button{min-width:36px;min-height:40px;padding:7px;border-radius:8px}
+.organization-drag-handle{border:1px solid #a8b7ca;background:#f3f6fb;color:#193b6f;cursor:grab;font:inherit;font-size:13px;font-weight:700;touch-action:none}
+.organization-drag-handle:active{cursor:grabbing}
+.organization-sort-position{display:grid;place-items:center;min-width:25px;color:#65758a;font-size:12px;font-weight:700}
 .organization-edit-group{margin:12px 0;border:1px solid #c7d4e2;border-radius:10px;background:#fff}
+.organization-sort-row .organization-edit-group{margin:0;min-width:0}
 .organization-edit-group>summary{cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:17px 18px;font-weight:700;color:#06266b}
 .organization-edit-group>summary small{font-weight:500;color:#5e7086}
 .organization-edit-group[open]>summary{border-bottom:1px solid #dce4ee}
@@ -28,8 +36,9 @@
 .organization-edit-person{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:12px;border:1px solid #d6dfeb;border-radius:9px;background:#f8fafc}
 .organization-edit-portrait{display:grid;place-items:center;flex:none;width:52px;height:52px;border-radius:50%;overflow:hidden;background:#e9eff7;color:#6681a0}
 .organization-edit-portrait img{width:100%;height:100%;object-fit:cover}
-.organization-edit-person>label:nth-child(2){flex:1 1 300px;min-width:180px;font-size:12px;font-weight:600}
-.organization-edit-person>label:nth-child(2) input{display:block;width:100%;margin-top:5px}
+.organization-person-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));flex:1 1 380px;gap:10px;min-width:0}
+.organization-person-fields label{display:block;min-width:0;font-size:12px;font-weight:600;color:#243b53}
+.organization-person-fields input{display:block;width:100%;margin-top:5px}
 .organization-photo-upload{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 12px;border:1px solid #a8b7ca;border-radius:8px;background:#fff;color:#183b6e;font-size:12px;font-weight:600;cursor:pointer}
 .organization-photo-upload:hover{background:#eef3fa}
 .organization-photo-upload:focus-within{outline:3px solid #dce6f6;outline-offset:2px}
@@ -39,5 +48,6 @@
 .organization-edit-actions .text-button{padding:10px}
 .organization-editor-footer{padding-top:18px;border-top:1px solid #dce4ee;margin-top:18px}
 .organization-editor-footer .primary{min-height:44px}
-@media(max-width:700px){.college-organization .organization-people{grid-template-columns:1fr}.organization-edit-body{padding:13px}.organization-edit-person>label:nth-child(2){flex-basis:calc(100% - 68px)}}
+@media(max-width:700px){.college-organization .organization-people{grid-template-columns:1fr}.organization-edit-body{padding:13px}.organization-sort-row{grid-template-columns:minmax(0,1fr);gap:5px}.organization-sort-controls{justify-content:flex-start}.organization-person-fields{flex-basis:calc(100% - 68px)}}
+@media(max-width:520px){.organization-person-fields{grid-template-columns:minmax(0,1fr)}.organization-sort-controls button{min-height:44px}.organization-drag-handle span{display:none}}
 @media(max-width:430px){.college-organization .organization-groups>details>summary{align-items:flex-start;flex-direction:column;gap:5px;padding:14px 16px}.college-organization .organization-people{padding:12px}}
