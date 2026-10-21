@@ -36,9 +36,13 @@
 .organization-edit-group>summary small{flex:none;color:#63768c;font-size:12px;font-weight:600;white-space:nowrap}
 .organization-summary-chevron{flex:none;font-size:21px;line-height:1;color:#6680a0;transition:transform .15s}
 .organization-edit-group[open] .organization-summary-chevron{transform:rotate(180deg)}
-.organization-sort-controls{display:flex;align-items:center;gap:4px;min-height:60px;padding:9px 11px;border-left:1px solid #e1e9f2}
-.organization-sort-controls button{display:grid;place-items:center;width:36px;height:38px;min-width:36px;min-height:38px;padding:0;border-radius:7px;font-size:17px}
-.organization-drag-handle{border:1px solid #b9c9dc;background:#f5f8fc;color:#274b7d;cursor:grab;font:inherit;font-size:19px;touch-action:none}
+.organization-sort-controls{display:flex;align-items:center;gap:6px;min-height:60px;padding:9px 12px;border-left:1px solid #e1e9f2;background:#fbfcfe}
+.organization-sort-controls button{display:flex;align-items:center;justify-content:center;gap:5px;min-height:40px;padding:0 10px;border-radius:8px;font-size:16px;font-weight:700;white-space:nowrap}
+.organization-sort-controls button:disabled{opacity:.4;cursor:not-allowed}
+.organization-sort-controls button:not(:disabled):hover{border-color:#6688b4;background:#edf4fd}
+.organization-sort-controls button:focus-visible,.organization-photo-upload:focus-within,.organization-text-action:focus-visible{outline:3px solid #a8c8f7;outline-offset:2px}
+.organization-sort-label{font-size:12px;font-weight:700}
+.organization-drag-handle{border:1px solid #b9c9dc;background:#f5f8fc;color:#274b7d;cursor:grab;font:inherit;touch-action:none}
 .organization-drag-handle:active{cursor:grabbing}
 .organization-edit-body{padding:18px;border-top:1px solid #e1e9f2;background:#fbfcfe}
 .organization-group-name{display:block;max-width:650px;color:#243b53;font-size:13px;font-weight:650}
@@ -47,23 +51,24 @@
 .organization-people-heading h3{margin:0;color:#183b6e;font-size:15px}
 .organization-people-heading span{color:#697d94;font-size:12px}
 .organization-edit-people{display:grid;gap:8px}
-.organization-edit-person{display:grid;grid-template-columns:20px 48px minmax(0,1fr) 112px;align-items:center;gap:10px;min-width:0;padding:12px;border:1px solid #d6e1ed;border-radius:9px;background:#fff}
+.organization-edit-person{display:grid;grid-template-columns:20px 48px minmax(0,1fr) 128px;align-items:center;gap:10px;min-width:0;padding:12px;border:1px solid #d6e1ed;border-radius:9px;background:#fff}
 .organization-person-number{align-self:start;padding-top:20px;color:#8798ad;font-size:12px;font-weight:700;text-align:center}
 .organization-edit-portrait{display:grid;place-items:center;width:48px;height:48px;border-radius:50%;overflow:hidden;background:#e9eff7;color:#6681a0}
 .organization-edit-portrait img{width:100%;height:100%;object-fit:cover}
 .organization-person-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;min-width:0}
 .organization-person-fields label{display:block;min-width:0;color:#38516c;font-size:12px;font-weight:650}
 .organization-person-fields input{display:block;width:100%;min-width:0;margin-top:5px}
-.organization-person-actions{display:grid;justify-items:stretch;gap:3px;align-self:stretch;align-content:center}
-.organization-photo-upload{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:7px 9px;border:1px solid #a8b7ca;border-radius:7px;background:#fff;color:#183b6e;font-size:12px;font-weight:650;cursor:pointer;white-space:nowrap}
+.organization-person-actions{display:grid;justify-items:stretch;gap:6px;align-self:stretch;align-content:center}
+.organization-photo-upload{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:7px 9px;border:1px solid #a8b7ca;border-radius:7px;background:#fff;color:#183b6e;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
 .organization-photo-upload:hover{background:#eef3fa}
-.organization-photo-upload:focus-within{outline:3px solid #dce6f6;outline-offset:2px}
 .organization-photo-upload input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
-.organization-text-action{border:0;background:none;color:#426389;font:inherit;font-size:12px;font-weight:650;cursor:pointer;text-align:center;text-decoration:underline;text-underline-offset:2px}
-.organization-text-action.is-danger{color:#9d432d}
+.organization-text-action{min-height:32px;padding:6px 9px;border:1px solid #d2deec;border-radius:7px;background:#f7faff;color:#315783;font:inherit;font-size:12px;font-weight:700;cursor:pointer;text-align:center}
+.organization-text-action:hover{background:#eaf2fb;border-color:#9eb5d0}
+.organization-text-action.is-danger{color:#a3442b;border-color:#efd2c8;background:#fff8f5}
+.organization-text-action.is-danger:hover{background:#ffede6;border-color:#dba48f}
 .organization-edit-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px}
 .organization-edit-actions .secondary{min-height:40px}
 @media(max-width:900px){.organization-edit-person{grid-template-columns:20px 48px minmax(0,1fr)}.organization-person-actions{grid-column:3;display:flex;flex-wrap:wrap;align-items:center;gap:8px}.organization-person-actions .organization-photo-upload{min-width:110px}}
-@media(max-width:700px){.college-organization .organization-people{grid-template-columns:1fr}.organization-editor-toolbar{top:0;flex-wrap:wrap}.organization-editor-toolbar-actions{width:100%}.organization-editor-toolbar-actions button{flex:1}.organization-edit-body{padding:14px}.organization-sort-row{grid-template-columns:minmax(0,1fr)}.organization-sort-controls{min-height:0;justify-content:flex-end;border-left:0;border-top:1px solid #e1e9f2;padding:6px 10px}.organization-sort-controls button{min-height:40px}.organization-edit-group>summary{padding:11px 13px}.organization-edit-group>summary small{font-size:11px}}
+@media(max-width:700px){.college-organization .organization-people{grid-template-columns:1fr}.organization-editor-toolbar{top:0;flex-wrap:wrap}.organization-editor-toolbar-actions{width:100%}.organization-editor-toolbar-actions button{flex:1}.organization-edit-body{padding:14px}.organization-sort-row{grid-template-columns:minmax(0,1fr)}.organization-sort-controls{min-height:0;justify-content:flex-end;border-left:0;border-top:1px solid #e1e9f2;padding:8px 10px}.organization-sort-controls button{min-height:44px}.organization-edit-group>summary{padding:11px 13px}.organization-edit-group>summary small{font-size:11px}}
 @media(max-width:520px){.organization-person-fields{grid-template-columns:minmax(0,1fr)}.organization-edit-person{grid-template-columns:20px 42px minmax(0,1fr);gap:7px}.organization-edit-portrait{width:42px;height:42px}.organization-person-actions{grid-column:2/-1}.organization-edit-group>summary{gap:8px}.organization-summary-title{font-size:14px}.organization-sort-position{width:28px;height:28px}.organization-editor-summary small{display:none}}
 @media(max-width:430px){.college-organization .organization-groups>details>summary{align-items:flex-start;flex-direction:column;gap:5px;padding:14px 16px}.college-organization .organization-people{padding:12px}}
