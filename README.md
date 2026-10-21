@@ -39,7 +39,9 @@ The user side uses a public website layout with top navigation, a welcome page, 
 
 ## Booking contact and agreement
 
-New reservation requests require a valid email address and acceptance of the Terms and Conditions. ID number is optional for bookings. The booking terms display the requirements from the supplied HRM laboratory form. Acceptance time and terms version are saved with each request, and the admin can see the email and acceptance date. This does not send email automatically or verify email ownership. Existing records are preserved; utilization and incident forms retain their previous ID requirement.
+New reservation requests require a valid email address and acceptance of the Terms and Conditions. ID number is optional for bookings. The booking terms display the requirements from the supplied HRM laboratory form. Acceptance time and terms version are saved with each request, and the admin can see the email and acceptance date. Email ownership is not verified. Existing records are preserved; utilization and incident forms retain their previous ID requirement.
+
+Booking-status emails use Resend when `RESEND_API_KEY` and `RESEND_FROM_EMAIL` are configured on the backend. Verify a sending domain in Resend and use an address on that domain as `RESEND_FROM_EMAIL`, then add both values to the **backend** Vercel project's Production environment and redeploy it. Instructor approval, instructor decline, final admin approval, and admin rejection send one status email to the address supplied with the booking. Staff see whether the message sent, could not be sent, or is not configured. Failed email delivery does not undo the booking decision. The email includes the booking reference and directs the student to My bookings; it never includes the private recovery code.
 
 ## Refined user booking flow
 
@@ -54,7 +56,7 @@ The NestJS backend supports local file storage and TiDB Cloud via Prisma. The te
 
 ## Complete backend workflows
 
-Users book as guests; no account or sign-in is required. Each request requires full name, valid email, acceptance of laboratory terms, and an optional ID number. New reservations receive a private recovery code shown in My bookings. A student can enter the booking reference and code on another device to link that reservation to its browser. Existing reservations created before recovery codes were introduced remain available in their original browser. Email is stored for contact, but automated email delivery is not configured.
+Users book as guests; no account or sign-in is required. Each request requires full name, valid email, acceptance of laboratory terms, and an optional ID number. New reservations receive a private recovery code shown in My bookings. A student can enter the booking reference and code on another device to link that reservation to its browser. Existing reservations created before recovery codes were introduced remain available in their original browser. Booking-status delivery depends on the Resend configuration described above.
 
 Facility lists and descriptions now come from the backend. Admins can change availability and descriptions and supply a notice for a closure. Unavailable spaces cannot receive new bookings or approvals. Existing bookings are preserved for review/cancellation. Admin cancellation requires a reason, visible in the user's record. Final approval requires verification of the instructor's signed utilization form and an administrator signature.
 

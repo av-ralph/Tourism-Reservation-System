@@ -294,6 +294,26 @@ describe('reservations',()=>{
    await expect(service.create('reservations',{...booking,instructor:'Instructor One'})).resolves.toBeDefined();
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
+ it('emails the student after instructor and administrator booking decisions',async()=>{
+  process.env.HM_ADMIN_KEY='test-super-key';process.env.RESEND_API_KEY='re_test';process.env.RESEND_FROM_EMAIL='booking@example.org';
+  const deliveries:Record<string,unknown>[]=[];
+  vi.stubGlobal('fetch',vi.fn().mockImplementation((_url:string,options:{body:string})=>{deliveries.push(JSON.parse(options.body));return Promise.resolve(new Response('{}',{status:200}));}));
+  try{
+   await service.createAdminKey({name:'Instructor',key:'InstructorTest1!',role:'instructor'});
+   const first=await service.createForUser('reservations',booking,'11111111-1111-4111-8111-111111111111');
+   expect((await service.reviewAsInstructor(first.id!,{decision:'Approved',note:'',signature},'Bearer InstructorTest1!')).emailNotification).toBe('sent');
+   expect((await service.reviewReservation(first.id!,{action:'Approved',note:'',signatureConfirmed:true,adminSignature:signature},'Bearer test-super-key')).emailNotification).toBe('sent');
+   const second=await service.createForUser('reservations',{...booking,facility:'Cold Kitchen'},'11111111-1111-4111-8111-111111111111');
+   expect((await service.reviewAsInstructor(second.id!,{decision:'Declined',note:'Equipment unavailable'},'Bearer InstructorTest1!')).emailNotification).toBe('sent');
+   const third=await service.createForUser('reservations',{...booking,start:'10:00',end:'11:00'},'11111111-1111-4111-8111-111111111111');
+   await service.reviewAsInstructor(third.id!,{decision:'Approved',note:'',signature},'Bearer InstructorTest1!');
+   expect((await service.reviewReservation(third.id!,{action:'Rejected',note:'Lab unavailable'},'Bearer test-super-key')).emailNotification).toBe('sent');
+   expect(deliveries.map(row=>row.subject)).toEqual(['Your HM laboratory request passed instructor review','Your HM laboratory booking is approved','Your HM laboratory request was declined','Your HM laboratory request passed instructor review','Your HM laboratory request was declined']);
+   expect(String(deliveries[2]?.text)).toContain('Equipment unavailable');
+   expect(String(deliveries[4]?.text)).toContain('Lab unavailable');
+   expect(deliveries.every(row=>JSON.stringify(row.to)==='["student@example.com"]')).toBe(true);
+  }finally{delete process.env.HM_ADMIN_KEY;delete process.env.RESEND_API_KEY;delete process.env.RESEND_FROM_EMAIL;vi.unstubAllGlobals();}
+ });
  it('blocks simultaneous overlapping bookings',async()=>{const results=await Promise.allSettled([service.create('reservations',booking),service.create('reservations',booking)]);expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(1);});
  it('lets an admin adjust equipment while enforcing stock and renewed approval',async()=>{
   process.env.HM_ADMIN_KEY='test-super-key';

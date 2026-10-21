@@ -6,6 +6,7 @@ import { RecordStore } from './record-store.js';
 import type { Row, Store } from './record-store.js';
 import { facilityCatalog } from './facility-catalog.js';
 import { inventoryCatalog } from './inventory-catalog.js';
+import {sendBookingEmail} from './booking-email.js';
 
 @Injectable()
 export class AppService {
@@ -202,7 +203,7 @@ export class AppService {
   if(!['Approved','Declined'].includes(String(decision)))throw new BadRequestException('Choose approve or decline.');
   if(typeof note!=='string'||note.length>1000||(decision==='Declined'&&!note.trim()))throw new BadRequestException('Explain why the request was declined.');
   const validatedSignature=decision==='Approved'?this.validateSignature(signature):'';
-  return this.storage.mutate(data=>{
+  const saved=await this.storage.mutate(data=>{
    const reservation=data.reservations.find(row=>row.id===id);
    if(!reservation)throw new NotFoundException('Reservation not found.');
    const hash=this.keyHash((authorization||'').replace(/^Bearer /,'')),instructor=data.adminKeys.find(row=>row.hash===hash);
@@ -213,8 +214,10 @@ export class AppService {
    if(decision==='Approved')this.rememberSignature(data,authorization,identity,validatedSignature);
    reservation.status=decision==='Approved'?'Awaiting admin':'Rejected';
    if(decision==='Declined')reservation.reviewNote=note.trim();
-   return {id:reservation.id,status:reservation.status,instructorDecision:reservation.instructorDecision,instructorNote:reservation.instructorNote,instructorReviewedBy:reservation.instructorReviewedBy,instructorReviewedAt:reservation.instructorReviewedAt};
+   return {response:{id:reservation.id,status:reservation.status,instructorDecision:reservation.instructorDecision,instructorNote:reservation.instructorNote,instructorReviewedBy:reservation.instructorReviewedBy,instructorReviewedAt:reservation.instructorReviewedAt},reservation:{...reservation}};
   });
+  const emailNotification=await sendBookingEmail(saved.reservation,decision==='Approved'?'instructor-approved':'instructor-declined');
+  return {...saved.response,emailNotification};
  }
  createAdminKey(input:unknown){
   if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid access key details.');
@@ -239,7 +242,7 @@ export class AppService {
  cancelForUser(id:string,token?:string){const owner=this.userToken(token);return this.storage.mutate(data=>{const r=data.reservations.find(r=>r.id===id);if(!r)throw new NotFoundException('Reservation not found.');if(!this.ownsReservation(r,owner))throw new ForbiddenException('You can only cancel your own reservations.');if(['Rejected','Cancelled'].includes(this.reservationStatus(r)!))throw new BadRequestException('This request is already closed.');r.status='Cancelled';return {success:true};});}
  recoverReservation(input:unknown,token?:string){const owner=this.userToken(token);if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Enter a booking reference and private recovery code.');const {id,code}=input as Record<string,unknown>;if(typeof id!=='string'||typeof code!=='string'||!/^[0-9a-f-]{36}$/i.test(id)||!/^[0-9a-f]{32}$/i.test(code))throw new BadRequestException('Enter a valid booking reference and recovery code.');return this.storage.mutate(data=>{const row=data.reservations.find(reservation=>reservation.id===id);const hash=createHash('sha256').update(code.toLowerCase()).digest('hex');if(!row?.recoveryHash||!timingSafeEqual(Buffer.from(row.recoveryHash,'hex'),Buffer.from(hash,'hex')))throw new NotFoundException('Booking reference or recovery code not found.');let owners:string[];try{owners=JSON.parse(row.owners||'[]')}catch{owners=[]}if(!this.ownsReservation(row,owner)){owners.push(owner);row.owners=JSON.stringify(owners)}return this.publicReservation(row)});}
 
- async reviewReservation(id:string,input:unknown,authorization?:string){const identity=await this.adminIdentity(authorization);if(identity.role==='instructor')throw new ForbiddenException('Instructors cannot make final administrator decisions.');return this.storage.mutate(data=>{
+ async reviewReservation(id:string,input:unknown,authorization?:string){const identity=await this.adminIdentity(authorization);if(identity.role==='instructor')throw new ForbiddenException('Instructors cannot make final administrator decisions.');const saved=await this.storage.mutate(data=>{
   if(!input||typeof input!=='object')throw new BadRequestException('Invalid review.');
   const {action,note,signatureConfirmed,adminSignature,laboratoryEntries,skipInstructorReview}=input as Record<string,unknown>;
   const r=data.reservations.find(r=>r.id===id);if(!r)throw new NotFoundException('Reservation not found.');
@@ -268,7 +271,7 @@ export class AppService {
   if(action==='Approved'){updated.adminSignature=validatedSignature;updated.adminReviewedBy=identity.adminName;updated.adminReviewedAt=updated.reviewedAt;updated.laboratoryEntries=this.validateLaboratoryEntries(laboratoryEntries,r);this.rememberSignature(data,authorization,identity,validatedSignature);if(override){updated.adminOverride='true';updated.adminOverrideReason=note.trim();}}
   else {delete updated.adminSignature;delete updated.adminReviewedBy;delete updated.adminReviewedAt;}
   data.reservations=data.reservations.map(x=>x.id===id?updated:x);return updated;
- });}
+ });if(saved.status==='Approved'||saved.status==='Rejected')return {...saved,emailNotification:await sendBookingEmail(saved,saved.status==='Approved'?'admin-approved':'admin-rejected')};return saved;}
  private validateLaboratoryEntries(value:unknown,reservation:Row){
   let requestedQuantities:number[]=[];
   try{const selected=JSON.parse(reservation.inventorySelection||'[]');if(Array.isArray(selected)&&selected.length)requestedQuantities=selected.map(entry=>Number(entry.quantity));}catch{/* Legacy text-only equipment list. */}
