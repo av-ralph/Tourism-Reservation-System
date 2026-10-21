@@ -5,7 +5,7 @@ export function splitPersonNameTitle(value){
  const hyphenated=text.match(/^(.+?)-\s+(.+)$/)
  if(!hyphenated)return {name:text,title:''}
  const first=hyphenated[1].trim(),second=hyphenated[2].trim()
- const roleFirst=/\b(?:laboratory|office|in-charge|assistant|coordinator|director|manager|dean|registrar|officer|head)\b/i.test(first)
+ const roleFirst=/\b(?:chairman|secretary|treasurer|members?|president|vice president|laboratory|office|in-charge|assistant|coordinator|director|manager|dean|registrar|officer|head)\b/i.test(first)
  return roleFirst?{name:second,title:first}:{name:first,title:second}
 }
 
