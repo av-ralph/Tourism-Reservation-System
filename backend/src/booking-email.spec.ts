@@ -1,32 +1,33 @@
+import nodemailer from 'nodemailer';
 import {sendBookingEmail} from './booking-email.js';
 
-const booking={id:'11111111-1111-4111-8111-111111111111',name:'Student',email:'student@example.com',facility:'Hot Kitchen',date:'2099-10-10',start:'09:00',end:'10:00',instructorReviewedAt:'2099-10-01T01:00:00.000Z',reviewedAt:'2099-10-02T01:00:00.000Z',reviewNote:'Space unavailable'};
+vi.mock('nodemailer',()=>({default:{createTransport:vi.fn()}}));
+
+const booking={id:'11111111-1111-4111-8111-111111111111',name:'Student',email:'student@example.com',facility:'Hot Kitchen',date:'2099-10-10',start:'09:00',end:'10:00',reviewNote:'Space unavailable'};
 
 describe('booking status email',()=>{
- afterEach(()=>{delete process.env.RESEND_API_KEY;delete process.env.RESEND_FROM_EMAIL;vi.unstubAllGlobals();});
- it('skips sending until both Resend settings are configured',async()=>{
-  const fetchMock=vi.fn();vi.stubGlobal('fetch',fetchMock);
+ afterEach(()=>{delete process.env.GMAIL_SMTP_USER;delete process.env.GMAIL_SMTP_APP_PASSWORD;vi.clearAllMocks();});
+ it('skips sending until both Gmail settings are configured',async()=>{
   expect(await sendBookingEmail(booking,'instructor-approved')).toBe('not_configured');
-  expect(fetchMock).not.toHaveBeenCalled();
+  expect(nodemailer.createTransport).not.toHaveBeenCalled();
  });
  it('sends the student a booking update without the private recovery code',async()=>{
-  process.env.RESEND_API_KEY='re_test';process.env.RESEND_FROM_EMAIL='HM Laboratory <booking@example.org>';
-  const fetchMock=vi.fn().mockResolvedValue(new Response('{}',{status:200}));vi.stubGlobal('fetch',fetchMock);
+  process.env.GMAIL_SMTP_USER='sender@gmail.com';process.env.GMAIL_SMTP_APP_PASSWORD='test-app-password';
+  const sendMail=vi.fn().mockResolvedValue({messageId:'test'}),close=vi.fn();
+  vi.mocked(nodemailer.createTransport).mockReturnValue({sendMail,close} as never);
   expect(await sendBookingEmail(booking,'admin-rejected')).toBe('sent');
-  const [url,options]=fetchMock.mock.calls[0];
-  expect(url).toBe('https://api.resend.com/emails');
-  expect(options.headers.Authorization).toBe('Bearer re_test');
-  expect(options.headers['Idempotency-Key']).toContain(booking.id);
-  const payload=JSON.parse(options.body);
-  expect(payload).toMatchObject({to:['student@example.com'],subject:'Your HM laboratory request was declined'});
+  expect(nodemailer.createTransport).toHaveBeenCalledWith(expect.objectContaining({service:'gmail',auth:{user:'sender@gmail.com',pass:'test-app-password'}}));
+  const payload=sendMail.mock.calls[0][0];
+  expect(payload).toMatchObject({to:'student@example.com',subject:'Your HM laboratory request was declined'});
   expect(payload.text).toContain('Space unavailable');
   expect(payload.text).toContain(booking.id);
   expect(payload.text).not.toContain('recovery code');
+  expect(close).toHaveBeenCalled();
  });
  it('reports delivery failure without throwing',async()=>{
-  process.env.RESEND_API_KEY='re_test';process.env.RESEND_FROM_EMAIL='booking@example.org';
-  vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response('{}',{status:503})));
+  process.env.GMAIL_SMTP_USER='sender@gmail.com';process.env.GMAIL_SMTP_APP_PASSWORD='test-app-password';
+  const close=vi.fn();vi.mocked(nodemailer.createTransport).mockReturnValue({sendMail:vi.fn().mockRejectedValue(new Error('SMTP unavailable')),close} as never);
   const spy=vi.spyOn(console,'error').mockImplementation(()=>{});
-  try{expect(await sendBookingEmail(booking,'admin-approved')).toBe('failed');}finally{spy.mockRestore();}
+  try{expect(await sendBookingEmail(booking,'admin-approved')).toBe('failed');expect(close).toHaveBeenCalled();}finally{spy.mockRestore();}
  });
 });

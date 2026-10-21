@@ -2,7 +2,9 @@ import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {deflateSync} from 'node:zlib';
+import nodemailer from 'nodemailer';
 import {AppService} from './app.service.js';
+vi.mock('nodemailer',()=>({default:{createTransport:vi.fn()}}));
 function testSignatureImage(){
  const crc=(data:Buffer)=>{let value=0xffffffff;for(const byte of data){value^=byte;for(let bit=0;bit<8;bit++)value=value&1?value>>>1^0xedb88320:value>>>1;}return (value^0xffffffff)>>>0;};
  const chunk=(name:string,data:Buffer)=>{const type=Buffer.from(name),size=Buffer.alloc(4),checksum=Buffer.alloc(4);size.writeUInt32BE(data.length);checksum.writeUInt32BE(crc(Buffer.concat([type,data])));return Buffer.concat([size,type,data,checksum]);};
@@ -295,9 +297,9 @@ describe('reservations',()=>{
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
  it('emails the student after instructor and administrator booking decisions',async()=>{
-  process.env.HM_ADMIN_KEY='test-super-key';process.env.RESEND_API_KEY='re_test';process.env.RESEND_FROM_EMAIL='booking@example.org';
-  const deliveries:Record<string,unknown>[]=[];
-  vi.stubGlobal('fetch',vi.fn().mockImplementation((_url:string,options:{body:string})=>{deliveries.push(JSON.parse(options.body));return Promise.resolve(new Response('{}',{status:200}));}));
+  process.env.HM_ADMIN_KEY='test-super-key';process.env.GMAIL_SMTP_USER='sender@gmail.com';process.env.GMAIL_SMTP_APP_PASSWORD='test-app-password';
+  const deliveries:Record<string,unknown>[]=[],sendMail=vi.fn().mockImplementation((message:Record<string,unknown>)=>{deliveries.push(message);return Promise.resolve({messageId:String(deliveries.length)});});
+  vi.mocked(nodemailer.createTransport).mockReturnValue({sendMail,close:vi.fn()} as never);
   try{
    await service.createAdminKey({name:'Instructor',key:'InstructorTest1!',role:'instructor'});
    const first=await service.createForUser('reservations',booking,'11111111-1111-4111-8111-111111111111');
@@ -311,8 +313,8 @@ describe('reservations',()=>{
    expect(deliveries.map(row=>row.subject)).toEqual(['Your HM laboratory request passed instructor review','Your HM laboratory booking is approved','Your HM laboratory request was declined','Your HM laboratory request passed instructor review','Your HM laboratory request was declined']);
    expect(String(deliveries[2]?.text)).toContain('Equipment unavailable');
    expect(String(deliveries[4]?.text)).toContain('Lab unavailable');
-   expect(deliveries.every(row=>JSON.stringify(row.to)==='["student@example.com"]')).toBe(true);
-  }finally{delete process.env.HM_ADMIN_KEY;delete process.env.RESEND_API_KEY;delete process.env.RESEND_FROM_EMAIL;vi.unstubAllGlobals();}
+   expect(deliveries.every(row=>row.to==='student@example.com')).toBe(true);
+  }finally{delete process.env.HM_ADMIN_KEY;delete process.env.GMAIL_SMTP_USER;delete process.env.GMAIL_SMTP_APP_PASSWORD;vi.clearAllMocks();}
  });
  it('blocks simultaneous overlapping bookings',async()=>{const results=await Promise.allSettled([service.create('reservations',booking),service.create('reservations',booking)]);expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(1);});
  it('lets an admin adjust equipment while enforcing stock and renewed approval',async()=>{
