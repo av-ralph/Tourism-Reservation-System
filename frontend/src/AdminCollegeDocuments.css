@@ -1,0 +1,17 @@
+.college-documents-editor .document-list{margin:20px 0}
+.college-documents-hint{margin:0 0 20px;color:#52647b}
+.college-documents-editor fieldset{min-width:0;margin:0;padding:0;border:0}
+.college-document-section{margin:0 0 12px;border:1px solid #c4d2e4;border-radius:12px;background:#fff;overflow:hidden}
+.college-document-section>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;cursor:pointer;color:#082868}
+.college-document-section>summary small{color:#64748b;font-weight:400;text-align:right}
+.college-document-section[open]>summary{border-bottom:1px solid #dce5ef;background:#f5f8fc}
+.college-document-fields{display:grid;gap:20px;padding:20px}
+.college-document-fields label{display:grid;gap:7px;min-width:0;font-weight:600;color:#183b62}
+.college-document-fields :is(input,textarea){width:100%;min-width:0;font:inherit;line-height:1.5}
+.college-document-lines{display:grid;justify-items:start;gap:12px}
+.college-document-lines h3{margin:0;color:#09296b;font-size:1rem}
+.college-document-line{display:flex;align-items:flex-end;gap:10px;width:100%}
+.college-document-line label{flex:1}
+.college-document-line textarea{resize:vertical}
+.college-document-save{display:flex;justify-content:flex-end;margin-top:18px}
+@media(max-width:600px){.college-document-section>summary{align-items:flex-start;flex-direction:column;gap:4px}.college-document-fields{padding:16px}.college-document-line{align-items:stretch;flex-direction:column}.college-document-line button{align-self:flex-start}.college-document-save button{width:100%}}

@@ -52,6 +52,34 @@ export class AppService {
  async listInstructors(){const data=await this.storage.read();return data.adminKeys.filter(row=>row.role==='instructor').map(row=>({id:row.id,name:this.instructorName(data,row)})).sort((a,b)=>a.name.localeCompare(b.name));}
  async facilityPhoto(id:string){const facility=this.facilitiesFrom(await this.storage.read()).find(f=>f.id===id) as Row|undefined;if(!facility?.photo)throw new NotFoundException('Facility photo not found.');return Buffer.from(facility.photo.split(',')[1]!,'base64');}
  async collegeOrganization(){const row=(await this.storage.read()).organization.find(item=>item.id==='college-organization');return {groups:row?JSON.parse(row.content!):null};}
+ async collegeContent(){const row=(await this.storage.read()).organization.find(item=>item.id==='college-content');return {sections:row?JSON.parse(row.content!):null};}
+ async saveCollegeContent(input:unknown){
+  if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid college content.');
+  const sections=(input as Record<string,unknown>).sections;
+  if(!Array.isArray(sections)||sections.length<1||sections.length>30)throw new BadRequestException('Add between 1 and 30 document sections.');
+  const titles=new Set<string>();
+  const cleaned=sections.map(section=>{
+   if(!section||typeof section!=='object'||Array.isArray(section))throw new BadRequestException('Invalid document section.');
+   const raw=section as Record<string,unknown>;
+   if(typeof raw.title!=='string'||!raw.title.trim()||raw.title.trim().length>120)throw new BadRequestException('Enter a section title of up to 120 characters.');
+   const title=raw.title.trim(),key=title.toLowerCase();
+   if(titles.has(key))throw new BadRequestException('Section titles must be unique.');
+   titles.add(key);
+   const lines=(value:unknown,label:string)=>{
+    if(value===undefined)return undefined;
+    if(!Array.isArray(value)||value.length>30||value.some(line=>typeof line!=='string'||!line.trim()||line.trim().length>2000))throw new BadRequestException(`Enter up to 30 ${label}, each between 1 and 2000 characters.`);
+    return value.map(line=>(line as string).trim());
+   };
+   const paragraphs=lines(raw.paragraphs,'paragraphs'),items=lines(raw.items,'list items');
+   if(!paragraphs?.length&&!items?.length)throw new BadRequestException('Each section needs a paragraph or list item.');
+   if(raw.note!==undefined&&(typeof raw.note!=='string'||raw.note.length>500))throw new BadRequestException('Notes must be under 500 characters.');
+   if(raw.source!==undefined&&(typeof raw.source!=='string'||raw.source.length>120))throw new BadRequestException('Invalid source document.');
+   return {title,...(paragraphs?{paragraphs}:{}),...(items?{items}:{}),...(raw.note?{note:(raw.note as string).trim()}:{}),...(raw.source?{source:(raw.source as string).trim()}:{} )};
+  });
+  if(JSON.stringify(cleaned).length>100000)throw new BadRequestException('The document text is too long.');
+  await this.storage.mutate(data=>{const old=data.organization.find(row=>row.id==='college-content');data.organization=data.organization.filter(row=>row.id!=='college-content');data.organization.push({id:'college-content',content:JSON.stringify(cleaned),createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()});});
+  return {sections:cleaned};
+ }
  async saveCollegeOrganization(input:unknown){
   if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid college organization.');
   const groups=(input as Record<string,unknown>).groups;
@@ -77,7 +105,7 @@ export class AppService {
    return {title:title.trim(),items};
   });
   if(people>150||JSON.stringify(cleaned).length>850000)throw new BadRequestException('The organization list is too large.');
-  await this.storage.mutate(data=>{const old=data.organization.find(row=>row.id==='college-organization');data.organization=[{id:'college-organization',content:JSON.stringify(cleaned),createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()}];});
+  await this.storage.mutate(data=>{const old=data.organization.find(row=>row.id==='college-organization');data.organization=data.organization.filter(row=>row.id!=='college-organization');data.organization.push({id:'college-organization',content:JSON.stringify(cleaned),createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()});});
   return {groups:cleaned};
  }
 

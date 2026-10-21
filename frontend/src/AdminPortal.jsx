@@ -1,5 +1,6 @@
 import AdminProfile from './AdminProfile'
 import AdminCollegeOrganization from './AdminCollegeOrganization'
+import AdminCollegeDocuments from './AdminCollegeDocuments'
 import AdminKeys from './AdminKeys'
 import AdminRecordEditor from './AdminRecordEditor'
 import AdminInventory from './AdminInventory'
@@ -15,7 +16,6 @@ import CollegeText from './CollegeText'
 import SignaturePad,{SignatureView} from './SignaturePad'
 import {signatureIsMeaningful} from './signature-utils'
 import { useCallback, useEffect, useState } from 'react'
-import college from './college-content.json'
 import { requestJson } from './api'
 import './AdminPortal.css'
 const sidebarIcons=['M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z','M7 3h10v4H7z M5 5H3v16h18V5h-2 M7 12h10 M7 16h7','M4 5h16v16H4z M8 3v4 M16 3v4 M4 10h16 M8 14h3 M14 14h2','M3 21h18 M5 21V3h14v18 M9 7h2 M13 7h2 M9 11h2 M13 11h2 M10 21v-5h4v5','M5 4h14v17H5z M8 8h8 M8 12h8 M8 16h5','M5 21V3 M5 4h14l-3 4 3 4H5','M6 3h9l4 4v14H6z M14 3v5h5 M9 12h7 M9 16h7','M16 19v-2a4 4 0 0 0-8 0v2 M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6 M19 8a2 2 0 0 1 0 4 M21 19v-2a3 3 0 0 0-2-2.8']
@@ -73,7 +73,7 @@ export default function AdminPortal(){
  {page==='Utilization Records'&&<section className="records"><div className="section-heading"><div><h2>Laboratory sessions</h2><p>{visits.length} recorded sessions</p></div><input className="search" aria-label="Search utilization records" placeholder="Search person or facility…" value={search} onChange={e=>setSearch(e.target.value)}/></div>{visits.map(r=><article className="record" key={r.id}>{manageButtons('utilization',r)}<h3>{r.facility}</h3><p>{r.purpose}</p><small>{r.name}{r.email&&' · '+r.email}{r.studentId&&' · '+r.studentId} · {formatDate(r.date)} · {r.start}–{r.end} · {r.attendees} participants</small></article>)}{!visits.length&&<div className="empty">No sessions match this view.</div>}</section>}
  {page==='Damage & Loss Reports'&&<section className="records"><div className="section-heading"><div><h2>Incident follow-up</h2><p>Review reports and document equipment replacement or repair.</p></div><div className="incident-filters">{['Open','Resolved','All'].map(value=><button key={value} aria-pressed={reportFilter===value} className={reportFilter===value?'active':''} onClick={()=>setReportFilter(value)}>{value}</button>)}</div></div>{reports.map(r=><article className="record admin-report" key={r.id}><div>{manageButtons('reports',r)}<span className="badge">{r.status||'Open'} · {r.type}</span><h3>{r.facility}</h3><p>{r.details}</p><small>{r.name}{r.email&&' · '+r.email}{r.studentId&&' · '+r.studentId} · {formatDate(r.date)}</small>{r.resolution&&<p className="resolution"><strong>Resolution:</strong> {r.resolution}</p>}</div>{r.status!=='Resolved'&&<button className="secondary" onClick={()=>{setError('');setReview({kind:'reports',record:r})}}>Record resolution</button>}</article>)}{!reports.length&&<div className="empty">No incidents in this view.</div>}</section>}
  {page==='College organization'&&<AdminCollegeOrganization request={keyRequest}/>}
- {page==='College Documents'&&<section className="college-section"><h2>Department reference documents</h2><p className="source-note">Use the laboratory utilization form for instructor signatures and equipment inventory.</p><div className="document-list">{college.downloads.map(doc=><a key={doc.url} href={doc.url} download>{doc.name.startsWith('ACA-')?'HRM Laboratory Utilization Form':doc.name.replace('.docx','')}<span>Download Word document ↓</span></a>)}</div></section>}
+ {page==='College Documents'&&<AdminCollegeDocuments request={keyRequest}/>}
  <footer><span><CollegeText>Cristal e-College</CollegeText> · HM Laboratory Administration</span><span>Knowledge · Leadership · Humanity</span></footer></main></div>
  {editor&&<AdminRecordEditor editor={editor} facilities={data.facilities||[]} request={(path,options)=>request(key,path,options)} onSaved={saved=>{const {kind,record,action}=editor;setData(current=>({...current,[kind]:action==='delete'?current[kind].filter(row=>row.id!==record.id):record?.id?current[kind].map(row=>row.id===saved.id?saved:row):[...current[kind],saved]}));setUpdated(new Date());setNotice(action==='delete'?'Record deleted successfully.':'Record saved successfully.')}} onClose={()=>setEditor(null)}/>}
  {formPreview&&<AdminReservationForm key={formPreview.id} record={formPreview} request={keyRequest} formatDate={formatDate} onSaved={saved=>{setFormPreview(saved);setData(current=>({...current,reservations:current.reservations.map(row=>row.id===saved.id?saved:row)}));setUpdated(new Date())}} onClose={()=>{setFormPreview(null);setError("")}} onEdit={()=>{setEditor({kind:"reservations",record:formPreview});setFormPreview(null)}}/>}

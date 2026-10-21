@@ -135,6 +135,18 @@ describe('reservations',()=>{
   await expect(service.saveCollegeOrganization({groups:[{title:'Laboratory team',items:[{name:'Example Person',photo:'https://example.com/photo.jpg'}]}]})).rejects.toThrow('JPEG portrait');
   expect(await new AppService().collegeOrganization()).toEqual({groups:withHeadings});
  });
+ it('saves college document text for About CeC without erasing organization',async()=>{
+  expect(await service.collegeContent()).toEqual({sections:null});
+  const sections=[{title:'Vision Statement',paragraphs:['A renewed vision.'],source:'philosophy.docx'}];
+  expect(await service.saveCollegeContent({sections})).toEqual({sections});
+  const groups=[{title:'Laboratory team',items:[{name:'Example Person',photo:''}]}];
+  await service.saveCollegeOrganization({groups});
+  expect(await new AppService().collegeContent()).toEqual({sections});
+  expect(await new AppService().collegeOrganization()).toEqual({groups});
+  await expect(service.saveCollegeContent({sections:[{title:'Empty',paragraphs:[]}]})).rejects.toThrow('paragraph or list item');
+  await expect(service.saveCollegeContent({sections:[{title:'Vision Statement',paragraphs:['Valid']},{title:'vision statement',items:['Duplicate']}]})).rejects.toThrow('unique');
+  expect(await new AppService().collegeContent()).toEqual({sections});
+ });
  it('lets administrators manage instructor keys without granting administrator key access',async()=>{
   process.env.HM_ADMIN_KEY='test-super-key';
   try{

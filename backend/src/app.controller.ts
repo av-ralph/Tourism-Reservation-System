@@ -17,6 +17,10 @@ export class AppController {
  @Header('Cache-Control','no-store')
  @Get('api/organization') organization(){return this.appService.collegeOrganization();}
  @Header('Cache-Control','no-store')
+ @Get('api/college-content') collegeContent(){return this.appService.collegeContent();}
+ @Get('api/admin/college-content') async adminCollegeContent(@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return this.appService.collegeContent();}
+ @Patch('api/admin/college-content') async saveCollegeContent(@Body() body:unknown,@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return this.appService.saveCollegeContent(body);}
+ @Header('Cache-Control','no-store')
  @Get('api/admin/organization') async adminOrganization(@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return this.appService.collegeOrganization();}
  @Patch('api/admin/organization') async saveOrganization(@Body() body:unknown,@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return this.appService.saveCollegeOrganization(body);}
  @Get('api/facilities/:id/photo')
