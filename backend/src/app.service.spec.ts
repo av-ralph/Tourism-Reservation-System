@@ -55,6 +55,18 @@ describe('reservations',()=>{
   const another=await restarted.createForUser('reservations',{...booking,facility:'Cold Kitchen',instructor:'New Instructor Name'},owner);
   expect(another.instructorKeyId).toBe(instructor.id);
  });
+ it('books the selected instructor account even if its display name changed',async()=>{
+  await service.createAdminKey({name:'First Instructor',key:'FirstInstructor1!',role:'instructor'});
+  const second=await service.createAdminKey({name:'Second Instructor',key:'SecondInstructor1!',role:'instructor'});
+  expect(await service.listInstructors()).toContainEqual({id:second.id,name:'Second Instructor'});
+  await service.updateAdminProfile('Bearer SecondInstructor1!',{name:'Updated Second Instructor',email:'',photo:''});
+  const owner='11111111-1111-4111-8111-111111111111';
+  const reservation=await service.createForUser('reservations',{...booking,instructor:'Second Instructor',instructorKeyId:second.id},owner);
+  expect(reservation).toMatchObject({instructor:'Updated Second Instructor',instructorKeyId:second.id});
+  expect((await service.instructorRecords('Bearer SecondInstructor1!')).reservations).toHaveLength(1);
+  expect((await service.instructorRecords('Bearer FirstInstructor1!')).reservations).toHaveLength(0);
+  await expect(service.createForUser('reservations',{...booking,facility:'Cold Kitchen',instructorKeyId:'unknown'},owner)).rejects.toThrow('listed instructor');
+ });
  it('recovers a guest booking on another device with a private code',async()=>{
   await service.createAdminKey({name:'Instructor',key:'InstructorTest1!',role:'instructor'});
   const first='11111111-1111-4111-8111-111111111111',second='22222222-2222-4222-8222-222222222222';

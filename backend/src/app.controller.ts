@@ -6,6 +6,7 @@ export class AppController {
  @Get() getHello(){return this.appService.getHello();}
  @Get('api/records') records(@Headers('x-user-session') token?:string){return this.appService.userRecords(token);}
  @Get('api/facilities') facilities(){return this.appService.listFacilities();}
+ @Header('Cache-Control','no-store')
  @Get('api/instructors') instructors(){return this.appService.listInstructors();}
  @Header('Cache-Control','no-store')
  @Get('api/contact') contact(){return this.appService.publicContact();}

@@ -335,8 +335,10 @@ export class AppService {
    if(kind==='reservations'){if(raw.termsAccepted!==true)throw new BadRequestException('Please agree to the Terms and Conditions before booking.');r.termsAccepted='true';r.termsAcceptedAt=new Date().toISOString();r.termsVersion='hm-laboratory-2026-10-09';}
   }
   if(kind==='reservations'){
-   const selected=data.adminKeys.find(row=>row.role==='instructor'&&this.instructorName(data,row).toLowerCase()===r.instructor!.toLowerCase());
+   const selectedId=typeof raw.instructorKeyId==='string'?raw.instructorKeyId.trim():'';
+   const selected=requireInstructor&&selectedId?data.adminKeys.find(row=>row.role==='instructor'&&row.id===selectedId):data.adminKeys.find(row=>row.role==='instructor'&&this.instructorName(data,row).toLowerCase()===r.instructor!.toLowerCase());
    if(requireInstructor&&!selected)throw new BadRequestException('Choose a listed instructor before sending this request.');
+   if(selected)r.instructor=this.instructorName(data,selected);
    r.instructorKeyId=selected?.id||'';
   }
   if(!this.facilitiesFrom(data).some(f=>f.name===r.facility))throw new BadRequestException('Select a listed facility.');
