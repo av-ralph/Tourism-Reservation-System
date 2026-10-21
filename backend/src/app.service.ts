@@ -83,8 +83,7 @@ export class AppService {
  async saveCollegeOrganization(input:unknown){
   if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid college organization.');
   const groups=(input as Record<string,unknown>).groups;
-  if(!Array.isArray(groups)||groups.length<1||groups.length>20)throw new BadRequestException('Add between 1 and 20 organization groups.');
-  let people=0;
+  if(!Array.isArray(groups)||groups.length<1)throw new BadRequestException('Add at least one organization group.');
   const titles=new Set<string>();
   const cleaned=groups.map(group=>{
    if(!group||typeof group!=='object'||Array.isArray(group))throw new BadRequestException('Invalid organization group.');
@@ -93,8 +92,7 @@ export class AppService {
    if(titles.has(title.trim().toLowerCase()))throw new BadRequestException('Organization group names must be unique.');
    titles.add(title.trim().toLowerCase());
    const mayBeEmpty=['The Founders','Faculty and Staff'].includes(title.trim());
-   if(!Array.isArray(raw.items)||(!mayBeEmpty&&raw.items.length<1)||raw.items.length>30)throw new BadRequestException('Each group needs between 1 and 30 people, except The Founders and Faculty and Staff.');
-   people+=raw.items.length;
+   if(!Array.isArray(raw.items)||(!mayBeEmpty&&raw.items.length<1))throw new BadRequestException('Each group needs at least one person, except The Founders and Faculty and Staff.');
    const items=raw.items.map(item=>{
     if(!item||typeof item!=='object'||Array.isArray(item))throw new BadRequestException('Invalid organization person.');
     const person=item as Record<string,unknown>,name=person.name,personTitle=person.title,photo=person.photo;
@@ -105,7 +103,7 @@ export class AppService {
    });
    return {title:title.trim(),items};
   });
-  if(people>150||JSON.stringify(cleaned).length>850000)throw new BadRequestException('The organization list is too large.');
+  if(JSON.stringify(cleaned).length>3500000)throw new BadRequestException('The organization data is too large to save at once. Try smaller photos.');
   await this.storage.mutate(data=>{const old=data.organization.find(row=>row.id==='college-organization');data.organization=data.organization.filter(row=>row.id!=='college-organization');data.organization.push({id:'college-organization',content:JSON.stringify(cleaned),createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()});});
   return {groups:cleaned};
  }

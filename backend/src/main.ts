@@ -3,7 +3,7 @@ import { AppModule } from './app.module.js';
 import { configureCors } from './cors.js';
 async function bootstrap(){
  const app=await NestFactory.create<import('@nestjs/platform-express').NestExpressApplication>(AppModule);
- app.useBodyParser('json',{limit:'1mb'});
+ app.useBodyParser('json',{limit:'4mb'});
  configureCors(app);
  app.enableShutdownHooks();
  await app.listen(process.env.PORT??3001,process.env.VERCEL?'0.0.0.0':'127.0.0.1');

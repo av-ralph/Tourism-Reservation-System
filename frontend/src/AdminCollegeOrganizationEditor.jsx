@@ -15,8 +15,8 @@ export default function AdminCollegeOrganizationEditor({request}){
  function changed(){setNotice('');setError('')}
  function changeGroup(index,value){setGroups(current=>current.map((group,i)=>i===index?{...group,title:value}:group));changed()}
  function changePerson(groupIndex,personIndex,changes){setGroups(current=>current.map((group,i)=>i===groupIndex?{...group,items:group.items.map((person,j)=>j===personIndex?{...person,...changes}:person)}:group));changed()}
- function addGroup(){if(groups.length>=20){setError('You can add up to 20 groups.');return}setGroups(current=>[...current,{clientId:crypto.randomUUID(),title:'',items:[{name:'',title:'',photo:''}]}]);changed()}
- function addPerson(index){if(groups[index].items.length>=30||peopleCount>=150){setError('The organization list has reached its limit.');return}setGroups(current=>current.map((group,i)=>i===index?{...group,items:[...group.items,{name:'',title:'',photo:''}]}:group));changed()}
+ function addGroup(){setGroups(current=>[...current,{clientId:crypto.randomUUID(),title:'',items:[{name:'',title:'',photo:''}]}]);changed()}
+ function addPerson(index){setGroups(current=>current.map((group,i)=>i===index?{...group,items:[...group.items,{name:'',title:'',photo:''}]}:group));changed()}
  function removePerson(groupIndex,personIndex){setGroups(current=>current.map((group,i)=>i===groupIndex?{...group,items:group.items.filter((_,j)=>j!==personIndex)}:group));changed()}
  function removeGroup(index){setGroups(current=>current.filter((_,i)=>i!==index));changed()}
  function moveGroup(from,to){if(from===to||from<0||to<0||from>=groups.length||to>=groups.length)return;setGroups(current=>{const next=[...current],item=next.splice(from,1)[0];next.splice(to,0,item);return next});changed()}

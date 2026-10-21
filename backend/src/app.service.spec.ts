@@ -130,7 +130,7 @@ describe('reservations',()=>{
   expect(await new AppService().collegeOrganization()).toEqual({groups});
   const withHeadings=[{title:'The Founders',items:[]},...groups,{title:'Faculty and Staff',items:[]}];
   expect(await service.saveCollegeOrganization({groups:withHeadings})).toEqual({groups:withHeadings});
-  await expect(service.saveCollegeOrganization({groups:[{title:'Other group',items:[]}]})).rejects.toThrow('between 1 and 30 people');
+  await expect(service.saveCollegeOrganization({groups:[{title:'Other group',items:[]}]})).rejects.toThrow('at least one person');
   await expect(service.saveCollegeOrganization({groups:[{title:'',items:groups[0].items}]})).rejects.toThrow('group name');
   await expect(service.saveCollegeOrganization({groups:[{title:'Laboratory team',items:[{name:'Example Person',photo:'https://example.com/photo.jpg'}]}]})).rejects.toThrow('JPEG portrait');
   expect(await new AppService().collegeOrganization()).toEqual({groups:withHeadings});
@@ -138,6 +138,10 @@ describe('reservations',()=>{
   expect(await service.saveCollegeOrganization({groups:reordered})).toEqual({groups:reordered});
   expect(await new AppService().collegeOrganization()).toEqual({groups:reordered});
   await expect(service.saveCollegeOrganization({groups:[{title:'Team',items:[{name:'Example Person',title:'x'.repeat(161),photo:''}]}]})).rejects.toThrow('title');
+  const manyGroups=Array.from({length:21},(_,index)=>({title:`Group ${index+1}`,items:[{name:'Person',photo:''}]}));
+  expect((await service.saveCollegeOrganization({groups:manyGroups})).groups).toHaveLength(21);
+  const manyPeople=[{title:'Large group',items:Array.from({length:151},(_,index)=>({name:`Person ${index+1}`,photo:''}))}];
+  expect((await service.saveCollegeOrganization({groups:manyPeople})).groups[0].items).toHaveLength(151);
  });
  it('saves college document text for About CeC without erasing organization',async()=>{
   expect(await service.collegeContent()).toEqual({sections:null});
