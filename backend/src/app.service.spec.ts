@@ -43,6 +43,33 @@ describe('reservations',()=>{
    await expect(service.authorizeAdmin('Bearer StaffCustom1!')).rejects.toThrow('valid administrator');
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
+ it('lets administrators and instructors change their own passwords without losing their profiles',async()=>{
+  process.env.HM_ADMIN_KEY='test-super-key';
+  try{
+   const admin=await service.createStaffKey({name:'Office Admin',key:'OfficeAdmin1!',role:'admin'},'Bearer test-super-key');
+   const instructor=await service.createStaffKey({name:'Faculty Member',key:'FacultyMember1!',role:'instructor'},'Bearer test-super-key');
+   await service.updateAdminProfile('Bearer OfficeAdmin1!',{name:'Office Manager',email:'office@example.com',photo:''});
+   await service.updateAdminProfile('Bearer FacultyMember1!',{name:'Faculty Lead',email:'faculty@example.com',photo:''});
+   await expect(service.changeStaffKey('Bearer OfficeAdmin1!',{currentKey:'wrong',newKey:'NewOfficeAdmin2!'})).rejects.toThrow('current access key');
+   await expect(service.changeStaffKey('Bearer OfficeAdmin1!',{currentKey:'OfficeAdmin1!',newKey:'weak'})).rejects.toThrow('10–32 characters');
+   await expect(service.changeStaffKey('Bearer test-super-key',{currentKey:'test-super-key',newKey:'NewSuperAdmin1!'})).rejects.toThrow('server settings');
+   await service.changeStaffKey('Bearer OfficeAdmin1!',{currentKey:'OfficeAdmin1!',newKey:'NewOfficeAdmin2!'});
+   await service.changeStaffKey('Bearer FacultyMember1!',{currentKey:'FacultyMember1!',newKey:'NewFacultyMember2!'});
+   const restarted=new AppService();
+   await expect(restarted.authorizeAdmin('Bearer OfficeAdmin1!')).rejects.toThrow('valid administrator');
+   await expect(restarted.authorizeInstructor('Bearer FacultyMember1!')).rejects.toThrow('valid administrator');
+   expect(await restarted.authorizeAdmin('Bearer NewOfficeAdmin2!')).toBe('admin');
+   expect(await restarted.authorizeInstructor('Bearer NewFacultyMember2!')).toBe('instructor');
+   expect(await restarted.adminIdentity('Bearer NewOfficeAdmin2!')).toMatchObject({adminName:'Office Manager',adminEmail:'office@example.com'});
+   expect(await restarted.adminIdentity('Bearer NewFacultyMember2!')).toMatchObject({adminName:'Faculty Lead',adminEmail:'faculty@example.com'});
+   const keys=await restarted.listStaffKeys('Bearer test-super-key');
+   expect(keys.find(row=>row.id===admin.id)?.key).toBe('NewOfficeAdmin2!');
+   expect(keys.find(row=>row.id===instructor.id)?.key).toBe('NewFacultyMember2!');
+   const stored=await import('node:fs/promises').then(fs=>fs.readFile(join(dir,'records.json'),'utf8'));
+   expect(stored).not.toContain('NewOfficeAdmin2!');
+   expect(stored).not.toContain('NewFacultyMember2!');
+  }finally{delete process.env.HM_ADMIN_KEY;}
+ });
  it('persists records across restart',async()=>{await service.create('reservations',booking);expect((await new AppService().records()).reservations).toHaveLength(1);});
  it('shows a changed instructor display name in staff, student, and reservation views',async()=>{
   const instructor=await service.createAdminKey({name:'Instructor',key:'InstructorTest1!',role:'instructor'});

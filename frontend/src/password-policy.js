@@ -1,4 +1,4 @@
-export const passwordHint = '10–32 characters: uppercase, lowercase, number, and symbol (! @ # $ % ^ & * _ -).'
+export const passwordHint = 'Use 10–32 characters with an uppercase letter, a lowercase letter, a number, and a symbol (! @ # $ % ^ & * _ -).'
 
 export function passwordIssue(value) {
  if (value.length < 10 || value.length > 32) return 'Use 10–32 characters.'

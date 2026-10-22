@@ -15,27 +15,27 @@ export default function AccessKeyForm({ request, onChanged }) {
   setError(''); setNotice('')
   const issue = passwordIssue(newKey)
   if (issue) { setError(issue); return }
-  if (newKey !== confirmKey) { setError('The new keys do not match.'); return }
-  if (newKey === currentKey) { setError('Choose a different access key.'); return }
+  if (newKey !== confirmKey) { setError('The new passwords do not match.'); return }
+  if (newKey === currentKey) { setError('Choose a different password.'); return }
   setBusy(true)
   try {
    await request('access-key', { method: 'PATCH', body: JSON.stringify({ currentKey, newKey }) })
    onChanged(newKey)
    form.reset()
    setShow(false)
-   setNotice('Access key updated. Use the new key the next time you sign in.')
+   setNotice('Password updated. Use your new password the next time you sign in.')
   } catch (failure) { setError(failure.message) }
   finally { setBusy(false) }
  }
 
- return <section className="panel staff-password-panel"><h2>Change access key</h2><p>Choose a password you can remember. Your current key stops working as soon as this change is saved.</p>
+ return <section id="staff-password" className="panel staff-password-panel"><h2>Change password</h2><p>Change the password you use to sign in. Your current password stops working as soon as this change is saved.</p>
   <form onSubmit={change}><fieldset disabled={busy}>
-   <label>Current access key<input name="currentKey" type={show ? 'text' : 'password'} required autoComplete="current-password" maxLength={256} /></label>
-   <label>New access key<input name="newKey" type={show ? 'text' : 'password'} required minLength={10} maxLength={32} autoComplete="new-password" aria-describedby="staff-password-hint" /></label>
+   <label>Current password<input name="currentKey" type={show ? 'text' : 'password'} required autoComplete="current-password" maxLength={256} /></label>
+   <label>New password<input name="newKey" type={show ? 'text' : 'password'} required minLength={10} maxLength={32} autoComplete="new-password" aria-describedby="staff-password-hint" /></label>
    <small id="staff-password-hint">{passwordHint}</small>
-   <label>Confirm new access key<input name="confirmKey" type={show ? 'text' : 'password'} required minLength={10} maxLength={32} autoComplete="new-password" /></label>
-   <label className="staff-password-reveal"><input type="checkbox" checked={show} onChange={event => setShow(event.target.checked)} /> Show access keys</label>
-   <button className="primary" disabled={busy}>{busy ? 'Updating…' : 'Update access key'}</button>
+   <label>Confirm new password<input name="confirmKey" type={show ? 'text' : 'password'} required minLength={10} maxLength={32} autoComplete="new-password" /></label>
+   <label className="staff-password-reveal"><input type="checkbox" checked={show} onChange={event => setShow(event.target.checked)} /> Show passwords</label>
+   <button className="primary" disabled={busy}>{busy ? 'Updating…' : 'Update password'}</button>
   </fieldset></form>
   {error && <div className="alert" role="alert">{error}</div>}{notice && <div className="notice" role="status">{notice}</div>}
  </section>
