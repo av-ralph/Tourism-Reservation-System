@@ -34,7 +34,3 @@
 .staff-password-panel .staff-password-reveal input{width:auto}
 .staff-password-panel .primary{justify-self:start}
 .admin-shell .admin-override-notice{margin:16px 0;padding:12px 15px;border:1px solid #edc4a9;border-left:4px solid #e9612a;border-radius:8px;background:#fff5ed;color:#694125;line-height:1.5;font-size:13px}
-.admin-report .report-actions{display:flex;flex-wrap:wrap;gap:10px}
-.admin-report .report-usage{font-weight:600;margin:4px 0}
-.admin-report .report-items{margin:6px 0;padding-left:20px}
-.admin-report .report-items span{font-size:12px;font-weight:700;color:var(--admin-orange,#e9612a);margin-left:4px}

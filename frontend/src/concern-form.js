@@ -1,6 +1,6 @@
 import { unzipSync, zipSync, strFromU8, strToU8 } from 'fflate'
 import {escapeXml,dateLabel,uniqueRowIds} from './reservation-form.js'
-const timeLabel=value=>{
+export const timeLabel=value=>{
   const match=/^(\d{2}):(\d{2})$/.exec(value||'')
   if(!match)return ''
   const hour=Number(match[1])

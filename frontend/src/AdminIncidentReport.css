@@ -1,0 +1,54 @@
+.incident-list{display:grid;gap:16px;margin-top:20px}
+.incident-card{border:1px solid #dfe5ec;border-left:4px solid #e9612a;border-radius:10px;padding:20px 22px;background:#fff;display:grid;gap:18px;min-width:0}
+.incident-card.is-resolved{border-left-color:#5f9a72}
+.incident-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap}
+.incident-title{min-width:0;flex:1 1 280px}
+.incident-tags{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px}
+.incident-status,.incident-type{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;line-height:1.4}
+.incident-status{background:#fff0e2;color:#a54b26}
+.incident-status.resolved{background:#edf4ee;color:#42684e}
+.incident-type{background:#eef2f7;color:#3d5673}
+.incident-filed{font-size:12px;color:#607286}
+.incident-card h3{margin:0;font-size:19px;letter-spacing:-.3px;color:#193352}
+.incident-reporter{margin:6px 0 0;font-size:13px;color:#607286;overflow-wrap:anywhere}
+.incident-reporter strong{color:#193352}
+.incident-reporter a{color:inherit}
+.incident-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:10px}
+.incident-actions>button{white-space:nowrap}
+.incident-manage{display:flex;gap:14px;padding-left:6px}
+.incident-delete{color:#b3412a}
+.incident-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px 20px;margin:0;padding:14px 16px;background:#f7f9fb;border-radius:8px}
+.incident-details div{min-width:0}
+.incident-details .wide{grid-column:1/-1}
+.incident-details dt{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#7a8a9d}
+.incident-details dd{margin:3px 0 0;font-size:14px;color:#193352;overflow-wrap:anywhere}
+.incident-items-wrap{overflow-x:auto}
+/* Phone layouts restack admin tables as cards; three short columns read better as a table. */
+.admin-shell .incident-card table.incident-items{display:table}
+.admin-shell .incident-card .incident-items caption{display:table-caption}
+.admin-shell .incident-card .incident-items thead{display:table-header-group}
+.admin-shell .incident-card .incident-items tbody{display:table-row-group}
+.admin-shell .incident-card .incident-items tr{display:table-row;border:0;padding:0;margin:0;background:none;box-shadow:none}
+.admin-shell .incident-card .incident-items th,.admin-shell .incident-card .incident-items td{display:table-cell}
+.admin-shell .incident-card .incident-items td::before{content:none}
+.incident-items{width:100%;border-collapse:collapse;font-size:14px}
+.incident-items caption{text-align:left;font-size:13px;font-weight:700;color:#193352;padding-bottom:8px}
+.incident-card .incident-items th{background:none;height:auto;text-align:left;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#7a8a9d;padding:8px 10px;border-bottom:1px solid #dfe5ec}
+.incident-card .incident-items td{background:none;height:auto;line-height:1.4;padding:9px 10px;border-bottom:1px solid #eef0f4;color:#193352;overflow-wrap:anywhere}
+.incident-items th:first-child,.incident-items td:first-child{width:56px;text-align:center}
+.incident-items th:last-child,.incident-items td:last-child{width:120px}
+.incident-condition{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px}
+.incident-condition.broke{background:#fde8e4;color:#a33a24}
+.incident-condition.lost{background:#efeaf8;color:#5a428a}
+.incident-condition.damaged{background:#fff0e2;color:#a54b26}
+.incident-note h4{margin:0 0 4px;font-size:13px;color:#193352}
+.incident-note h4 span{font-weight:400;color:#607286}
+.incident-note p{margin:0;font-size:14px;line-height:1.7;color:#3f5368;overflow-wrap:anywhere;white-space:pre-line}
+.incident-resolution{padding:12px 14px;border-radius:8px;background:#edf4ee}
+.incident-filters button .count{margin-left:6px;font-weight:700}
+@media (max-width:640px){
+ .incident-card{padding:16px}
+ .incident-actions{justify-content:flex-start;width:100%}
+ .incident-actions>button{flex:1 1 auto}
+ .incident-manage{width:100%;padding-left:0}
+}
