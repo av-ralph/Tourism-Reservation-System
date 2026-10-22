@@ -119,7 +119,7 @@ async function renderSignature(value,label='instructor'){
 let templatePromise
 export async function downloadReservationForm(reservation) {
   try {
-    templatePromise ||= fetch('/documents/reservation-template.docx?v=20').then(async response => {
+    templatePromise ||= fetch('/documents/reservation-template.docx?v=21').then(async response => {
       if (!response.ok) throw new Error('The form template could not be loaded.')
       return new Uint8Array(await response.arrayBuffer())
     }).catch(error=>{templatePromise=undefined;throw error})
