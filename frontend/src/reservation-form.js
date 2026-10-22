@@ -2,11 +2,11 @@ import { unzipSync, zipSync, strFromU8, strToU8 } from 'fflate'
 import {drawSignature,fitSignatureStrokes,signatureIsMeaningful,SIGNATURE_WIDTH,SIGNATURE_HEIGHT} from './signature-utils.js'
 import {extractSignatureImage} from './signature-image.js'
 // Strip characters that XML 1.0 cannot represent, including pasted control characters.
-const escapeXml = value => Array.from(String(value ?? '')).filter(char => {
+export const escapeXml = value => Array.from(String(value ?? '')).filter(char => {
   const code=char.codePointAt(0)
   return code===9||code===10||code===13||(code>=32&&code<=0xd7ff)||(code>=0xe000&&code<=0xfffd)||(code>=0x10000&&code<=0x10ffff)
 }).join('').replace(/[&<>"'{}]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;','{':'&#123;','}':'&#125;'}[char]))
-const dateLabel = value => {
+export const dateLabel = value => {
   if(!value)return ''
   const date=new Date(value.length===10?value+'T00:00:00+08:00':value)
   return Number.isNaN(date.getTime())?'':date.toLocaleDateString('en-PH',{timeZone:'Asia/Manila',year:'numeric',month:'short',day:'numeric'})
@@ -30,7 +30,7 @@ export function reservationItems(reservation) {
 export function reservationLaboratoryEntries(reservation){
  try{const entries=JSON.parse(reservation.laboratoryEntries||'[]');return Array.isArray(entries)?entries:[]}catch{return []}
 }
-function uniqueRowIds(source,index){let id=0;return source.replace(/w14:paraId="[0-9A-Fa-f]{8}"/g,()=>`w14:paraId="${(0xF0000000+index*256+id++).toString(16).toUpperCase()}"`)}
+export function uniqueRowIds(source,index){let id=0;return source.replace(/w14:paraId="[0-9A-Fa-f]{8}"/g,()=>`w14:paraId="${(0xF0000000+index*256+id++).toString(16).toUpperCase()}"`)}
 export function reservationArea(facility) {
   const name=String(facility||'').trim().toLowerCase()
   if(name==='bar area')return 'BAR'

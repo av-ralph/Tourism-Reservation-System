@@ -41,7 +41,7 @@ try{
  assert.equal((await call('records','GET',undefined,user)).reservations[0].status,'Cancelled');assert.equal((await call('schedule')).length,0);
  const rejected=await call('reservations','POST',booking,user,201);await call('instructor/reservations/'+rejected.id+'/review','PATCH',{decision:'Declined',note:'Alternative requested'},instructor);
  const released=await call('reservations','POST',booking,user,201);await call('reservations/'+released.id,'DELETE',undefined,user);
- const report=await call('reports','POST',{facility:kitchen.name,name:'Workflow Student',email:'workflow@example.com',studentId:'Visitor',date:'2026-10-09',type:'Damage',details:'Test damaged item'},user,201);
+ const report=await call('reports','POST',{facility:kitchen.name,name:'Workflow Student',email:'workflow@example.com',studentId:'Visitor',date:'2026-10-09',start:'08:00',end:'10:00',subject:'Workflow Subject',purpose:'Workflow practice',reportItems:JSON.stringify([{quantity:1,description:'Test tray',condition:'Damaged'}]),details:'Test damaged item'},user,201);
  await call('admin/reports/'+report.id,'PATCH',{note:'Test replacement arranged'},admin);assert.equal((await call('records','GET',undefined,user)).reports[0].status,'Resolved');
  await call('utilization','POST',{...booking,studentId:'Visitor',date:'2026-10-08',attendees:'20'},user,201);
  assert.equal((await call('records','GET',undefined,user)).utilization.length,1);

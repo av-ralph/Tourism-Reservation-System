@@ -265,7 +265,7 @@ export class AppService {
  userToken(token?:string){if(!token||!/^[-a-zA-Z0-9]{36}$/.test(token))throw new UnauthorizedException('User session is missing.');return token;}
  async userRecords(token?:string){const owner=this.userToken(token),data=await this.storage.read();return {reservations:data.reservations.filter(r=>this.ownsReservation(r,owner)).map(row=>this.publicReservation(row,data)),reports:data.reports.filter(r=>r.owner===owner),utilization:data.utilization.filter(r=>r.owner===owner)};}
  async schedule(){const data=await this.storage.read();return data.reservations.filter(row=>!['Cancelled','Rejected'].includes(this.reservationStatus(row)!)).map(row=>({id:row.id,facility:row.facility,date:row.date,start:row.start,end:row.end,status:this.reservationStatus(row)}));}
- createForUser(kind:'reservations'|'reports'|'utilization',input:unknown,token?:string){const owner=this.userToken(token);return this.create(kind,input,owner,kind==='reservations');}
+ createForUser(kind:'reservations'|'reports'|'utilization',input:unknown,token?:string){const owner=this.userToken(token);return this.create(kind,input,owner,kind!=='utilization');}
  cancelForUser(id:string,token?:string){const owner=this.userToken(token);return this.storage.mutate(data=>{const r=data.reservations.find(r=>r.id===id);if(!r)throw new NotFoundException('Reservation not found.');if(!this.ownsReservation(r,owner))throw new ForbiddenException('You can only cancel your own reservations.');if(['Rejected','Cancelled'].includes(this.reservationStatus(r)!))throw new BadRequestException('This request is already closed.');r.status='Cancelled';return {success:true};});}
  recoverReservation(input:unknown,token?:string){const owner=this.userToken(token);if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Enter a booking reference and private recovery code.');const {id,code}=input as Record<string,unknown>;if(typeof id!=='string'||typeof code!=='string'||!/^[0-9a-f-]{36}$/i.test(id)||!/^[0-9a-f]{32}$/i.test(code))throw new BadRequestException('Enter a valid booking reference and recovery code.');return this.storage.mutate(data=>{const row=data.reservations.find(reservation=>reservation.id===id);const hash=createHash('sha256').update(code.toLowerCase()).digest('hex');if(!row?.recoveryHash||!timingSafeEqual(Buffer.from(row.recoveryHash,'hex'),Buffer.from(hash,'hex')))throw new NotFoundException('Booking reference or recovery code not found.');let owners:string[];try{owners=JSON.parse(row.owners||'[]')}catch{owners=[]}if(!this.ownsReservation(row,owner)){owners.push(owner);row.owners=JSON.stringify(owners)}return this.publicReservation(row)});}
 
@@ -353,7 +353,10 @@ export class AppService {
 
  private validateRecord(kind:'reservations'|'reports'|'utilization',input:unknown,data:Store,excludeId?:string,requireInstructor=false):Row{
   if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid request.');
-  const raw=input as Record<string,unknown>,r:Row={};
+  let raw=input as Record<string,unknown>;const r:Row={};
+  // Requester concern reports carry the acknowledgement form fields; older and admin-entered reports may not.
+  const reportItems=kind==='reports'?this.reportItems(raw.reportItems,requireInstructor&&!excludeId):undefined;
+  if(reportItems)raw={...raw,type:reportItems.every(item=>item.condition==='Lost')?'Loss':'Damage'};
   const closedEdit=excludeId&&data.reservations.some(x=>x.id===excludeId&&['Cancelled','Rejected'].includes(x.status!));
   const keys=['facility','name','date',...(kind==='reports'?['type','details']:['start','end','purpose']),...(kind==='utilization'?['attendees']:[]),...(kind==='reservations'?['subject','instructor','equipment']:[])];
   for(const k of keys){const v=raw[k];if(typeof v!=='string'||!v.trim()||v.length>(k==='equipment'?100000:k==='details'?2000:k==='purpose'?1000:100))throw new BadRequestException('Please provide a valid '+k+'.');r[k]=v.trim();}
@@ -388,8 +391,28 @@ export class AppService {
    }
   }
   if(kind==='reports'&&!['Damage','Loss'].includes(r.type!))throw new BadRequestException('Invalid report type.');
+  if(kind==='reports'){
+   const complete=requireInstructor&&!excludeId;
+   if(reportItems)r.reportItems=JSON.stringify(reportItems);
+   for(const [k,max] of [['subject',80],['purpose',1000],['instructor',100]] as const){const v=raw[k];if(v===undefined||v===''){if(complete&&k!=='instructor')throw new BadRequestException('Please provide a valid '+k+'.');continue;}if(typeof v!=='string'||!v.trim()||v.length>max)throw new BadRequestException('Please provide a valid '+k+'.');r[k]=v.trim();}
+   if(complete||raw.start!==undefined||raw.end!==undefined){if(![raw.start,raw.end].every(t=>typeof t==='string'&&/^([01]\d|2[0-3]):[0-5]\d$/.test(t))||(raw.end as string)<=(raw.start as string))throw new BadRequestException('End time must be after start time.');r.start=raw.start as string;r.end=raw.end as string;}
+  }
   if(kind==='utilization'&&(!/^\d+$/.test(r.attendees!)||Number(r.attendees)<1||Number(r.attendees)>500))throw new BadRequestException('Participants must be between 1 and 500.');
   return r;
+ }
+ private reportItems(value:unknown,required:boolean){
+  if(value===undefined||value===''){if(required)throw new BadRequestException('List at least one damaged or lost item.');return undefined;}
+  let items:unknown=value;
+  if(typeof value==='string'){try{items=JSON.parse(value);}catch{throw new BadRequestException('List valid damaged or lost items.');}}
+  if(!Array.isArray(items)||!items.length||items.length>30)throw new BadRequestException('List between 1 and 30 damaged or lost items.');
+  return items.map((item,index)=>{
+   const {quantity,description,condition}=(item&&typeof item==='object'?item:{}) as Record<string,unknown>;
+   const count=typeof quantity==='string'&&/^\d+$/.test(quantity.trim())?Number(quantity):quantity;
+   if(!Number.isSafeInteger(count)||(count as number)<1||(count as number)>999)throw new BadRequestException(`Item ${index+1}: quantity must be between 1 and 999.`);
+   if(typeof description!=='string'||!description.trim()||description.trim().length>200)throw new BadRequestException(`Item ${index+1}: describe the item in 200 characters or fewer.`);
+   if(!['Broke','Lost','Damaged'].includes(condition as string))throw new BadRequestException(`Item ${index+1}: choose Broke, Lost or Damaged.`);
+   return {quantity:count as number,description:description.trim(),condition:condition as string};
+  });
  }
  create(kind:'reservations'|'reports'|'utilization',input:unknown,owner?:string,requireInstructor=false){return this.storage.mutate(data=>{
   const r=this.validateRecord(kind,input,data,undefined,requireInstructor);
