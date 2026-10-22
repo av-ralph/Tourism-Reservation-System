@@ -16,7 +16,7 @@ export function removeSignatureBackground(pixels,width,height){
   const brightness=(pixels[index]+pixels[index+1]+pixels[index+2])/3
   const contrast=transparent?235-brightness:background-brightness
   const opacity=alpha*Math.max(0,Math.min(1,(contrast-12)/60))
-  pixels[index]=20;pixels[index+1]=46;pixels[index+2]=87;pixels[index+3]=Math.round(opacity*255)
+  pixels[index]=37;pixels[index+1]=132;pixels[index+2]=196;pixels[index+3]=Math.round(opacity*255)
   if(opacity>.3){ink++;left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y)}
  }
  if(ink<40||right-left<12||bottom-top<3)throw new Error('No clear signature was found. Upload a close, well-lit image of your signature.')

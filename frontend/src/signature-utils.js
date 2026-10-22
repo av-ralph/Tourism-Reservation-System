@@ -1,6 +1,20 @@
 export const SIGNATURE_WIDTH=600
 export const SIGNATURE_HEIGHT=180
 
+// Saved pad coordinates describe the whole pad, even when the signer used only
+// a small corner. Fit the actual ink before placing it on the printed form.
+export function fitSignatureStrokes(strokes){
+ const points=strokes.flat()
+ if(!points.length)return strokes
+ const xs=points.map(point=>point[0]),ys=points.map(point=>point[1])
+ const left=Math.min(...xs),top=Math.min(...ys)
+ const width=Math.max(1,Math.max(...xs)-left),height=Math.max(1,Math.max(...ys)-top)
+ const inset=12
+ const scale=Math.min((SIGNATURE_WIDTH-inset*2)/width,(SIGNATURE_HEIGHT-inset*2)/height)
+ const offsetX=(SIGNATURE_WIDTH-width*scale)/2,offsetY=(SIGNATURE_HEIGHT-height*scale)/2
+ return strokes.map(stroke=>stroke.map(([x,y])=>[(x-left)*scale+offsetX,(y-top)*scale+offsetY]))
+}
+
 export function signatureIsMeaningful(strokes){
  if(strokes?.type==='image')return typeof strokes.data==='string'&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(strokes.data)&&strokes.data.length>150&&strokes.data.length<=700000
  if(!Array.isArray(strokes))return false
@@ -39,7 +53,7 @@ export function signaturePath(stroke){
 
 export function drawSignature(context,strokes){
  context.clearRect(0,0,SIGNATURE_WIDTH,SIGNATURE_HEIGHT)
- context.strokeStyle='#142e57';context.lineWidth=3.2;context.lineCap='round';context.lineJoin='round'
+ context.strokeStyle='#2584c4';context.lineWidth=3.2;context.lineCap='round';context.lineJoin='round'
  for(const stroke of strokes){
   const points=smoothSignaturePoints(stroke)
   if(points.length<2)continue

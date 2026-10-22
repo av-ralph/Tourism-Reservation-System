@@ -1,5 +1,11 @@
 import assert from 'node:assert/strict'
 import {removeSignatureBackground} from '../src/signature-image.js'
+import {fitSignatureStrokes,SIGNATURE_WIDTH,SIGNATURE_HEIGHT} from '../src/signature-utils.js'
+
+const smallStrokes=[[[40,35],[70,43],[130,45]],[[55,52],[95,50]]]
+const fitted=fitSignatureStrokes(smallStrokes).flat()
+assert(Math.max(...fitted.map(point=>point[0]))-Math.min(...fitted.map(point=>point[0]))>400,'a small pad signature fills the form signature area')
+assert(fitted.every(([x,y])=>x>=0&&x<=SIGNATURE_WIDTH&&y>=0&&y<=SIGNATURE_HEIGHT),'fitted ink stays inside the image')
 
 function sample(background,alpha=255){
  const width=80,height=30,pixels=new Uint8ClampedArray(width*height*4)

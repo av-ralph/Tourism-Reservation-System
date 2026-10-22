@@ -1,5 +1,5 @@
 import { unzipSync, zipSync, strFromU8, strToU8 } from 'fflate'
-import {drawSignature,signatureIsMeaningful,SIGNATURE_WIDTH,SIGNATURE_HEIGHT} from './signature-utils.js'
+import {drawSignature,fitSignatureStrokes,signatureIsMeaningful,SIGNATURE_WIDTH,SIGNATURE_HEIGHT} from './signature-utils.js'
 import {extractSignatureImage} from './signature-image.js'
 // Strip characters that XML 1.0 cannot represent, including pasted control characters.
 const escapeXml = value => Array.from(String(value ?? '')).filter(char => {
@@ -112,14 +112,14 @@ async function renderSignature(value,label='instructor'){
   }
   if(!Array.isArray(strokes)||!strokes.every(stroke=>Array.isArray(stroke)&&stroke.every(point=>Array.isArray(point)&&point.length===2&&point.every(Number.isFinite)))||!signatureIsMeaningful(strokes))throw new Error(`The saved ${label} signature is invalid. Please contact the laboratory office.`)
   const canvas=document.createElement('canvas');canvas.width=SIGNATURE_WIDTH;canvas.height=SIGNATURE_HEIGHT
-  drawSignature(canvas.getContext('2d'),strokes)
+  drawSignature(canvas.getContext('2d'),fitSignatureStrokes(strokes))
   const base64=canvas.toDataURL('image/png').split(',')[1]
   return Uint8Array.from(atob(base64),char=>char.charCodeAt(0))
 }
 let templatePromise
 export async function downloadReservationForm(reservation) {
   try {
-    templatePromise ||= fetch('/documents/reservation-template.docx?v=19').then(async response => {
+    templatePromise ||= fetch('/documents/reservation-template.docx?v=20').then(async response => {
       if (!response.ok) throw new Error('The form template could not be loaded.')
       return new Uint8Array(await response.arrayBuffer())
     }).catch(error=>{templatePromise=undefined;throw error})
