@@ -60,12 +60,14 @@ export function fillReservationForm(template, reservation, signatureImage, admin
     return Object.entries(values).reduce((result,[key,value])=>result.replaceAll(`{{${key}}}`,()=>escapeXml(value)),uniqueRowIds(row,i))
   }).join(''))
   const checkedArea=reservationArea(reservation.facility)
-  for(const area of ['BAR','DINING','FRONT_OFFICE','HOT_KITCHEN','COLD_KITCHEN','LAUNDRY','MINI_FUNCTION','HARMONIA','LUNARA','COMPUTER'])xml=xml.replaceAll(`{{CHECK_${area}}}`,()=>area===checkedArea?'☒':'☐')
+  for(const area of ['BAR','DINING','FRONT_OFFICE','HOT_KITCHEN','COLD_KITCHEN','LAUNDRY','MINI_FUNCTION','HARMONIA','LUNARA','COMPUTER'])xml=xml.replaceAll(`{{CHECK_${area}}}`,()=>area===checkedArea?'☑':'☐')
   const values = {
     FILED_DATE:dateLabel(reservation.createdAt), USAGE_DATE:dateLabel(reservation.date),
     SUBJECT:reservation.subject, USAGE_TIME:[reservation.start,reservation.end].filter(Boolean).join(' – '),
-    PURPOSE:reservation.purpose, FACILITY:reservation.facility,
-    CONTACT_DETAILS:`Requested by: ${reservation.name||''}\nEmail: ${reservation.email||''}${reservation.studentId ? ' | ID: '+reservation.studentId : ''}${reservation.adminOverride==='true'?'\nInstructor review waived by administrator; reason recorded with the booking.':''}`,
+    PURPOSE:reservation.purpose,
+    REQUESTER_NAME:reservation.name,
+    REQUESTER_EMAIL:[reservation.email,reservation.studentId ? 'ID: '+reservation.studentId : ''].filter(Boolean).join(' | '),
+    CONTACT_DETAILS:reservation.adminOverride==='true'?'Instructor review waived by administrator; reason recorded with the booking.':'',
     SIGNED_DATE:signatureImage?dateLabel(reservation.instructorReviewedAt):'__________________',
     ADMIN_SIGNED_DATE:adminSignatureImage?dateLabel(reservation.adminReviewedAt):'__________________',
   }
@@ -117,7 +119,7 @@ async function renderSignature(value,label='instructor'){
 let templatePromise
 export async function downloadReservationForm(reservation) {
   try {
-    templatePromise ||= fetch('/documents/reservation-template.docx?v=12').then(async response => {
+    templatePromise ||= fetch('/documents/reservation-template.docx?v=19').then(async response => {
       if (!response.ok) throw new Error('The form template could not be loaded.')
       return new Uint8Array(await response.arrayBuffer())
     }).catch(error=>{templatePromise=undefined;throw error})
