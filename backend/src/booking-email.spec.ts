@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import {sendBookingEmail} from './booking-email.js';
+import {createBookingEmail} from './booking-email-template.js';
 
 vi.mock('nodemailer',()=>({default:{createTransport:vi.fn()}}));
 
@@ -22,7 +23,24 @@ describe('booking status email',()=>{
   expect(payload.text).toContain('Space unavailable');
   expect(payload.text).toContain(booking.id);
   expect(payload.text).not.toContain('recovery code');
+  expect(payload.html).toContain('https://hmreservation.vercel.app/cec.png');
+  expect(payload.html).toContain('https://hmreservation.vercel.app/hm-logo.webp');
+  expect(payload.html).toContain('Space unavailable');
   expect(close).toHaveBeenCalled();
+ });
+ it('uses the correct status and safely renders student supplied details for every decision',()=>{
+  const unsafe={...booking,name:'<Student & Co>',facility:'Hot <Kitchen>',reviewNote:'Use <another> space'};
+  for(const event of ['instructor-approved','instructor-declined','admin-approved','admin-rejected'] as const){
+   const email=createBookingEmail(unsafe,event);
+   expect(email.html).toContain('&lt;Student &amp; Co&gt;');
+   expect(email.html).toContain('Hot &lt;Kitchen&gt;');
+   expect(email.html).not.toContain('<Student & Co>');
+   expect(email.html).not.toContain('recovery code');
+   expect(email.text).toContain(booking.id);
+  }
+  expect(createBookingEmail(unsafe,'instructor-approved').html).toContain('Pending final approval');
+  expect(createBookingEmail(unsafe,'admin-approved').html).toContain('download your completed utilization form');
+  expect(createBookingEmail(unsafe,'admin-rejected').html).toContain('Use &lt;another&gt; space');
  });
  it('reports delivery failure without throwing',async()=>{
   process.env.GMAIL_SMTP_USER='sender@gmail.com';process.env.GMAIL_SMTP_APP_PASSWORD='test-app-password';
