@@ -61,7 +61,7 @@ export function createBookingEmail(row: Row, event: BookingEmailEvent) {
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
 <td width="62" style="vertical-align:middle"><img src="${siteUrl}cec.png" alt="Cristal e-College seal" width="54" height="54" style="display:block;width:54px;height:54px"></td>
 <td style="vertical-align:middle;color:#ffffff;font-size:17px;font-weight:700;line-height:1.3">Cristal e-College<br><span style="color:#d7e5f3;font-size:12px;font-weight:400;letter-spacing:.04em">HOSPITALITY MANAGEMENT LABORATORY</span></td>
-<td width="62" align="right" style="vertical-align:middle"><img src="${siteUrl}hm-logo.webp" alt="HM Hospitality Management logo" width="54" height="54" style="display:block;width:54px;height:54px"></td>
+<td width="62" align="right" style="vertical-align:middle"><img src="${siteUrl}hm-logo.webp" alt="HM Hospitality Management logo" width="54" height="54" style="display:block;width:54px;height:54px;background:#ffffff;border-radius:50%;padding:4px"></td>
 </tr></table></td></tr>
 <tr><td style="padding:30px 28px 12px">
 <span style="display:inline-block;background:${message.tint};color:${message.color};border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700">${message.status}</span>
