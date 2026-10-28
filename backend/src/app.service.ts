@@ -197,7 +197,7 @@ export class AppService {
  async listStaffKeys(authorization?:string){const role=await this.authorizeAdmin(authorization);const keys=await this.listAdminKeys();return role==='superadmin'?keys:keys.filter(row=>row.role==='instructor');}
  async createStaffKey(input:unknown,authorization?:string){const role=await this.authorizeAdmin(authorization);if(role!=='superadmin'&&(!input||typeof input!=='object'||Array.isArray(input)||(input as Record<string,unknown>).role!=='instructor'))throw new ForbiddenException('Administrators can create instructor keys only.');return this.createAdminKey(input);}
  async revokeStaffKey(id:string,authorization?:string){const role=await this.authorizeAdmin(authorization);return this.revokeAdminKey(id,role);}
- async instructorRecords(authorization?:string){const data=await this.storage.read(),identity=await this.adminIdentity(authorization,data);if(identity.role!=='instructor')throw new ForbiddenException('Enter an instructor access key.');const hash=this.keyHash((authorization||'').replace(/^Bearer /,'')),instructor=data.adminKeys.find(row=>row.hash===hash);return {...identity,reservations:data.reservations.filter(row=>!row.instructorKeyId||row.instructorKeyId===instructor?.id).map(row=>this.publicReservation(row,data)),facilities:this.facilitiesFrom(data).map(facility=>{const details={...facility} as Row;delete details.photo;return details;})};}
+ async instructorRecords(authorization?:string){const data=await this.storage.read(),identity=await this.adminIdentity(authorization,data);if(identity.role!=='instructor')throw new ForbiddenException('Enter an instructor access key.');const hash=this.keyHash((authorization||'').replace(/^Bearer /,'')),instructor=data.adminKeys.find(row=>row.hash===hash);return {...identity,reservations:data.reservations.filter(row=>row.requesterType!=='department'&&(!row.instructorKeyId||row.instructorKeyId===instructor?.id)).map(row=>this.publicReservation(row,data)),facilities:this.facilitiesFrom(data).map(facility=>{const details={...facility} as Row;delete details.photo;return details;})};}
  private validateSignature(value:unknown){
   if(value&&typeof value==='object'&&!Array.isArray(value)&&(value as Record<string,unknown>).type==='image'){
    const data=(value as Record<string,unknown>).data;
@@ -281,7 +281,7 @@ export class AppService {
   if(typeof note!=='string'||note.length>1000||(['Rejected','Cancelled'].includes(String(action))&&!note.trim()))throw new BadRequestException('Provide a rejection reason or a valid review note.');
   if(override&&!note.trim())throw new BadRequestException('Explain why the instructor review is being waived.');
   if(action==='Approved'&&this.facilitiesFrom(data).find(f=>f.name===r.facility)?.status==='Unavailable')throw new ConflictException('This facility is currently unavailable.');
-  if(action==='Approved'&&!override&&r.instructorDecision!=='Approved')throw new BadRequestException('An instructor must endorse this request before final approval.');
+  if(action==='Approved'&&!override&&r.instructorDecision!=='Approved'&&r.requesterType!=='department')throw new BadRequestException('An instructor must endorse this request before final approval.');
   if(action==='Approved'&&signatureConfirmed!==true)throw new BadRequestException(override?'Confirm the administrator exception before approval.':'Confirm the instructor signature before approval.');
   if(action==='Approved'&&r.inventorySelection){
    let selected:{id:string;quantity:number}[];
@@ -298,7 +298,19 @@ export class AppService {
   if(action==='Approved'){updated.adminSignature=validatedSignature;updated.adminReviewedBy=identity.adminName;updated.adminReviewedAt=updated.reviewedAt;updated.laboratoryEntries=this.validateLaboratoryEntries(laboratoryEntries,r);this.rememberSignature(data,authorization,identity,validatedSignature);if(override){updated.adminOverride='true';updated.adminOverrideReason=note.trim();}}
   else {delete updated.adminSignature;delete updated.adminReviewedBy;delete updated.adminReviewedAt;}
   data.reservations=data.reservations.map(x=>x.id===id?updated:x);return updated;
- });if(saved.status==='Approved'||saved.status==='Rejected')return {...saved,emailNotification:await sendBookingEmail(saved,saved.status==='Approved'?'admin-approved':'admin-rejected')};return saved;}
+ });if(saved.status!=='Approved'&&saved.status!=='Rejected')return saved;
+ const emailNotification=await sendBookingEmail(saved,saved.status==='Approved'?'admin-approved':'admin-rejected');
+ // The endorsing instructor hears about the final decision too, at the email saved in their profile.
+ const instructorEmail=saved.instructorDecision==='Approved'?await this.instructorEmail(saved.instructorKeyId):'';
+ const instructorEmailNotification=instructorEmail&&instructorEmail.toLowerCase()!==String(saved.email||'').toLowerCase()?await sendBookingEmail(saved,saved.status==='Approved'?'staff-admin-approved':'staff-admin-rejected',instructorEmail):undefined;
+ return {...saved,emailNotification,...(instructorEmailNotification?{instructorEmailNotification}:{})};}
+ private async instructorEmail(keyId?:string){
+  if(!keyId)return '';
+  const data=await this.storage.read(),staff=data.adminKeys.find(row=>row.id===keyId&&row.role==='instructor');
+  if(!staff)return '';
+  const profile=data.adminProfiles.find(row=>row.id===this.staffProfileId(staff.hash!)||row.id==='profile-'+staff.hash);
+  return String(profile?.email||'').trim();
+ }
  private validateLaboratoryEntries(value:unknown,reservation:Row){
   let requestedQuantities:number[]=[];
   try{const selected=JSON.parse(reservation.inventorySelection||'[]');if(Array.isArray(selected)&&selected.length)requestedQuantities=selected.map(entry=>Number(entry.quantity));}catch{/* Legacy text-only equipment list. */}
@@ -324,8 +336,32 @@ export class AppService {
   reservation.laboratoryEntries=this.validateLaboratoryEntries((input as {entries?:unknown})?.entries,reservation);
   reservation.updatedAt=new Date().toISOString();return reservation;
  });}
- updateReservationItems(id:string,input:unknown){return this.storage.mutate(data=>{
+ async createAsInstructor(input:unknown,authorization?:string){
+  const identity=await this.adminIdentity(authorization);
+  if(identity.role!=='instructor')throw new ForbiddenException('Enter an instructor access key.');
+  if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid request.');
+  const hash=this.keyHash((authorization||'').replace(/^Bearer /,'')),staff=(await this.storage.read()).adminKeys.find(row=>row.hash===hash&&row.role==='instructor');
+  if(!staff)throw new UnauthorizedException('Instructor access has been revoked.');
+  const signature=this.validateSignature((input as Record<string,unknown>).signature);
+  // The instructor endorses their own booking by signing it, so it goes straight to the administrator.
+  const saved=await this.create('reservations',{...input as object,requesterType:'instructor',instructorKeyId:staff.id,instructor:identity.adminName},undefined,true,{name:identity.adminName,signature});
+  await this.storage.mutate(data=>{this.rememberSignature(data,authorization,identity,signature);});
+  return saved;
+ }
+ async updateItemsAsInstructor(id:string,input:unknown,authorization?:string){
+  const identity=await this.adminIdentity(authorization);
+  if(identity.role!=='instructor')throw new ForbiddenException('Enter an instructor access key.');
+  const saved=await this.updateReservationItems(id,input,{hash:this.keyHash((authorization||'').replace(/^Bearer /,'')),name:identity.adminName});
+  return this.publicReservation(saved);
+ }
+ updateReservationItems(id:string,input:unknown,editor?:{hash:string;name:string}){return this.storage.mutate(data=>{
   const reservation=data.reservations.find(row=>row.id===id);if(!reservation)throw new NotFoundException('Reservation not found.');
+  if(editor){
+   // Instructors may adjust only their own requests, and only before they sign them.
+   const instructor=data.adminKeys.find(row=>row.hash===editor.hash&&row.role==='instructor');
+   if(!instructor||(reservation.instructorKeyId&&reservation.instructorKeyId!==instructor.id))throw new ForbiddenException('This request belongs to another instructor.');
+   if(this.reservationStatus(reservation)!=='Awaiting instructor')throw new ConflictException('Items can only be changed while the request is awaiting your review.');
+  }
   if(['Cancelled','Rejected'].includes(this.reservationStatus(reservation)!))throw new BadRequestException('Closed reservations cannot be edited.');
   const raw=(input as {items?:unknown})?.items;if(!Array.isArray(raw))throw new BadRequestException('Choose a valid equipment list.');
   if(raw.length>this.inventoryFrom(data).length)throw new BadRequestException('Too many equipment items were selected.');
@@ -345,8 +381,9 @@ export class AppService {
   if(previous===next)return reservation;
   reservation.inventorySelection=next;
   reservation.equipment=selection.map(item=>`${item.quantity} | ${item.name}`).join('\n')||'None';
-  reservation.updatedAt=new Date().toISOString();reservation.status='Awaiting instructor';
+  reservation.updatedAt=new Date().toISOString();reservation.status=reservation.requesterType==='department'?'Awaiting admin':'Awaiting instructor';
   for(const field of ['instructorDecision','instructorNote','instructorReviewedBy','instructorReviewedAt','instructorSignature','reviewNote','reviewedAt','adminSignature','adminReviewedBy','adminReviewedAt','adminOverride','adminOverrideReason','laboratoryEntries'])delete reservation[field];
+  if(editor){reservation.itemsEditedBy=editor.name;reservation.itemsEditedAt=reservation.updatedAt;}
   return reservation;
  });}
  resolveReport(id:string,input:unknown){return this.storage.mutate(data=>{const r=data.reports.find(r=>r.id===id);if(!r)throw new NotFoundException('Report not found.');const note=(input as {note?:unknown})?.note;if(typeof note!=='string'||!note.trim()||note.length>1000)throw new BadRequestException('Enter resolution details.');if(r.status==='Resolved')throw new BadRequestException('Report is already resolved.');const updated={...r,status:'Resolved',resolution:note.trim(),resolvedAt:new Date().toISOString()};data.reports=data.reports.map(x=>x.id===id?updated:x);return updated;});}
@@ -358,7 +395,7 @@ export class AppService {
   const reportItems=kind==='reports'?this.reportItems(raw.reportItems,requireInstructor&&!excludeId):undefined;
   if(reportItems)raw={...raw,type:reportItems.every(item=>item.condition==='Lost')?'Loss':'Damage'};
   const closedEdit=excludeId&&data.reservations.some(x=>x.id===excludeId&&['Cancelled','Rejected'].includes(x.status!));
-  const keys=['facility','name','date',...(kind==='reports'?['type','details']:['start','end','purpose']),...(kind==='utilization'?['attendees']:[]),...(kind==='reservations'?['subject','instructor','equipment']:[])];
+  const keys=['facility','name','date',...(kind==='reports'?['type','details']:['start','end','purpose']),...(kind==='utilization'?['attendees']:[]),...(kind==='reservations'?['subject',...(raw.requesterType==='department'?[]:['instructor']),'equipment']:[])];
   for(const k of keys){const v=raw[k];if(typeof v!=='string'||!v.trim()||v.length>(k==='equipment'?100000:k==='details'?2000:k==='purpose'?1000:100))throw new BadRequestException('Please provide a valid '+k+'.');r[k]=v.trim();}
   {
    if(raw.studentId!==undefined&&(typeof raw.studentId!=='string'||raw.studentId.length>40))throw new BadRequestException('ID number must be 40 characters or fewer.');
@@ -367,7 +404,12 @@ export class AppService {
    r.email=raw.email.trim();
    if(kind==='reservations'){if(raw.termsAccepted!==true)throw new BadRequestException('Please agree to the Terms and Conditions before booking.');r.termsAccepted='true';r.termsAcceptedAt=new Date().toISOString();r.termsVersion='hm-laboratory-2026-10-09';}
   }
-  if(kind==='reservations'){
+  if(kind==='reservations'&&raw.requesterType==='department'){
+   // Other offices (e.g. HR) name their department head instead of choosing an instructor account.
+   for(const k of ['department','departmentHead']){const v=raw[k];if(typeof v!=='string'||!v.trim()||v.trim().length>80)throw new BadRequestException(k==='department'?'Enter your office or department.':'Enter the full name of your department head.');r[k]=v.trim();}
+   r.requesterType='department';r.instructor=r.departmentHead!;r.instructorKeyId='';
+  }
+  else if(kind==='reservations'){
    const selectedId=typeof raw.instructorKeyId==='string'?raw.instructorKeyId.trim():'';
    const selected=requireInstructor&&selectedId?data.adminKeys.find(row=>row.role==='instructor'&&row.id===selectedId):data.adminKeys.find(row=>row.role==='instructor'&&this.instructorName(data,row).toLowerCase()===r.instructor!.toLowerCase());
    if(requireInstructor&&!selected)throw new BadRequestException('Choose a listed instructor before sending this request.');
@@ -414,9 +456,9 @@ export class AppService {
    return {quantity:count as number,description:description.trim(),condition:condition as string};
   });
  }
- create(kind:'reservations'|'reports'|'utilization',input:unknown,owner?:string,requireInstructor=false){return this.storage.mutate(data=>{
+ create(kind:'reservations'|'reports'|'utilization',input:unknown,owner?:string,requireInstructor=false,endorsement?:{name:string;signature:string}){return this.storage.mutate(data=>{
   const r=this.validateRecord(kind,input,data,undefined,requireInstructor);
-  if(kind==='reservations'&&owner){
+  if(kind==='reservations'&&(owner||endorsement)){
    const raw=(input as Record<string,unknown>).inventoryItems;
    if(!Array.isArray(raw))throw new BadRequestException('Choose listed inventory items.');
    const selected=new Set<string>(),lines:string[]=[],selection:{id:string;quantity:number;name:string}[]=[];
@@ -432,7 +474,9 @@ export class AppService {
    }
    r.equipment=lines.join('\n')||'None';r.inventorySelection=JSON.stringify(selection);
   }
-  r.id=randomUUID();r.createdAt=new Date().toISOString();if(owner)r.owner=owner;if(kind==='reservations')r.status='Awaiting instructor';if(kind==='reports')r.status='Open';const recoveryCode=kind==='reservations'&&owner?randomBytes(16).toString('hex'):undefined;if(recoveryCode)r.recoveryHash=createHash('sha256').update(recoveryCode).digest('hex');data[kind].push(r);return {...this.publicReservation(r),...(recoveryCode?{recoveryCode}:{})};
+  r.id=randomUUID();r.createdAt=new Date().toISOString();if(owner)r.owner=owner;if(kind==='reservations')r.status=r.requesterType==='department'?'Awaiting admin':'Awaiting instructor';
+  if(kind==='reservations'&&endorsement){r.requesterType='instructor';r.instructorDecision='Approved';r.instructorNote='';r.instructorReviewedBy=endorsement.name;r.instructorReviewedAt=r.createdAt;r.instructorSignature=endorsement.signature;r.status='Awaiting admin';}
+  if(kind==='reports')r.status='Open';const recoveryCode=kind==='reservations'&&owner?randomBytes(16).toString('hex'):undefined;if(recoveryCode)r.recoveryHash=createHash('sha256').update(recoveryCode).digest('hex');data[kind].push(r);return {...this.publicReservation(r),...(recoveryCode?{recoveryCode}:{})};
  });}
  private recordKind(kind:string):'reservations'|'reports'|'utilization'{if(!['reservations','reports','utilization'].includes(kind))throw new BadRequestException('Invalid record type.');return kind as 'reservations'|'reports'|'utilization';}
  adminCreate(kind:string,input:unknown){const type=this.recordKind(kind);return this.create(type,input,undefined,type==='reservations');}

@@ -1,11 +1,6 @@
 import { unzipSync, zipSync, strFromU8, strToU8 } from 'fflate'
 import {escapeXml,dateLabel,uniqueRowIds} from './reservation-form.js'
-export const timeLabel=value=>{
-  const match=/^(\d{2}):(\d{2})$/.exec(value||'')
-  if(!match)return ''
-  const hour=Number(match[1])
-  return `${hour%12||12}:${match[2]} ${hour<12?'AM':'PM'}`
-}
+import {timeRange} from './time-format.js'
 export function concernItems(report){
   try{
     const items=JSON.parse(report.reportItems||'[]')
@@ -40,7 +35,7 @@ export function fillConcernForm(template,report){
   for(const area of ['BAR','DINING','FRONT_OFFICE','KITCHEN','LAUNDRY','ROOMS'])xml=xml.replaceAll(`{{CHECK_${area}}}`,()=>area===checkedArea?'☑':'☐')
   const values={
     FILED_DATE:dateLabel(report.createdAt),FACILITY:report.facility,USAGE_DATE:dateLabel(report.date),
-    SUBJECT:report.subject,USAGE_TIME:[timeLabel(report.start),timeLabel(report.end)].filter(Boolean).join(' – '),PURPOSE:report.purpose,
+    SUBJECT:report.subject,USAGE_TIME:timeRange(report.start,report.end),PURPOSE:report.purpose,
     STUDENT_NAME:String(report.name||'').toLocaleUpperCase('en-PH'),INSTRUCTOR_NAME:String(report.instructor||'').toLocaleUpperCase('en-PH'),
     IN_CHARGE_NAME:'CRISTIAN JAY M. PECHON',
   }
@@ -51,7 +46,7 @@ export function fillConcernForm(template,report){
 let templatePromise
 export async function downloadConcernForm(report){
   try{
-    templatePromise||=fetch('/documents/concern-template.docx?v=1').then(async response=>{
+    templatePromise||=fetch('/documents/concern-template.docx?v=2').then(async response=>{
       if(!response.ok)throw new Error('The form template could not be loaded.')
       return new Uint8Array(await response.arrayBuffer())
     }).catch(error=>{templatePromise=undefined;throw error})

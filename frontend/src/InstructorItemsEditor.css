@@ -1,0 +1,9 @@
+.instructor-items-toggle{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin:14px 0;padding:12px 14px;border:1px dashed #cfd8e3;border-radius:9px;background:#f9fafc}
+.instructor-items-toggle p{margin:0;font-size:13px;color:#4f6278}
+.instructor-items-toggle .instructor-items-notice{flex-basis:100%}
+.instructor-items-editor{margin:14px 0;padding:14px;border:1px solid #dfe5ec;border-radius:10px;background:#fbfcfd;display:grid;gap:12px;min-width:0}
+.instructor-items-legacy{margin:0;font-size:13px;color:#6b4a1f;background:#fff6e8;border-radius:7px;padding:9px 11px}
+.instructor-items-notice{margin:0;font-size:13px;color:#2f6a46}
+.instructor-items-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+/* Student-site styles give the picker and booking form their usual look inside staff pages. */
+.student-site.booking-embed{min-height:0;background:transparent;color:inherit}

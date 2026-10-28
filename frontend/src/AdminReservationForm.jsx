@@ -4,6 +4,7 @@ import {SignatureView} from './SignaturePad'
 import LaboratoryTable from './LaboratoryTable'
 import {laboratoryEntriesFor,validateLaboratoryTable} from './laboratory-table-utils'
 import './AdminReservationForm.css'
+import {timeRange} from './time-format'
 
 function selectedItems(record){try{const items=JSON.parse(record.inventorySelection||'[]');return Array.isArray(items)?items.map(item=>({id:item.id,quantity:item.quantity,name:item.name})):[]}catch{return []}}
 const signedAt=value=>value?new Date(value).toLocaleString('en-PH',{timeZone:'Asia/Manila'}):''
@@ -30,7 +31,7 @@ export default function AdminReservationForm({record,request,onSaved,onClose,onE
   try{const saved=await request(`reservations/${record.id}/laboratory`,{method:'PATCH',body:JSON.stringify({entries:labEntries})});onSaved(saved);setLabEntries(laboratoryEntriesFor(saved));setNotice('Laboratory issue and return details saved to the form.')}catch(e){setError(e.message)}finally{setSaving(false)}
  }
  return <div className="modal-backdrop"><section className="modal admin-form-modal" role="dialog" aria-modal="true" aria-labelledby="form-preview-title"><button className="close" aria-label="Close form preview" autoFocus disabled={saving} onClick={onClose}>×</button><div className="eyebrow">RESERVATION FORM</div><h2 id="form-preview-title">HRM Laboratory Utilization Form</h2><p>Review and update the information used in the college Word form.</p>
-  <div className="admin-review-summary"><dl>{[['Facility',record.facility],['Date of usage',formatDate(record.date)],['Time of usage',`${record.start} – ${record.end}`],['Subject',record.subject],['Purpose',record.purpose],['Requester',record.name],['Email',record.email],['ID number',record.studentId||'Not provided'],['Instructor',record.instructor||'Not recorded']].map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl><button type="button" className="secondary" onClick={onEdit}>Edit booking details</button></div>
+  <div className="admin-review-summary"><dl>{[['Facility',record.facility],['Date of usage',formatDate(record.date)],['Time of usage',timeRange(record.start,record.end)],['Subject',record.subject],['Purpose',record.purpose],['Requester',record.name],['Email',record.email],['ID number',record.studentId||'Not provided'],['Instructor',record.instructor||'Not recorded']].map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl><button type="button" className="secondary" onClick={onEdit}>Edit booking details</button></div>
   {record.adminOverride==='true'&&<p className="admin-override-notice"><strong>Instructor review waived by administrator.</strong> {record.adminOverrideReason}</p>}
   <details className="admin-form-requested-items"><summary><span><strong>Requested items / equipment</strong><small>Expand to review or edit the requested items</small></span><span className="admin-form-item-count">{items.length} selected</span><span className="admin-form-chevron" aria-hidden="true">⌄</span></summary><div className="admin-form-requested-content">
   {legacy&&<p className="admin-form-warning">This older request has a text-only equipment list: {record.equipment}. Saving the list below will replace it with verified inventory items.</p>}

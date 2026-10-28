@@ -42,6 +42,8 @@ export class AppController {
  @Delete('api/admin/inventory/:id') async removeInventory(@Param('id') id:string,@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return this.appService.deleteInventory(id);}
  @Header('Cache-Control','no-store')
  @Get('api/instructor/records') instructorRecords(@Headers('authorization') key?:string){return this.appService.instructorRecords(key);}
+ @Post('api/instructor/reservations') instructorReserve(@Body() body:unknown,@Headers('authorization') key?:string){return this.appService.createAsInstructor(body,key);}
+ @Patch('api/instructor/reservations/:id/items') instructorItems(@Param('id') id:string,@Body() body:unknown,@Headers('authorization') key?:string){return this.appService.updateItemsAsInstructor(id,body,key);}
  @Patch('api/instructor/reservations/:id/review') instructorReview(@Param('id') id:string,@Body() body:unknown,@Headers('authorization') key?:string){return this.appService.reviewAsInstructor(id,body,key);}
  @Patch('api/admin/reservations/:id') async review(@Param('id') id:string,@Body() body:unknown,@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return this.appService.reviewReservation(id,body,key);}
  @Patch('api/admin/reservations/:id/items') async updateReservationItems(@Param('id') id:string,@Body() body:unknown,@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return this.appService.updateReservationItems(id,body);}

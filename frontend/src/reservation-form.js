@@ -1,6 +1,7 @@
 import { unzipSync, zipSync, strFromU8, strToU8 } from 'fflate'
 import {drawSignature,fitSignatureStrokes,signatureIsMeaningful,SIGNATURE_WIDTH,SIGNATURE_HEIGHT} from './signature-utils.js'
 import {extractSignatureImage} from './signature-image.js'
+import {timeRange} from './time-format.js'
 // Strip characters that XML 1.0 cannot represent, including pasted control characters.
 export const escapeXml = value => Array.from(String(value ?? '')).filter(char => {
   const code=char.codePointAt(0)
@@ -63,7 +64,7 @@ export function fillReservationForm(template, reservation, signatureImage, admin
   for(const area of ['BAR','DINING','FRONT_OFFICE','HOT_KITCHEN','COLD_KITCHEN','LAUNDRY','MINI_FUNCTION','HARMONIA','LUNARA','COMPUTER'])xml=xml.replaceAll(`{{CHECK_${area}}}`,()=>area===checkedArea?'☑':'☐')
   const values = {
     FILED_DATE:dateLabel(reservation.createdAt), USAGE_DATE:dateLabel(reservation.date),
-    SUBJECT:reservation.subject, USAGE_TIME:[reservation.start,reservation.end].filter(Boolean).join(' – '),
+    SUBJECT:reservation.subject, USAGE_TIME:timeRange(reservation.start,reservation.end),
     PURPOSE:reservation.purpose,
     REQUESTER_NAME:reservation.name,
     REQUESTER_EMAIL:[reservation.email,reservation.studentId ? 'ID: '+reservation.studentId : ''].filter(Boolean).join(' | '),
@@ -119,7 +120,7 @@ async function renderSignature(value,label='instructor'){
 let templatePromise
 export async function downloadReservationForm(reservation) {
   try {
-    templatePromise ||= fetch('/documents/reservation-template.docx?v=21').then(async response => {
+    templatePromise ||= fetch('/documents/reservation-template.docx?v=22').then(async response => {
       if (!response.ok) throw new Error('The form template could not be loaded.')
       return new Uint8Array(await response.arrayBuffer())
     }).catch(error=>{templatePromise=undefined;throw error})

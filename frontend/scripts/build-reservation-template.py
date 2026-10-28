@@ -29,7 +29,7 @@ def add_masthead(document):
         cell.paragraphs[0].paragraph_format.space_after = Pt(0)
     masthead.cell(0, 0).paragraphs[0].add_run().add_picture(str(public_dir / "cec.png"), width=Inches(0.82))
     center = masthead.cell(0, 1).paragraphs[0]
-    for index, (line, size) in enumerate((("Cristal e-College", 12), ("Academic Division", 10), ("Hospitality Management", 10))):
+    for index, (line, size) in enumerate((("Cristal e-College, Inc.", 12), ("Academic Division", 10), ("Hospitality Management", 10))):
         if index:
             center.add_run().add_break()
         run = center.add_run(line)

@@ -1,5 +1,6 @@
 import {useEffect,useMemo,useRef,useState} from 'react'
 import './StaffNotifications.css'
+import {timeRange} from './time-format'
 
 const recentFirst=(a,b)=>String(b.reviewedAt||b.instructorReviewedAt||b.createdAt||'').localeCompare(String(a.reviewedAt||a.instructorReviewedAt||a.createdAt||''))
 const dateLabel=value=>value?new Date(`${value}T00:00:00`).toLocaleDateString('en-PH',{month:'short',day:'numeric'}):''
@@ -46,7 +47,7 @@ export default function StaffNotifications({role,reservations=[],reports=[],onRe
    <div className="staff-notification-live"><span aria-hidden="true"/>Auto-updating{updatedAt&&<small>· Updated {timeLabel(updatedAt)}</small>}</div>
    <div className="staff-notification-list">
     {count>0&&<div className="staff-notification-section"><span>Needs action</span><b>{count}</b></div>}
-    {needsReview.map(row=><button type="button" key={'request-'+row.id} className="staff-notification-item" onClick={()=>closeAnd(()=>onReservation(row))}><span className="staff-notification-dot" aria-hidden="true"/><span><strong>{role==='admin'?'Ready for final approval':'Reservation to review'}{newIds.includes('request-'+row.id)&&<em>New</em>}</strong><small>{row.name} · {row.facility}</small><small>{dateLabel(row.date)}{row.start?` · ${row.start}–${row.end}`:''}</small></span><span aria-hidden="true">→</span></button>)}
+    {needsReview.map(row=><button type="button" key={'request-'+row.id} className="staff-notification-item" onClick={()=>closeAnd(()=>onReservation(row))}><span className="staff-notification-dot" aria-hidden="true"/><span><strong>{role==='admin'?'Ready for final approval':'Reservation to review'}{newIds.includes('request-'+row.id)&&<em>New</em>}</strong><small>{row.name} · {row.facility}</small><small>{dateLabel(row.date)}{row.start?` · ${timeRange(row.start,row.end)}`:''}</small></span><span aria-hidden="true">→</span></button>)}
     {openReports.map(row=><button type="button" key={'report-'+row.id} className="staff-notification-item" onClick={()=>closeAnd(onReports)}><span className="staff-notification-dot" aria-hidden="true"/><span><strong>Damage or loss report{newIds.includes('report-'+row.id)&&<em>New</em>}</strong><small>{row.facility||row.name||'Needs follow-up'}</small></span><span aria-hidden="true">→</span></button>)}
     {completed.length>0&&<div className="staff-notification-section staff-notification-recent"><span>Recent admin decisions</span></div>}
     {completed.map(row=><button type="button" key={'completed-'+row.id} className="staff-notification-item staff-notification-completed" onClick={()=>closeAnd(()=>onReservation(row))}><span className="staff-notification-dot" aria-hidden="true"/><span><strong>{row.status} by admin</strong><small>{row.name} · {row.facility}</small><small>{row.reviewedAt?new Date(row.reviewedAt).toLocaleDateString('en-PH',{timeZone:'Asia/Manila',month:'short',day:'numeric'}):''}</small></span><span aria-hidden="true">→</span></button>)}

@@ -42,6 +42,19 @@ describe('booking status email',()=>{
   expect(createBookingEmail(unsafe,'admin-approved').html).toContain('download your completed utilization form');
   expect(createBookingEmail(unsafe,'admin-rejected').html).toContain('Use &lt;another&gt; space');
  });
+ it('shows 12-hour times and can email the endorsing instructor',async()=>{
+  expect(createBookingEmail({...booking,start:'13:30',end:'17:05'},'admin-approved').text).toContain('2099-10-10 · 1:30 PM – 5:05 PM');
+  process.env.GMAIL_SMTP_USER='sender@gmail.com';process.env.GMAIL_SMTP_APP_PASSWORD='test-app-password';
+  const sendMail=vi.fn().mockResolvedValue({messageId:'test'}),close=vi.fn();
+  vi.mocked(nodemailer.createTransport).mockReturnValue({sendMail,close} as never);
+  expect(await sendBookingEmail({...booking,instructor:'Arvin S. Ode'},'staff-admin-approved','arvin@example.com')).toBe('sent');
+  const payload=sendMail.mock.calls[0][0];
+  expect(payload).toMatchObject({to:'arvin@example.com',subject:'A request you endorsed is approved'});
+  expect(payload.text).toContain('Hello Arvin S. Ode,');
+  expect(payload.text).toContain('Requested by: Student');
+  expect(payload.text).toContain('https://hmreservation.vercel.app/instructor');
+  expect(createBookingEmail({...booking,instructor:'Arvin S. Ode'},'staff-admin-rejected').text).toContain('Reason: Space unavailable');
+ });
  it('reports delivery failure without throwing',async()=>{
   process.env.GMAIL_SMTP_USER='sender@gmail.com';process.env.GMAIL_SMTP_APP_PASSWORD='test-app-password';
   const close=vi.fn();vi.mocked(nodemailer.createTransport).mockReturnValue({sendMail:vi.fn().mockRejectedValue(new Error('SMTP unavailable')),close} as never);

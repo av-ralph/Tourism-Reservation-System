@@ -140,6 +140,65 @@ describe('reservations',()=>{
    expect((await service.listInventory()).some(entry=>entry.id===item.id)).toBe(false);
   }finally{delete process.env.HM_ADMIN_KEY;}
  });
+ it('sends department-head requests straight to the administrator',async()=>{
+  process.env.HM_ADMIN_KEY='test-super-key';
+  try{
+   await service.createAdminKey({name:'Instructor',key:'InstructorTest1!',role:'instructor'});
+   const office={...booking,facility:'Dining Area',instructor:'',requesterType:'department',department:'Human Resources',departmentHead:'Ana Reyes'};
+   await expect(service.createForUser('reservations',{...office,departmentHead:''},'11111111-1111-4111-8111-111111111111')).rejects.toThrow('department head');
+   const request=await service.createForUser('reservations',{...office,instructor:'Ana Reyes'},'11111111-1111-4111-8111-111111111111');
+   expect(request).toMatchObject({status:'Awaiting admin',requesterType:'department',department:'Human Resources',departmentHead:'Ana Reyes',instructor:'Ana Reyes',instructorKeyId:''});
+   expect((await service.instructorRecords('Bearer InstructorTest1!')).reservations.some(row=>row.id===request.id)).toBe(false);
+   const approved=await service.reviewReservation(request.id!,{action:'Approved',note:'',signatureConfirmed:true,adminSignature:signature},'Bearer test-super-key');
+   expect(approved.status).toBe('Approved');
+  }finally{delete process.env.HM_ADMIN_KEY;}
+ });
+ it('lets a signed-in instructor book with their own signature',async()=>{
+  process.env.HM_ADMIN_KEY='test-super-key';
+  try{
+   await service.createAdminKey({name:'Instructor',key:'InstructorTest1!',role:'instructor'});
+   const [item]=await service.listInventory();
+   const own={...booking,instructor:'',inventoryItems:[{id:item.id,quantity:1}]};
+   await expect(service.createAsInstructor(own,'Bearer InstructorTest1!')).rejects.toThrow('signature');
+   await expect(service.createAsInstructor({...own,signature},'Bearer test-super-key')).rejects.toThrow('instructor access key');
+   const request=await service.createAsInstructor({...own,signature},'Bearer InstructorTest1!');
+   expect(request).toMatchObject({status:'Awaiting admin',requesterType:'instructor',instructor:'Instructor',instructorDecision:'Approved',instructorReviewedBy:'Instructor'});
+   expect(request.instructorSignature).toBeTruthy();
+   expect(JSON.parse(request.inventorySelection!)).toEqual([{id:item.id,quantity:1,name:item.name}]);
+   expect((await service.instructorRecords('Bearer InstructorTest1!')).reservations.find(row=>row.id===request.id)?.status).toBe('Awaiting admin');
+   expect((await service.reviewReservation(request.id!,{action:'Approved',note:'',signatureConfirmed:true,adminSignature:signature},'Bearer test-super-key')).status).toBe('Approved');
+  }finally{delete process.env.HM_ADMIN_KEY;}
+ });
+ it('lets the assigned instructor edit requested items before signing',async()=>{
+  const [first,second]=(await service.listInventory()).filter(item=>Number(item.quantity)>=3);
+  await service.createAdminKey({name:'Instructor',key:'InstructorTest1!',role:'instructor'});
+  await service.createAdminKey({name:'Other Instructor',key:'OtherInstructor1!',role:'instructor'});
+  const reservation=await service.createForUser('reservations',{...booking,inventoryItems:[{id:first.id,quantity:1}]},'11111111-1111-4111-8111-111111111111');
+  await expect(service.updateItemsAsInstructor(reservation.id!,{items:[{id:first.id,quantity:2}]},'Bearer OtherInstructor1!')).rejects.toThrow('another instructor');
+  const edited=await service.updateItemsAsInstructor(reservation.id!,{items:[{id:first.id,quantity:3},{id:second.id,quantity:1}]},'Bearer InstructorTest1!');
+  expect(JSON.parse(edited.inventorySelection!).map((item:{id:string;quantity:number})=>[item.id,item.quantity])).toEqual([[first.id,3],[second.id,1]]);
+  expect(edited).toMatchObject({status:'Awaiting instructor',itemsEditedBy:'Instructor'});
+  expect(edited.recoveryHash).toBeUndefined();
+  const removed=await service.updateItemsAsInstructor(reservation.id!,{items:[{id:second.id,quantity:1}]},'Bearer InstructorTest1!');
+  expect(removed.equipment).toBe(`1 | ${second.name}`);
+  await service.reviewAsInstructor(reservation.id!,{decision:'Approved',note:'',signature},'Bearer InstructorTest1!');
+  await expect(service.updateItemsAsInstructor(reservation.id!,{items:[{id:first.id,quantity:1}]},'Bearer InstructorTest1!')).rejects.toThrow('awaiting your review');
+ });
+ it('emails the endorsing instructor when the administrator decides',async()=>{
+  process.env.HM_ADMIN_KEY='test-super-key';process.env.GMAIL_SMTP_USER='sender@gmail.com';process.env.GMAIL_SMTP_APP_PASSWORD='test-app-password';
+  const sendMail=vi.fn().mockResolvedValue({messageId:'test'});
+  vi.mocked(nodemailer.createTransport).mockReturnValue({sendMail,close:vi.fn()} as never);
+  try{
+   await service.createAdminKey({name:'Instructor',key:'InstructorTest1!',role:'instructor'});
+   await service.updateAdminProfile('Bearer InstructorTest1!',{name:'Instructor',email:'instructor@example.com',photo:''});
+   const reservation=await service.createForUser('reservations',booking,'11111111-1111-4111-8111-111111111111');
+   await service.reviewAsInstructor(reservation.id!,{decision:'Approved',note:'',signature},'Bearer InstructorTest1!');
+   sendMail.mockClear();
+   const approved=await service.reviewReservation(reservation.id!,{action:'Approved',note:'',signatureConfirmed:true,adminSignature:signature},'Bearer test-super-key');
+   expect(approved).toMatchObject({emailNotification:'sent',instructorEmailNotification:'sent'});
+   expect(sendMail.mock.calls.map(call=>[call[0].to,call[0].subject])).toEqual([['student@example.com','Your HM laboratory booking is approved'],['instructor@example.com','A request you endorsed is approved']]);
+  }finally{delete process.env.HM_ADMIN_KEY;delete process.env.GMAIL_SMTP_USER;delete process.env.GMAIL_SMTP_APP_PASSWORD;}
+ });
  it('accepts more than 22 distinct available items in one request',async()=>{
   const items=(await service.listInventory()).slice(0,23);
   expect(items).toHaveLength(23);

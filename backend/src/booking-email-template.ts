@@ -1,6 +1,6 @@
 import type { Row } from './record-store.js';
 
-export type BookingEmailEvent = 'instructor-approved' | 'instructor-declined' | 'admin-approved' | 'admin-rejected';
+export type BookingEmailEvent = 'instructor-approved' | 'instructor-declined' | 'admin-approved' | 'admin-rejected' | 'staff-admin-approved' | 'staff-admin-rejected';
 
 const siteUrl = 'https://hmreservation.vercel.app/';
 const messages: Record<BookingEmailEvent, { subject: string; heading: string; body: string; status: string; color: string; tint: string }> = {
@@ -28,7 +28,27 @@ const messages: Record<BookingEmailEvent, { subject: string; heading: string; bo
     body: 'The laboratory administrator could not approve this request. Please review the reason below, if provided, before making another booking.',
     status: 'Declined by administrator', color: '#9b3c20', tint: '#fff0e8',
   },
+  'staff-admin-approved': {
+    subject: 'A request you endorsed is approved',
+    heading: 'The administrator approved the request',
+    body: 'A laboratory request you endorsed received final approval. The completed utilization form is ready in the instructor portal.',
+    status: 'Fully approved', color: '#176344', tint: '#eaf7ef',
+  },
+  'staff-admin-rejected': {
+    subject: 'A request you endorsed was declined',
+    heading: 'The administrator declined the request',
+    body: 'The laboratory administrator could not approve a request you endorsed. Please review the reason below, if provided.',
+    status: 'Declined by administrator', color: '#9b3c20', tint: '#fff0e8',
+  },
 };
+
+// Times are stored as 24-hour HH:MM; people read them on a 12-hour clock.
+function timeLabel(value: unknown): string {
+  const match = /^(\d{2}):(\d{2})$/.exec(String(value ?? ''));
+  if (!match) return '';
+  const hour = Number(match[1]);
+  return `${hour % 12 || 12}:${match[2]} ${hour < 12 ? 'AM' : 'PM'}`;
+}
 
 function escapeHtml(value: unknown): string {
   return String(value ?? '').replace(/[&<>"']/g, (character) => ({
@@ -38,18 +58,22 @@ function escapeHtml(value: unknown): string {
 
 export function createBookingEmail(row: Row, event: BookingEmailEvent) {
   const message = messages[event];
-  const name = String(row.name || 'student').trim();
+  const staff = event.startsWith('staff-');
+  const name = String((staff ? row.instructorReviewedBy || row.instructor : row.name) || (staff ? 'instructor' : 'student')).trim();
+  const requester = String(row.name || 'Not recorded').trim();
+  const link = staff ? `${siteUrl}instructor` : siteUrl;
+  const linkLabel = staff ? 'Open instructor portal' : 'Open My bookings';
   const reference = String(row.id || '').trim();
   const facility = String(row.facility || 'Not recorded').trim();
-  const schedule = [row.date, [row.start, row.end].filter(Boolean).join('–')].filter(Boolean).join(' · ') || 'Not recorded';
+  const schedule = [row.date, [timeLabel(row.start), timeLabel(row.end)].filter(Boolean).join(' – ')].filter(Boolean).join(' · ') || 'Not recorded';
   const reason = event === 'instructor-declined'
     ? String(row.instructorNote || row.reviewNote || '').trim()
-    : event === 'admin-rejected' ? String(row.reviewNote || row.instructorNote || '').trim() : '';
+    : event === 'admin-rejected' || event === 'staff-admin-rejected' ? String(row.reviewNote || row.instructorNote || '').trim() : '';
   const text = [
     `Hello ${name},`, '', message.heading, message.body, '',
-    `Status: ${message.status}`, `Booking reference: ${reference}`, `Space: ${facility}`,
+    `Status: ${message.status}`, `Booking reference: ${reference}`, ...(staff ? [`Requested by: ${requester}`] : []), `Space: ${facility}`,
     `Schedule: ${schedule}`, ...(reason ? [`Reason: ${reason}`] : []),
-    '', `View My bookings: ${siteUrl}`, '', 'Cristal e-College HM Laboratory',
+    '', `${linkLabel}: ${link}`, '', 'Cristal e-College HM Laboratory',
   ].join('\n');
   const detail = (label: string, value: string) => `<tr><td style="padding:10px 0;color:#64748b;font-size:13px;vertical-align:top;width:120px">${label}</td><td style="padding:10px 0;color:#102f60;font-size:14px;font-weight:600;word-break:break-word">${escapeHtml(value)}</td></tr>`;
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(message.subject)}</title></head>
@@ -72,11 +96,11 @@ ${reason ? `<div style="margin:20px 0 0;padding:14px 16px;background:#fff7ed;bor
 </td></tr>
 <tr><td style="padding:12px 28px 0"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f7f9fc;border:1px solid #e1e8f0;border-radius:9px"><tr><td style="padding:14px 18px">
 <div style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#62748e;padding-bottom:7px">BOOKING DETAILS</div>
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${detail('Reference', reference)}${detail('Space', facility)}${detail('Schedule', schedule)}</table>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${detail('Reference', reference)}${staff ? detail('Requested by', requester) : ''}${detail('Space', facility)}${detail('Schedule', schedule)}</table>
 </td></tr></table></td></tr>
-<tr><td style="padding:24px 28px 30px"><a href="${siteUrl}" style="display:inline-block;background:#f7631e;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 22px;border-radius:7px">Open My bookings →</a>
-<p style="margin:18px 0 0;color:#64748b;font-size:12px;line-height:1.5">If the button does not work, visit <a href="${siteUrl}" style="color:#174c83">${siteUrl}</a> and open My bookings.</p></td></tr>
-<tr><td style="background:#f7f9fc;border-top:1px solid #e1e8f0;padding:16px 28px;color:#64748b;font-size:12px;line-height:1.5">Cristal e-College · HM Laboratory<br>This is an update about your reservation. Please keep your booking reference for tracking.</td></tr>
+<tr><td style="padding:24px 28px 30px"><a href="${link}" style="display:inline-block;background:#f7631e;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 22px;border-radius:7px">${linkLabel} →</a>
+<p style="margin:18px 0 0;color:#64748b;font-size:12px;line-height:1.5">If the button does not work, visit <a href="${link}" style="color:#174c83">${link}</a>${staff ? '.' : ' and open My bookings.'}</p></td></tr>
+<tr><td style="background:#f7f9fc;border-top:1px solid #e1e8f0;padding:16px 28px;color:#64748b;font-size:12px;line-height:1.5">Cristal e-College · HM Laboratory<br>${staff ? 'This is an update about a request you endorsed.' : 'This is an update about your reservation. Please keep your booking reference for tracking.'}</td></tr>
 </table></td></tr></table></body></html>`;
   return { subject: message.subject, text, html };
 }

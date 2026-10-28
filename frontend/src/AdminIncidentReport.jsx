@@ -1,9 +1,10 @@
-import {concernItems,timeLabel} from './concern-form'
+import {concernItems} from './concern-form'
 import './AdminIncidentReport.css'
+import {timeRange} from './time-format'
 const filedLabel=value=>{const date=new Date(value);return Number.isNaN(date.getTime())?'':date.toLocaleDateString('en-PH',{timeZone:'Asia/Manila',month:'short',day:'numeric',year:'numeric'})}
 export default function AdminIncidentReport({report:r,formatDate,onDownload,onResolve,onEdit,onDelete}){
  const resolved=r.status==='Resolved',items=r.reportItems?concernItems(r):[]
- const details=[['Date of usage',r.date&&formatDate(r.date)],['Time of usage',r.start&&`${timeLabel(r.start)} – ${timeLabel(r.end)}`],['Subject',r.subject],['Instructor',r.instructor],['Purpose',r.purpose]].filter(([,value])=>value)
+ const details=[['Date of usage',r.date&&formatDate(r.date)],['Time of usage',r.start&&timeRange(r.start,r.end)],['Subject',r.subject],['Instructor',r.instructor],['Purpose',r.purpose]].filter(([,value])=>value)
  return <article className={'incident-card'+(resolved?' is-resolved':'')}>
   <div className="incident-head">
    <div className="incident-title">
