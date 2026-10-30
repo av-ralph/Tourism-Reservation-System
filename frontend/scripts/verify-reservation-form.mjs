@@ -6,6 +6,11 @@ const template=readFileSync(new URL('../public/documents/reservation-template.do
 const record={id:'test',createdAt:'2026-10-09T14:00:00Z',date:'2026-10-15',start:'09:00',end:'11:00',subject:'Food & Beverage',purpose:'Practice <plating> $&',facility:'Hot Kitchen',name:'Sample Student',email:'sample@example.com',studentId:'2026-001',instructor:'Sample Instructor',equipment:'2 | Mixing bowls\n4 | Measuring cups\nTray $& (quantity unspecified)'}
 const original=unzipSync(template),result=unzipSync(fillReservationForm(template,record)),xml=strFromU8(result['word/document.xml'])
 const templateXml=strFromU8(original['word/document.xml'])
+const rowCount=source=>(source.match(/<w:tr\b/g)||[]).length,pageCount=source=>(source.match(/<w:pageBreakBefore\/>/g)||[]).length+1
+// Heading rows sit before the item row; every page repeats them, while the signature rows appear once.
+const headingRows=rowCount(templateXml.slice(templateXml.indexOf('<w:tbl>'),templateXml.indexOf('{{ITEM_QUANTITY}}')))-1,otherRows=rowCount(templateXml)-headingRows-1
+const plain=source=>source.replace(/<[^>]+>/g,'')
+const itemRows=source=>rowCount(source)-pageCount(source)*headingRows-otherRows
 const masthead=strFromU8(original['word/header2.xml'])
 for(const line of ['Cristal e-College, Inc.','Academic Division','Hospitality Management'])assert(masthead.includes(line),`masthead: ${line}`)
 assert.equal((masthead.match(/<a:blip\b/g)||[]).length,2,'both logos appear in the masthead')
@@ -56,11 +61,23 @@ assert.equal((xml.match(/<w:tr\b/g)||[]).length,(strFromU8(original['word/docume
 const long=fillReservationForm(template,{...record,studentId:'',equipment:Array.from({length:30},(_,i)=>`${i+1} | Item ${i+1}`).join('\n')})
 const longXml=strFromU8(unzipSync(long)['word/document.xml'])
 for(let i=1;i<=30;i++) assert(longXml.includes(`Item ${i}</w:t>`),`Item ${i} retained`)
-assert.equal((longXml.match(/<w:tr\b/g)||[]).length,(templateXml.match(/<w:tr\b/g)||[]).length+29,'30 inventory rows are added')
+assert.equal(itemRows(longXml),30,'30 inventory rows are added')
+assert.equal(pageCount(longXml),2,'30 items continue on a second page')
+assert.equal(plain(longXml).split('HRM LABORATORY UTILIZATION FORM').length-1,2,'the second page repeats the form heading')
+for(const field of ['Date filed:','Instruction:','Date of Usage:','Time of Usage:','Requested by:'])assert.equal(plain(longXml).split(field).length-1,2,`second page repeats ${field}`)
+assert.equal((longXml.match(/☑/g)||[]).length,2,'the selected area is ticked on both pages')
+const longIds=longXml.match(/w14:paraId="[0-9A-F]{8}"/g)||[]
+assert.equal(new Set(longIds).size,longIds.length,'repeated headings keep unique paragraph ids')
+assert.equal(pageCount(xml),1,'short forms stay on one page')
+const longNumbering=strFromU8(unzipSync(long)['word/numbering.xml'])
+assert(/<w:num w:numId="\d+"><w:abstractNumId w:val="\d+"\/><w:lvlOverride w:ilvl="0"><w:startOverride w:val="1"\/>/.test(longNumbering),'the second page restarts the instruction numbering')
+assert.equal(new Set(longXml.match(/<w:numId w:val="\d+"\/>/g)).size,2,'each page uses its own instruction list')
 const allItems=Array.from({length:379},(_,i)=>`${i+1} | Inventory item ${i+1}`)
 const allItemsXml=strFromU8(unzipSync(fillReservationForm(template,{...record,equipment:allItems.join('\n')}))['word/document.xml'])
 for(let i=1;i<=allItems.length;i++)assert(allItemsXml.includes(`Inventory item ${i}</w:t>`),`Inventory item ${i} retained`)
-assert.equal((allItemsXml.match(/<w:tr\b/g)||[]).length,(templateXml.match(/<w:tr\b/g)||[]).length+allItems.length-1,'every selected item has a row')
+assert.equal(itemRows(allItemsXml),allItems.length,'every selected item has a row')
+assert.equal(pageCount(allItemsXml),plain(allItemsXml).split('HRM LABORATORY UTILIZATION FORM').length-1,'every page carries the form heading')
+assert(pageCount(allItemsXml)>=16,'379 items span many pages')
 assert(allItemsXml.includes('SAMPLE INSTRUCTOR'),'signer is retained after a long inventory list')
 const structuredSelection=allItems.map((_,i)=>({id:`item-${i+1}`,quantity:i+1,name:`Inventory item ${i+1}`}))
 const laboratoryRecord={...record,equipment:'None',inventorySelection:JSON.stringify([{id:'bowl',quantity:3,name:'Mixing bowls'},{id:'tray',quantity:2,name:'Service tray'}]),laboratoryEntries:JSON.stringify([{released:'2',remarks:'Checked & issued',returned:'2026-10-18',condition:'Good order'},{released:'1',remarks:'Handle marked',returned:'',condition:'Damaged'}])}

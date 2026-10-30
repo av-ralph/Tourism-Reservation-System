@@ -46,6 +46,11 @@ export function reservationArea(facility) {
   if(name==='computer laboratory mh 302')return 'COMPUTER'
   return null
 }
+// A page holds the heading and 24 item rows; the last page also needs room for the signatures.
+const PAGE_ROWS=24,FINAL_PAGE_ROWS=16
+const headingCopy=(source,page)=>{let id=0;return source.replace(/w14:paraId="[0-9A-Fa-f]{8}"/g,()=>`w14:paraId="${(0x10000000+page*0x10000+id++).toString(16).toUpperCase()}"`)}
+// A near-zero-height paragraph that starts the next page, so a full page never spills a blank one.
+const NEW_PAGE='<w:p><w:pPr><w:pageBreakBefore/><w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/><w:rPr><w:sz w:val="2"/><w:szCs w:val="2"/></w:rPr></w:pPr></w:p>'
 export function fillReservationForm(template, reservation, signatureImage, adminSignatureImage) {
   const files = unzipSync(template)
   if(!files['word/document.xml'])throw new Error('The form template is not a valid Word document.')
@@ -55,11 +60,30 @@ export function fillReservationForm(template, reservation, signatureImage, admin
   if (!row) throw new Error('The reservation form template is unavailable.')
   const inventory = reservationItems(reservation)
   const laboratory=reservationLaboratoryEntries(reservation)
-  xml = xml.replace(rowPattern, () => Array.from({length:Math.max(12,inventory.length)}, (_,i) => {
+  const rows = Array.from({length:Math.max(12,inventory.length)}, (_,i) => {
     const entry=laboratory[i]||{}
     const values={ITEM_QUANTITY:inventory[i]?.quantity,ITEM_DESCRIPTION:inventory[i]?.description,LAB_RELEASED:entry.released,LAB_REMARKS:entry.remarks,LAB_RETURNED:entry.returned?dateLabel(entry.returned):'',LAB_GOOD:entry.condition==='Good order'?'✓':'',LAB_LOST:entry.condition==='Lost'?'✓':'',LAB_DAMAGED:entry.condition==='Damaged'?'✓':''}
     return Object.entries(values).reduce((result,[key,value])=>result.replaceAll(`{{${key}}}`,()=>escapeXml(value)),uniqueRowIds(row,i))
-  }).join(''))
+  })
+  // Long lists continue on new pages that each carry the full form heading. Writing the heading per page,
+  // rather than relying on Word's repeated header rows, keeps it visible in viewers that ignore that setting.
+  const tableStart=xml.indexOf('<w:tbl>'),rowStart=xml.indexOf(row),tableEnd=xml.indexOf('</w:tbl>',rowStart)+'</w:tbl>'.length
+  const heading=xml.slice(tableStart,rowStart),closing=xml.slice(rowStart+row.length,tableEnd)
+  const pages=[]
+  for(let rest=rows;rest.length;){
+    if(rest.length<=FINAL_PAGE_ROWS){pages.push(rest);break}
+    const take=Math.min(PAGE_ROWS,rest.length-1)
+    pages.push(rest.slice(0,take));rest=rest.slice(take)
+  }
+  // Each repeated heading gets its own numbered list so the instructions restart at 1 on every page.
+  let numbering=files['word/numbering.xml']?strFromU8(files['word/numbering.xml']):'',nextNumId=Math.max(0,...[...numbering.matchAll(/<w:num w:numId="(\d+)"/g)].map(match=>Number(match[1])))+1
+  const restartLists=source=>{const copies={};return source.replace(/<w:numId w:val="(\d+)"\/>/g,(match,id)=>{
+    if(!copies[id]){const abstract=numbering.match(new RegExp(`<w:num w:numId="${id}"[^>]*>[\\s\\S]*?<w:abstractNumId w:val="(\\d+)"/>`))?.[1];if(abstract===undefined)return match
+      copies[id]=String(nextNumId++);numbering=numbering.replace('</w:numbering>',`<w:num w:numId="${copies[id]}"><w:abstractNumId w:val="${abstract}"/><w:lvlOverride w:ilvl="0"><w:startOverride w:val="1"/></w:lvlOverride></w:num></w:numbering>`)}
+    return `<w:numId w:val="${copies[id]}"/>`})}
+  const pageTables=pages.map((pageRows,page)=>(page?restartLists(headingCopy(heading,page)):heading)+pageRows.join('')+closing)
+  xml=xml.slice(0,tableStart)+pageTables.join(NEW_PAGE)+xml.slice(tableEnd)
+  if(pages.length>1&&numbering)files['word/numbering.xml']=strToU8(numbering)
   const checkedArea=reservationArea(reservation.facility)
   for(const area of ['BAR','DINING','FRONT_OFFICE','HOT_KITCHEN','COLD_KITCHEN','LAUNDRY','MINI_FUNCTION','HARMONIA','LUNARA','COMPUTER'])xml=xml.replaceAll(`{{CHECK_${area}}}`,()=>area===checkedArea?'☑':'☐')
   const values = {
