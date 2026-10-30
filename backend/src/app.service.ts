@@ -406,7 +406,8 @@ export class AppService {
   }
   if(kind==='reservations'&&raw.requesterType==='department'){
    // Other offices (e.g. HR) name their department head instead of choosing an instructor account.
-   for(const k of ['department','departmentHead']){const v=raw[k];if(typeof v!=='string'||!v.trim()||v.trim().length>80)throw new BadRequestException(k==='department'?'Enter your office or department.':'Enter the full name of your department head.');r[k]=v.trim();}
+   const head=raw.departmentHead;if(typeof head!=='string'||!head.trim()||head.trim().length>80)throw new BadRequestException('Enter the full name of your department head.');r.departmentHead=head.trim();
+   if(raw.department!==undefined&&raw.department!==''){if(typeof raw.department!=='string'||raw.department.trim().length>80)throw new BadRequestException('Office or department must be 80 characters or fewer.');r.department=raw.department.trim();}
    r.requesterType='department';r.instructor=r.departmentHead!;r.instructorKeyId='';
   }
   else if(kind==='reservations'){

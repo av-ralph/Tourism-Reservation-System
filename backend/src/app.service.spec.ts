@@ -144,10 +144,11 @@ describe('reservations',()=>{
   process.env.HM_ADMIN_KEY='test-super-key';
   try{
    await service.createAdminKey({name:'Instructor',key:'InstructorTest1!',role:'instructor'});
-   const office={...booking,facility:'Dining Area',instructor:'',requesterType:'department',department:'Human Resources',departmentHead:'Ana Reyes'};
+   const office={...booking,facility:'Dining Area',instructor:'',requesterType:'department',departmentHead:'Ana Reyes'};
    await expect(service.createForUser('reservations',{...office,departmentHead:''},'11111111-1111-4111-8111-111111111111')).rejects.toThrow('department head');
    const request=await service.createForUser('reservations',{...office,instructor:'Ana Reyes'},'11111111-1111-4111-8111-111111111111');
-   expect(request).toMatchObject({status:'Awaiting admin',requesterType:'department',department:'Human Resources',departmentHead:'Ana Reyes',instructor:'Ana Reyes',instructorKeyId:''});
+   expect(request).toMatchObject({status:'Awaiting admin',requesterType:'department',departmentHead:'Ana Reyes',instructor:'Ana Reyes',instructorKeyId:''});
+   expect(request.department).toBeUndefined();
    expect((await service.instructorRecords('Bearer InstructorTest1!')).reservations.some(row=>row.id===request.id)).toBe(false);
    const approved=await service.reviewReservation(request.id!,{action:'Approved',note:'',signatureConfirmed:true,adminSignature:signature},'Bearer test-super-key');
    expect(approved.status).toBe('Approved');
