@@ -197,7 +197,7 @@ describe('reservations',()=>{
    sendMail.mockClear();
    const approved=await service.reviewReservation(reservation.id!,{action:'Approved',note:'',signatureConfirmed:true,adminSignature:signature},'Bearer test-super-key');
    expect(approved).toMatchObject({emailNotification:'sent',instructorEmailNotification:'sent'});
-   expect(sendMail.mock.calls.map(call=>[call[0].to,call[0].subject])).toEqual([['student@example.com','Your HM laboratory booking is approved'],['instructor@example.com','A request you endorsed is approved']]);
+   expect(sendMail.mock.calls.map(call=>[call[0].to,call[0].subject])).toEqual([['student@example.com','Your HM Laboratory booking is approved'],['instructor@example.com','A request you endorsed is approved']]);
   }finally{delete process.env.HM_ADMIN_KEY;delete process.env.GMAIL_SMTP_USER;delete process.env.GMAIL_SMTP_APP_PASSWORD;}
  });
  it('accepts more than 22 distinct available items in one request',async()=>{
@@ -417,7 +417,7 @@ describe('reservations',()=>{
    const third=await service.createForUser('reservations',{...booking,start:'10:00',end:'11:00'},'11111111-1111-4111-8111-111111111111');
    await service.reviewAsInstructor(third.id!,{decision:'Approved',note:'',signature},'Bearer InstructorTest1!');
    expect((await service.reviewReservation(third.id!,{action:'Rejected',note:'Lab unavailable'},'Bearer test-super-key')).emailNotification).toBe('sent');
-   expect(deliveries.map(row=>row.subject)).toEqual(['Your HM laboratory request passed instructor review','Your HM laboratory booking is approved','Your HM laboratory request was declined','Your HM laboratory request passed instructor review','Your HM laboratory request was declined']);
+   expect(deliveries.map(row=>row.subject)).toEqual(['Your HM Laboratory request passed instructor review','Your HM Laboratory booking is approved','Your HM Laboratory request was declined','Your HM Laboratory request passed instructor review','Your HM Laboratory request was declined']);
    expect(String(deliveries[2]?.text)).toContain('Equipment unavailable');
    expect(String(deliveries[4]?.text)).toContain('Lab unavailable');
    expect(deliveries.every(row=>row.to==='student@example.com')).toBe(true);

@@ -13,14 +13,14 @@ export default function AdminIncidentReport({report:r,formatDate,onDownload,onRe
     <p className="incident-reporter">Reported by <strong>{r.name}</strong>{r.email&&<> · <a href={'mailto:'+r.email}>{r.email}</a></>}{r.studentId&&<> · ID {r.studentId}</>}</p>
    </div>
    <div className="incident-actions">
-    <button className="secondary" onClick={onDownload}><span aria-hidden="true">⤓</span> Download form</button>
-    {!resolved&&<button className="primary" onClick={onResolve}>Record resolution</button>}
+    <button className="secondary" onClick={onDownload}><span aria-hidden="true">⤓</span> Download Form</button>
+    {!resolved&&<button className="primary" onClick={onResolve}>Record Resolution</button>}
     <div className="incident-manage"><button className="text-button" onClick={onEdit}>Edit</button><button className="text-button incident-delete" onClick={onDelete}>Delete</button></div>
    </div>
   </div>
   {details.length>0&&<dl className="incident-details">{details.map(([label,value])=><div key={label} className={label==='Purpose'?'wide':''}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>}
-  {items.length>0&&<div className="incident-items-wrap"><table className="incident-items"><caption>Damaged or lost items</caption><thead><tr><th scope="col">Qty</th><th scope="col">Item / equipment</th><th scope="col">Condition</th></tr></thead><tbody>{items.map((item,i)=><tr key={i}><td>{item.quantity}</td><td>{item.description}</td><td><span className={'incident-condition '+item.condition.toLowerCase()}>{item.condition}</span></td></tr>)}</tbody></table></div>}
-  <section className="incident-note"><h4>What happened</h4><p>{r.details}</p></section>
+  {items.length>0&&<div className="incident-items-wrap"><table className="incident-items"><caption>Damaged or Lost Items</caption><thead><tr><th scope="col">Qty</th><th scope="col">Item / Equipment</th><th scope="col">Condition</th></tr></thead><tbody>{items.map((item,i)=><tr key={i}><td>{item.quantity}</td><td>{item.description}</td><td><span className={'incident-condition '+item.condition.toLowerCase()}>{item.condition}</span></td></tr>)}</tbody></table></div>}
+  <section className="incident-note"><h4>What Happened</h4><p>{r.details}</p></section>
   {r.resolution&&<section className="incident-note incident-resolution"><h4>Resolution{r.resolvedAt&&<span> · {filedLabel(r.resolvedAt)}</span>}</h4><p>{r.resolution}</p></section>}
  </article>
 }

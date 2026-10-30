@@ -18,7 +18,7 @@ export default function InstructorReserve({data,request,onBooked}){
   catch(e){setError(e.message)}finally{setBusy(false)}
  }
  return <section className="records instructor-reserve">
-  <div className="section-heading"><div><h2>Reserve a space</h2><p>Book a laboratory space for your own class. Your signature endorses the request, so it goes straight to the administrator for final approval.</p></div></div>
+  <div className="section-heading"><div><h2>Reserve a Space</h2><p>Book a laboratory space for your own class. Your signature endorses the request, so it goes straight to the administrator for final approval.</p></div></div>
   {error&&<div className="alert" role="alert">{error}</div>}
   <div className="student-site booking-embed"><BookingForm key={formKey} mode="instructor" requester={{name:data.adminName,email:data.adminEmail}} savedSignature={data.savedSignature} facilities={(data.facilities||[]).map(facility=>[facility.name])} facilityInfo={data.facilities} inventory={inventory} inventoryStatus={inventoryStatus} onRetryInventory={()=>{setInventoryStatus('loading');setReload(value=>value+1)}} date={earliestBooking()} minDate={earliestBooking()} schedule={schedule} busy={busy} onSubmit={submit}/></div>
  </section>

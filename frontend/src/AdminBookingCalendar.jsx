@@ -6,13 +6,13 @@ const monthKey=date=>`${date.getFullYear()}-${String(date.getMonth()+1).padStart
 const dayKey=(month,day)=>`${month}-${String(day).padStart(2,'0')}`
 const shiftMonth=(month,offset)=>{const [year,number]=month.split('-').map(Number);return monthKey(new Date(year,number-1+offset,1))}
 const dateForMonth=month=>{const [year,number]=month.split('-').map(Number);return new Date(year,number-1,1)}
-const statusLabel=status=>status==='Awaiting instructor'?'With instructor':status==='Awaiting admin'?'Pending final':status
+const statusLabel=status=>status==='Awaiting instructor'?'With Instructor':status==='Awaiting admin'?'Pending Final':status
 
 export default function AdminBookingCalendar({reservations,facility,selectedDate,onSelectDate,month,onMonthChange}){
  const first=dateForMonth(month)
  const offset=first.getDay()
  const days=new Date(first.getFullYear(),first.getMonth()+1,0).getDate()
- const filtered=reservations.filter(row=>!['Cancelled','Rejected'].includes(row.status)&&(facility==='All facilities'||row.facility===facility))
+ const filtered=reservations.filter(row=>!['Cancelled','Rejected'].includes(row.status)&&(facility==='All Facilities'||row.facility===facility))
  const byDate=new Map()
  for(const booking of filtered){const list=byDate.get(booking.date)||[];list.push(booking);byDate.set(booking.date,list)}
  const cells=Array.from({length:Math.ceil((offset+days)/7)*7},(_,index)=>{const day=index-offset+1;return day>0&&day<=days?day:null})

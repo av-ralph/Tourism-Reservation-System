@@ -25,14 +25,14 @@ export default function EquipmentPicker({inventory,inventoryStatus,onRetryInvent
  const resetLimit=()=>setVisibleCount(PAGE_SIZE)
 
  return <fieldset className="equipment-fields">
-  <legend>Items / equipment <span className="equipment-optional">Optional</span></legend>
+  <legend>Items / Equipment <span className="equipment-optional">Optional</span></legend>
   {inventoryStatus==='loading'?<div className="equipment-state" role="status">Checking available equipment…</div>
-   :inventoryStatus==='error'?<div className="equipment-state" role="alert"><p>We couldn’t load the equipment list. You can still request the space and describe any equipment you need in Purpose / activity.</p><button type="button" className="secondary" onClick={onRetryInventory}>Try loading equipment again</button></div>
+   :inventoryStatus==='error'?<div className="equipment-state" role="alert"><p>We couldn’t load the equipment list. You can still request the space and describe any equipment you need in Purpose / activity.</p><button type="button" className="secondary" onClick={onRetryInventory}>Try Loading Equipment Again</button></div>
    :inventory.length===0?<div className="equipment-state" role="status">No equipment is currently available to select online. If you need items for your activity, describe them above. The laboratory staff will confirm what can be provided.</div>
    :<>
     <p className="field-hint">Need equipment? Search or browse, then tap Add. You can also continue without selecting any.</p>
     {items.length>0&&<section className="equipment-selected" aria-label="Selected equipment">
-     <div className="equipment-section-heading"><strong>Your items</strong><span>{items.length} selected</span></div>
+     <div className="equipment-section-heading"><strong>Your Items</strong><span>{items.length} selected</span></div>
      {items.map(item=>{
       const selected=inventory.find(entry=>entry.id===item.id)
       if(!selected)return null
@@ -55,12 +55,12 @@ export default function EquipmentPicker({inventory,inventoryStatus,onRetryInvent
      })}
     </section>}
     <details className="equipment-browse">
-    <summary className="equipment-browse-heading"><strong>Browse available items</strong><span>{inventory.length} items <b aria-hidden="true">⌄</b></span></summary>
+    <summary className="equipment-browse-heading"><strong>Browse Available Items</strong><span>{inventory.length} items <b aria-hidden="true">⌄</b></span></summary>
     <div className="equipment-browse-content">
     <div className="equipment-controls">
      <label>Search<input type="search" value={query} onChange={event=>{setQuery(event.target.value);resetLimit()}} placeholder="Try “toaster” or “kitchen”" autoComplete="off"/></label>
-     <label>Category<select value={category} onChange={event=>{setCategory(event.target.value);resetLimit()}}><option value="all">All categories</option>{categories.map(value=><option key={value} value={value}>{value}</option>)}</select></label>
-     <label>Sort<select value={sort} onChange={event=>{setSort(event.target.value);resetLimit()}}><option value="name">Name A–Z</option><option value="name-desc">Name Z–A</option><option value="category">Category</option><option value="stock">Most available</option></select></label>
+     <label>Category<select value={category} onChange={event=>{setCategory(event.target.value);resetLimit()}}><option value="all">All Categories</option>{categories.map(value=><option key={value} value={value}>{value}</option>)}</select></label>
+     <label>Sort<select value={sort} onChange={event=>{setSort(event.target.value);resetLimit()}}><option value="name">Name A–Z</option><option value="name-desc">Name Z–A</option><option value="category">Category</option><option value="stock">Most Available</option></select></label>
     </div>
     <p className="equipment-result-count" role="status">{sorted.length} {sorted.length===1?'item':'items'} found</p>
     {sorted.length?<div className="equipment-results">
@@ -69,7 +69,7 @@ export default function EquipmentPicker({inventory,inventoryStatus,onRetryInvent
       <button type="button" className={selectedIds.has(item.id)?'equipment-added':'secondary'} disabled={selectedIds.has(item.id)} aria-label={selectedIds.has(item.id)?`${item.name} added`:`Add ${item.name}`} onClick={()=>add(item)}>{selectedIds.has(item.id)?'✓ Added':'+ Add'}</button>
      </div>)}
     </div>:<p className="equipment-no-match">No items match. Try another search or category.</p>}
-    {visibleCount<sorted.length&&<button type="button" className="equipment-more secondary" onClick={()=>setVisibleCount(count=>count+PAGE_SIZE)}>Show more items</button>}
+    {visibleCount<sorted.length&&<button type="button" className="equipment-more secondary" onClick={()=>setVisibleCount(count=>count+PAGE_SIZE)}>Show More Items</button>}
     </div>
     </details>
    </>}

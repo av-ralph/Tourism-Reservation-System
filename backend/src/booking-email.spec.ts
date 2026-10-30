@@ -19,7 +19,7 @@ describe('booking status email',()=>{
   expect(await sendBookingEmail(booking,'admin-rejected')).toBe('sent');
   expect(nodemailer.createTransport).toHaveBeenCalledWith(expect.objectContaining({service:'gmail',auth:{user:'sender@gmail.com',pass:'test-app-password'}}));
   const payload=sendMail.mock.calls[0][0];
-  expect(payload).toMatchObject({to:'student@example.com',subject:'Your HM laboratory request was declined'});
+  expect(payload).toMatchObject({to:'student@example.com',subject:'Your HM Laboratory request was declined'});
   expect(payload.text).toContain('Space unavailable');
   expect(payload.text).toContain(booking.id);
   expect(payload.text).not.toContain('recovery code');
@@ -38,7 +38,7 @@ describe('booking status email',()=>{
    expect(email.html).not.toContain('recovery code');
    expect(email.text).toContain(booking.id);
   }
-  expect(createBookingEmail(unsafe,'instructor-approved').html).toContain('Pending final approval');
+  expect(createBookingEmail(unsafe,'instructor-approved').html).toContain('Pending Final Approval');
   expect(createBookingEmail(unsafe,'admin-approved').html).toContain('download your completed utilization form');
   expect(createBookingEmail(unsafe,'admin-rejected').html).toContain('Use &lt;another&gt; space');
  });

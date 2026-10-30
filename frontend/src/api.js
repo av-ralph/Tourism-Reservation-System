@@ -11,7 +11,7 @@ export class ApiError extends Error {
 
 export async function requestJson(url, options) {
   if (!API_CONFIGURED) {
-    throw new ApiError('Online booking is not connected yet. Please contact the HM laboratory office for assistance.')
+    throw new ApiError('Online booking is not connected yet. Please contact the HM Laboratory Office for assistance.')
   }
   let response
   let body

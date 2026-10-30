@@ -11,18 +11,18 @@ export default function InventorySheet({items,request,onChange,onEdit}){
  const [saving,setSaving]=useState('')
  const [message,setMessage]=useState('')
  const columns=useMemo(()=>[
-  {field:'name',headerName:'Item / equipment',minWidth:230,pinned:'left',editable:true},
+  {field:'name',headerName:'Item / Equipment',minWidth:230,pinned:'left',editable:true},
   {field:'category',headerName:'Category',minWidth:155,editable:true},
-  {field:'quantity',headerName:'Booking stock',minWidth:145,editable:true,filter:'agNumberColumnFilter',cellDataType:'number',valueGetter:params=>Number(params.data?.quantity??0)},
+  {field:'quantity',headerName:'Booking Stock',minWidth:145,editable:true,filter:'agNumberColumnFilter',cellDataType:'number',valueGetter:params=>Number(params.data?.quantity??0)},
   {field:'unit',headerName:'Unit',minWidth:105,editable:true},
-  {field:'status',headerName:'Student availability',minWidth:175,editable:true,cellEditor:'agSelectCellEditor',cellEditorParams:{values:['Draft','Available','Unavailable']}},
+  {field:'status',headerName:'Student Availability',minWidth:175,editable:true,cellEditor:'agSelectCellEditor',cellEditorParams:{values:['Draft','Available','Unavailable']}},
   {field:'model',headerName:'Model',minWidth:180,editable:true},
   {field:'serial',headerName:'Serial',minWidth:170,editable:true},
-  {field:'notes',headerName:'Current notes',minWidth:230,editable:true},
-  {headerName:'Previous in report',valueGetter:params=>report(params.data?.reportPreviousQuantity,params.data?.reportPreviousUnit),minWidth:165},
-  {headerName:'Actual in report',valueGetter:params=>report(params.data?.reportActualQuantity,params.data?.reportActualUnit),minWidth:155},
-  {headerName:'Required in report',valueGetter:params=>report(params.data?.reportRequiredQuantity,params.data?.reportRequiredUnit),minWidth:165},
-  {field:'reportRemarks',headerName:'Report remarks',minWidth:220},
+  {field:'notes',headerName:'Current Notes',minWidth:230,editable:true},
+  {headerName:'Previous in Report',valueGetter:params=>report(params.data?.reportPreviousQuantity,params.data?.reportPreviousUnit),minWidth:165},
+  {headerName:'Actual in Report',valueGetter:params=>report(params.data?.reportActualQuantity,params.data?.reportActualUnit),minWidth:155},
+  {headerName:'Required in Report',valueGetter:params=>report(params.data?.reportRequiredQuantity,params.data?.reportRequiredUnit),minWidth:165},
+  {field:'reportRemarks',headerName:'Report Remarks',minWidth:220},
   {headerName:'Details',minWidth:110,pinned:'right',sortable:false,filter:false,cellRenderer:params=><button type="button" className="inventory-sheet-edit" onClick={()=>onEdit(params.data)}>Edit</button>},
  ],[onEdit])
  const saveCell=useCallback(async event=>{
